@@ -1,0 +1,13 @@
+{
+  "lint": {
+    "include": ["scripts/"],
+    "exclude": ["node_modules"]
+  },
+  "fmt": {
+    "include": ["scripts/"],
+    "exclude": ["node_modules"]
+  },
+  "compilerOptions": {
+    "lib": ["deno.ns", "dom"]
+  }
+} 

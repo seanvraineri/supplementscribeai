@@ -5,32 +5,51 @@ import { useRouter } from 'next/navigation'
 import React, { useState } from 'react'
 import Link from 'next/link'
 
-export default function LoginPage() {
+export default function SignUpPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [message, setMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
-  const handleSignIn = async (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
     setMessage('')
     setIsLoading(true)
-    console.log('Attempting to sign in user:', email)
-    const { error } = await supabase.auth.signInWithPassword({
+
+    // Basic validation
+    if (password !== confirmPassword) {
+      setMessage('Passwords do not match')
+      setIsLoading(false)
+      return
+    }
+
+    if (password.length < 6) {
+      setMessage('Password must be at least 6 characters long')
+      setIsLoading(false)
+      return
+    }
+
+    console.log('Attempting to sign up user:', email)
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
     })
-    
+
     setIsLoading(false)
-    
-    if (!error) {
-      console.log('Sign in successful for:', email, 'Redirecting to onboarding.')
+
+    if (error) {
+      console.error('Sign up error:', error.message)
+      setMessage(`Sign up failed: ${error.message}`)
+    } else if (data.user && data.user.identities && data.user.identities.length === 0) {
+      console.warn('Sign up attempt for existing user:', email)
+      setMessage('This email is already registered. Please sign in instead.')
+    } else if (data.user) {
+      console.log('Sign up successful for:', email, 'Redirecting to onboarding.')
+      // Since email confirmation is disabled, redirect directly to onboarding
       router.push('/onboarding')
-    } else {
-      console.error('Sign in error:', error.message)
-      setMessage(`Sign in failed: ${error.message}`)
     }
   }
 
@@ -40,14 +59,14 @@ export default function LoginPage() {
         <div className="w-full max-w-md space-y-8">
           <div>
             <h1 className="text-4xl font-bold mb-2">
-              Welcome back to <span className="text-blue-600">SupplementScribe</span>
+              Join <span className="text-blue-600">SupplementScribe</span>
             </h1>
             <p className="text-gray-600 mb-8">
-              Sign in to access your personalized supplement recommendations
+              Create your account to get personalized supplement recommendations
             </p>
           </div>
 
-          <form onSubmit={handleSignIn} className="space-y-4">
+          <form onSubmit={handleSignUp} className="space-y-4">
             <div>
               <input
                 type="email"
@@ -65,7 +84,18 @@ export default function LoginPage() {
                 name="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
+                placeholder="Password (min. 6 characters)"
+                required
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <input
+                type="password"
+                name="confirmPassword"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirm password"
                 required
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
@@ -82,15 +112,15 @@ export default function LoginPage() {
               disabled={isLoading}
               className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:bg-blue-400 transition-colors duration-300"
             >
-              {isLoading ? 'Signing In...' : 'Sign In'}
+              {isLoading ? 'Creating Account...' : 'Create Account'}
             </button>
           </form>
 
           <div className="text-center">
             <p className="text-gray-600">
-              Don't have an account?{' '}
-              <Link href="/auth/signup" className="text-blue-600 hover:text-blue-700 font-semibold">
-                Get started here
+              Already have an account?{' '}
+              <Link href="/login" className="text-blue-600 hover:text-blue-700 font-semibold">
+                Sign in here
               </Link>
             </p>
           </div>

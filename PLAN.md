@@ -20,10 +20,10 @@ This document outlines the development plan for SupplementScribe. We will use th
 *   [ ] Define and populate the `products` table from the provided CSV.
 
 ### **Phase 3: File Handling & AI Parsing**
-*   [ ] Develop the secure file upload system to Supabase Storage.
-*   [ ] Create the `parse-lab-data` Edge Function.
-*   [ ] Trigger the `parse-lab-data` function when a new file is uploaded to a specific storage bucket.
-*   [ ] Store the parsed, structured data (biomarkers, SNPs) in their respective database tables.
+*   [x] Develop the secure file upload system to Supabase Storage.
+*   [x] Create the `parse-lab-data` Edge Function.
+*   [x] Trigger the `parse-lab-data` function when a new file is uploaded to a specific storage bucket.
+*   [x] Store the parsed, structured data (biomarkers, SNPs) in their respective database tables.
 
 ### **Phase 4: AI Plan Generation & Education**
 *   [ ] Build the `generate-plan` Edge Function using GPT-4o to synthesize all user data into a structured supplement plan.

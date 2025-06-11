@@ -1,3 +1,5 @@
+'use client'
+
 import Link from 'next/link';
 import React from 'react';
 
@@ -11,9 +13,20 @@ export default function HomePage() {
         <p className="text-lg md:text-xl mb-8 max-w-2xl">
           Your personalized, data-driven supplement recommendation platform. We use science to help you achieve your health goals.
         </p>
-        <Link href="/login" className="px-8 py-3 bg-blue-600 text-white rounded-lg font-semibold text-lg hover:bg-blue-700 transition-colors duration-300">
+        <div className="flex space-x-4">
+          <Link 
+            href="/auth/signup" 
+            className="px-8 py-3 bg-blue-600 text-white rounded-lg font-semibold text-lg hover:bg-blue-700 transition-colors duration-300"
+          >
             Get Started
-        </Link>
+          </Link>
+          <Link 
+            href="/login" 
+            className="px-8 py-3 bg-gray-200 text-gray-800 rounded-lg font-semibold text-lg hover:bg-gray-300 transition-colors duration-300"
+          >
+            Login
+          </Link>
+        </div>
       </main>
 
       <footer className="w-full h-24 flex items-center justify-center border-t mt-8">

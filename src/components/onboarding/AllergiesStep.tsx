@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormContext, useFieldArray, Controller } from "react-hook-form";
+import { useFormContext, useFieldArray } from "react-hook-form";
 import { OnboardingData } from "@/lib/schemas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,26 +37,36 @@ const HealthProfileSection: React.FC<HealthProfileSectionProps> = ({ name, title
     name,
   });
 
-  const [hasNone, setHasNone] = React.useState(false);
+  const fieldValue = form.watch(name) || [];
+  const hasNone = fieldValue.length === 1 && fieldValue[0].value === "None";
 
   const handleNoneChange = (checked: boolean) => {
-    setHasNone(checked);
     if (checked) {
-      replace([]); // Clear the array
+      replace([{ value: "None" }]);
+    } else {
+      replace([]);
     }
   };
   
   const handlePresetClick = (value: string) => {
-    // Prevent adding if it already exists
-    if (!fields.some(field => (field as { value: string }).value === value)) {
+    const currentValues = (form.getValues(name) || []).map((item: {value: string}) => item.value);
+    
+    // If 'None' is selected, clear it before adding the new item
+    if (currentValues.includes("None")) {
+      replace([{ value }]);
+    } else if (!currentValues.includes(value)) {
       append({ value });
-      setHasNone(false);
     }
   };
 
   const handleAppend = () => {
-    append({ value: "" });
-    setHasNone(false);
+    const currentValues = (form.getValues(name) || []).map((item: {value: string}) => item.value);
+    // If 'None' is selected, clear it before adding the new item
+    if (currentValues.includes("None")) {
+      replace([{ value: "" }])
+    } else {
+      append({ value: "" });
+    }
   }
 
   return (
@@ -67,15 +77,18 @@ const HealthProfileSection: React.FC<HealthProfileSectionProps> = ({ name, title
       </div>
       <FormItem className="flex flex-row items-start space-x-3 space-y-0">
         <FormControl>
-          <Checkbox checked={hasNone} onCheckedChange={handleNoneChange} />
+          <Checkbox 
+            checked={hasNone} 
+            onCheckedChange={handleNoneChange} 
+          />
         </FormControl>
         <div className="space-y-1 leading-none">
           <FormLabel>None</FormLabel>
         </div>
       </FormItem>
-      
+
       {!hasNone && (
-        <div className="space-y-4">
+       <div className="space-y-4">
           <div>
             <FormLabel>Common {title}</FormLabel>
             <div className="flex flex-wrap gap-2 pt-2">
@@ -87,40 +100,45 @@ const HealthProfileSection: React.FC<HealthProfileSectionProps> = ({ name, title
             </div>
           </div>
 
-          {fields.map((field, index) => (
-            <FormField
-              control={form.control}
-              key={field.id}
-              name={`${name}.${index}.value`}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className={index !== 0 ? "sr-only" : ""}>Custom {title}</FormLabel>
-                  <div className="flex items-center gap-2">
-                    <FormControl>
-                      <Input {...field} placeholder={placeholder} />
-                    </FormControl>
-                    <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
-                      <XCircle className="h-5 w-5" />
-                      <span className="sr-only">Remove</span>
-                    </Button>
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          ))}
+          {fields.map((field, index) => {
+            // Do not render the input if the value is "None"
+            if (field.value === "None") return null;
+            
+            return (
+              <FormField
+                control={form.control}
+                key={field.id}
+                name={`${name}.${index}.value`}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={index !== 0 ? "sr-only" : ""}>Custom {title}</FormLabel>
+                    <div className="flex items-center gap-2">
+                      <FormControl>
+                        <Input {...field} placeholder={placeholder} />
+                      </FormControl>
+                      <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
+                        <XCircle className="h-5 w-5" />
+                        <span className="sr-only">Remove</span>
+                      </Button>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )
+          })}
           <Button type="button" variant="outline" size="sm" onClick={handleAppend}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Add Custom
           </Button>
-        </div>
+       </div>
       )}
     </div>
   );
 };
 
 
-export function HealthProfileStep() {
+export function AllergiesStep() {
   return (
     <div className="space-y-8">
       <HealthProfileSection

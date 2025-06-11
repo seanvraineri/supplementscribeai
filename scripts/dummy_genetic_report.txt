@@ -1,0 +1,13 @@
+This is a sample genetic report.
+
+Patient: Test User
+Date: 2024-07-25
+
+--- SNP Results ---
+
+rs1801133 (MTHFR C677T): T/T
+rs1801131 (MTHFR A1298C): A/C
+rs4680 (COMT Val158Met): Val/Met
+APOE: e3/e4
+An invalid SNP: rs000000: A/G
+CYP1A2 rs762551: A/C 

@@ -1,0 +1,17 @@
+This is a sample blood report.
+
+Patient: Test User
+Date: 2024-07-25
+
+--- Biomarker Results ---
+
+- 25-OH Vitamin D: 32.5 ng/mL
+- Vitamin B12: 550 pg/mL
+- Homocysteine: 9.1 umol/L
+- hs-CRP: 0.8 mg/L
+- LDL Cholesterol: 102 mg/dL
+- HbA1c: 5.4 %
+- Iron: 110 ug/dL
+- Folate (RBC): 900 ng/mL
+- An invalid marker: 12345
+- Testosterone (total): 600 ng/dL 

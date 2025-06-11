@@ -63,6 +63,19 @@ export function ReviewStep() {
       
       <Card>
         <CardHeader>
+          <CardTitle>Lifestyle</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <dl>
+            <DataPoint label="Activity Level" value={data.activity_level} />
+            <DataPoint label="Average Sleep" value={`${data.sleep_hours} hours/night`} />
+            <DataPoint label="Alcohol Intake" value={data.alcohol_intake} />
+          </dl>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle>Health Goals</CardTitle>
         </CardHeader>
         <CardContent>

@@ -1,0 +1,27 @@
+Lab Results - Sean Raineri
+
+Blood Chemistry Panel:
+Glucose: 95 mg/dL
+Hemoglobin A1c: 5.4 %
+Total Cholesterol: 180 mg/dL
+LDL Cholesterol: 110 mg/dL
+HDL Cholesterol: 50 mg/dL
+Triglycerides: 120 mg/dL
+
+Complete Blood Count:
+Hemoglobin: 14.5 g/dL
+Hematocrit: 42.5 %
+White Blood Cell Count: 7.2 thousand/uL
+Red Blood Cell Count: 4.8 million/uL
+
+Thyroid Panel:
+TSH: 2.1 mIU/L
+Free T4: 1.2 ng/dL
+
+Vitamins:
+Vitamin D, 25-OH: 35 ng/mL
+Vitamin B12: 450 pg/mL
+
+Liver Function:
+ALT: 25 U/L
+AST: 23 U/L 

@@ -55,13 +55,13 @@ export function HealthGoalsStep() {
                     >
                       <FormControl>
                         <Checkbox
-                          checked={field.value?.includes(item.label)}
+                          checked={field.value?.includes(item.id)}
                           onCheckedChange={(checked) => {
                             return checked
-                              ? field.onChange([...(field.value || []), item.label])
+                              ? field.onChange([...(field.value || []), item.id])
                               : field.onChange(
                                   field.value?.filter(
-                                    (value) => value !== item.label
+                                    (value) => value !== item.id
                                   )
                                 )
                           }}
