@@ -2,3 +2,4 @@ node_modules
 .next
 .env.local
 .vscode
+HEALTH_ASSESSMENT_GUIDE.md
