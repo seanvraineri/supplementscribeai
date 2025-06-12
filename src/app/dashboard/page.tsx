@@ -2707,7 +2707,7 @@ export default function DashboardPage() {
 
       {/* Main Content */}
       <div className="flex-1 overflow-auto">
-        <div className="p-8">
+        <div className="p-8 lg:p-12">
           {renderContent()}
         </div>
       </div>
