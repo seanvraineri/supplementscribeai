@@ -25,6 +25,7 @@ import {
   Info
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import ReactMarkdown from 'react-markdown';
 
 type TabType = 'dashboard' | 'supplement-plan' | 'analysis' | 'ai-chat' | 'settings';
 
@@ -2307,7 +2308,59 @@ export default function DashboardPage() {
                             : 'bg-gray-100 text-gray-900'
                         }`}
                       >
-                        <div className="whitespace-pre-wrap text-sm">{message.content}</div>
+                        {message.role === 'assistant' ? (
+                          <div className="text-sm max-w-none ai-chat-content">
+                            <ReactMarkdown
+                              components={{
+                                // Custom rendering for beautiful formatting
+                                strong: ({ children }) => (
+                                  <strong className="font-semibold text-gray-900 bg-yellow-100 px-1 py-0.5 rounded">{children}</strong>
+                                ),
+                                em: ({ children }) => (
+                                  <em className="italic text-blue-700 font-medium">{children}</em>
+                                ),
+                                p: ({ children }) => (
+                                  <p className="mb-3 text-gray-700 leading-relaxed">{children}</p>
+                                ),
+                                ul: ({ children }) => (
+                                  <ul className="mb-4 ml-1 space-y-2 list-none">{children}</ul>
+                                ),
+                                ol: ({ children }) => (
+                                  <ol className="mb-4 ml-4 space-y-2 list-decimal">{children}</ol>
+                                ),
+                                li: ({ children }) => (
+                                  <li className="text-gray-700 leading-relaxed flex items-start">
+                                    <span className="text-blue-500 mr-2 mt-0.5">•</span>
+                                    <span>{children}</span>
+                                  </li>
+                                ),
+                                h1: ({ children }) => (
+                                  <h1 className="text-lg font-bold text-blue-900 mb-3 mt-4 pb-1 border-b border-blue-200">{children}</h1>
+                                ),
+                                h2: ({ children }) => (
+                                  <h2 className="text-base font-bold text-blue-800 mb-2 mt-3">{children}</h2>
+                                ),
+                                h3: ({ children }) => (
+                                  <h3 className="text-sm font-semibold text-blue-700 mb-2 mt-3">{children}</h3>
+                                ),
+                                code: ({ children }) => (
+                                  <code className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-mono border">{children}</code>
+                                ),
+                                blockquote: ({ children }) => (
+                                  <blockquote className="border-l-4 border-green-400 pl-4 my-3 bg-green-50 py-3 rounded-r italic">{children}</blockquote>
+                                ),
+                                // Custom component for numbered lists to look better
+                                div: ({ children }) => (
+                                  <div className="space-y-1">{children}</div>
+                                ),
+                              }}
+                            >
+                              {message.content}
+                            </ReactMarkdown>
+                          </div>
+                        ) : (
+                          <div className="whitespace-pre-wrap text-sm">{message.content}</div>
+                        )}
                         <div className={`text-xs mt-1 ${
                           message.role === 'user' ? 'text-blue-100' : 'text-gray-500'
                         }`}>

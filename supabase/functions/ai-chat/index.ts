@@ -308,30 +308,30 @@ function buildOptimizedHealthContext(
   // Essential demographics
   if (profile.age || profile.gender) {
     const demo = [];
-    if (profile.age) demo.push(`${profile.age}y`);
-    if (profile.gender) demo.push(profile.gender);
-    if (profile.weight_lbs) demo.push(`${profile.weight_lbs}lbs`);
-    parts.push(`PROFILE: ${demo.join(', ')}`);
+    if (profile.age) demo.push(`**${profile.age} years old**`);
+    if (profile.gender) demo.push(`**${profile.gender}**`);
+    if (profile.weight_lbs) demo.push(`**${profile.weight_lbs} lbs**`);
+    parts.push(`**PROFILE**: ${demo.join(', ')}`);
   }
 
   // Key health goals & symptoms
   if (profile.health_goals?.length || profile.energy_levels || profile.brain_fog) {
     const health = [];
-    if (profile.health_goals?.length) health.push(`Goals: ${profile.health_goals.slice(0,3).join(', ')}`);
-    if (profile.energy_levels && profile.energy_levels !== 'high') health.push(`Energy: ${profile.energy_levels}`);
-    if (profile.brain_fog && profile.brain_fog !== 'none') health.push(`Brain fog: ${profile.brain_fog}`);
-    if (profile.sleep_quality && profile.sleep_quality !== 'excellent') health.push(`Sleep: ${profile.sleep_quality}`);
-    if (health.length) parts.push(`HEALTH: ${health.join(', ')}`);
+    if (profile.health_goals?.length) health.push(`Goals: **${profile.health_goals.slice(0,3).join(', ')}**`);
+    if (profile.energy_levels && profile.energy_levels !== 'high') health.push(`Energy: **${profile.energy_levels}**`);
+    if (profile.brain_fog && profile.brain_fog !== 'none') health.push(`Brain fog: **${profile.brain_fog}**`);
+    if (profile.sleep_quality && profile.sleep_quality !== 'excellent') health.push(`Sleep: **${profile.sleep_quality}**`);
+    if (health.length) parts.push(`**HEALTH GOALS & SYMPTOMS**: ${health.join(', ')}`);
   }
 
   // Medical conditions (top 5)
   if (conditions.length > 0) {
-    parts.push(`CONDITIONS: ${conditions.slice(0,5).map(c => c.condition_name).join(', ')}`);
+    parts.push(`**CONDITIONS**: ${conditions.slice(0,5).map(c => `**${c.condition_name}**`).join(', ')}`);
   }
 
   // Current medications (top 5)
   if (medications.length > 0) {
-    parts.push(`MEDS: ${medications.slice(0,5).map(m => m.medication_name).join(', ')}`);
+    parts.push(`**MEDICATIONS**: ${medications.slice(0,5).map(m => `**${m.medication_name}**`).join(', ')}`);
   }
 
   // Key biomarkers (top 10 most important)
@@ -341,9 +341,9 @@ function buildOptimizedHealthContext(
         b.marker_name.toLowerCase().includes(key.toLowerCase())
       ))
       .slice(0, 10)
-      .map(b => `${b.marker_name}: ${b.value}${b.unit || ''}`)
+      .map(b => `**${b.marker_name}**: ${b.value}${b.unit || ''}`)
       .join(', ');
-    if (keyBiomarkers) parts.push(`BIOMARKERS: ${keyBiomarkers}`);
+    if (keyBiomarkers) parts.push(`**KEY BIOMARKERS**: ${keyBiomarkers}`);
   }
 
   // Key genetic variants (top 10)
@@ -351,23 +351,23 @@ function buildOptimizedHealthContext(
     const keySnps = snps
       .filter(s => ['MTHFR', 'COMT', 'VDR', 'FADS', 'APOE'].includes(s.gene_name))
       .slice(0, 10)
-      .map(s => `${s.gene_name}(${s.snp_id}): ${s.genotype || s.allele}`)
+      .map(s => `**${s.gene_name}**(${s.snp_id}): **${s.genotype || s.allele}**`)
       .join(', ');
-    if (keySnps) parts.push(`GENETICS: ${keySnps}`);
+    if (keySnps) parts.push(`**GENETICS**: ${keySnps}`);
   }
 
   // Current supplements (top 10)
   if (supplementPlan?.recommendations) {
     const currentSupps = supplementPlan.recommendations
       .slice(0, 10)
-      .map((rec: any) => `${rec.supplement}: ${rec.dosage}`)
+      .map((rec: any) => `**${rec.supplement}**: ${rec.dosage}`)
       .join(', ');
-    parts.push(`SUPPLEMENTS: ${currentSupps}`);
+    parts.push(`**CURRENT SUPPLEMENTS**: ${currentSupps}`);
   }
 
   // Allergies
   if (allergies.length > 0) {
-    parts.push(`ALLERGIES: ${allergies.slice(0,10).map(a => a.ingredient_name).join(', ')}`);
+    parts.push(`**ALLERGIES**: ${allergies.slice(0,10).map(a => `**${a.ingredient_name}**`).join(', ')}`);
   }
 
   return parts.join('\n\n');
@@ -378,22 +378,29 @@ function createOptimizedSystemPrompt(healthContext: string): string {
 
 ${healthContext}
 
-PERSONALITY: Friendly, knowledgeable health advisor who remembers everything about their health profile.
+**PERSONALITY**: Friendly, knowledgeable health advisor who remembers everything about their health profile.
 
-APPROACH:
-• Reference their specific data (biomarkers, genetics, symptoms)
-• Provide actionable, personalized recommendations
-• Focus on root causes and optimization
-• Consider genetic predispositions
-• Be aware of medication interactions
-• Emphasize prevention and biohacking
+**APPROACH**:
+- Reference their specific data (biomarkers, genetics, symptoms)
+- Provide actionable, personalized recommendations
+- Focus on root causes and optimization
+- Consider genetic predispositions
+- Be aware of medication interactions
+- Emphasize prevention and biohacking
 
-RESPONSE STYLE:
-• Conversational but scientifically sound
-• Reference their specific data points
-• Provide practical next steps
-• Keep responses focused and actionable
-• Ask follow-up questions when helpful
+**RESPONSE STYLE**:
+- Use clear formatting with **bold** for key points
+- Reference their specific data points with concrete numbers
+- Provide practical next steps in organized lists
+- Keep responses focused and actionable
+- Ask follow-up questions when helpful
+
+**FORMATTING GUIDELINES**:
+- Use **bold** for important concepts and supplement names
+- Use bullet points (-) for lists
+- Use numbered lists (1., 2., 3.) for step-by-step recommendations
+- Keep paragraphs concise and scannable
+- Highlight specific biomarker values and genetic variants
 
 Focus on their unique health profile and provide personalized biohacking advice based on their actual data.`;
 } 
