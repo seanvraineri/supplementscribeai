@@ -45,6 +45,13 @@ export default function DashboardPage() {
   const [expandedSnps, setExpandedSnps] = useState<Set<number>>(new Set());
   const [biomarkersExpanded, setBiomarkersExpanded] = useState(false);
   const [snpsExpanded, setSnpsExpanded] = useState(false);
+  
+  // AI Chat state
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [isChatLoading, setIsChatLoading] = useState(false);
+  const [chatHistory, setChatHistory] = useState<any[]>([]);
+  
   const router = useRouter();
   const supabase = createClient();
 
@@ -1990,32 +1997,278 @@ export default function DashboardPage() {
     </div>
   );
 
-  const renderAIChat = () => (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold">AI Health Assistant</h1>
+  // AI Chat functions
+  const sendMessage = async (message: string, conversationId?: string) => {
+    if (!message.trim() || isChatLoading) return;
+
+    setIsChatLoading(true);
+    
+    // Add user message to chat immediately for better UX
+    const userMessage = {
+      role: 'user' as const,
+      content: message,
+      timestamp: new Date().toISOString()
+    };
+    
+    setChatMessages(prev => [...prev, userMessage]);
+    setChatInput('');
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
       
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
-            Chat with AI
-          </CardTitle>
-          <CardDescription>
-            Ask questions about your health data and get personalized advice
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="text-center py-12">
-          <Brain className="h-16 w-16 text-blue-500 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">AI Chat Coming Soon</h3>
-          <p className="text-gray-600 mb-6">
-            Soon you'll be able to have conversations with our AI about your health data, 
-            ask questions about supplements, and get personalized guidance.
-          </p>
-          <Button disabled variant="outline">
-            Start Chat (Coming Soon)
-          </Button>
-        </CardContent>
-      </Card>
+      const response = await fetch('/api/ai-chat', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session?.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message,
+          conversation_id: conversationId
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Add AI response to chat
+        const aiMessage = {
+          role: 'assistant' as const,
+          content: result.message,
+          timestamp: new Date().toISOString()
+        };
+        
+        setChatMessages(prev => [...prev, aiMessage]);
+        
+        // Update conversation list if needed
+        if (result.conversations) {
+          setChatHistory(result.conversations);
+        }
+      } else {
+        console.error('Failed to send message:', result.error);
+        alert(`Failed to send message: ${result.error}`);
+      }
+    } catch (error: any) {
+      console.error('Error sending message:', error);
+      alert(`An error occurred: ${error.message}`);
+    } finally {
+      setIsChatLoading(false);
+    }
+  };
+
+  const startNewConversation = () => {
+    setChatMessages([]);
+  };
+
+  const loadConversation = async (conversationId: string) => {
+    try {
+      const { data: messages, error } = await supabase
+        .from('user_chat_messages')
+        .select('role, content, created_at')
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error loading conversation:', error);
+        return;
+      }
+
+      const formattedMessages = (messages || []).map(msg => ({
+        role: msg.role as 'user' | 'assistant',
+        content: msg.content,
+        timestamp: msg.created_at
+      }));
+
+      setChatMessages(formattedMessages);
+    } catch (error) {
+      console.error('Error loading conversation:', error);
+    }
+  };
+
+  // Load conversation history on component mount
+  useEffect(() => {
+    const loadChatHistory = async () => {
+      if (!user) return;
+
+      try {
+        const { data: conversations, error } = await supabase
+          .from('user_chat_conversations')
+          .select('id, title, updated_at')
+          .eq('user_id', user.id)
+          .order('updated_at', { ascending: false });
+
+        if (!error && conversations) {
+          setChatHistory(conversations);
+        }
+      } catch (error) {
+        console.error('Error loading chat history:', error);
+      }
+    };
+
+    loadChatHistory();
+  }, [user, supabase]);
+
+  const renderAIChat = () => (
+    <div className="space-y-6 h-full">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">🧬 AI Biohacker Assistant</h1>
+        <Button onClick={startNewConversation} variant="outline">
+          New Conversation
+        </Button>
+      </div>
+
+      <div className="grid lg:grid-cols-4 gap-6 h-[calc(100vh-200px)]">
+        {/* Conversation History Sidebar */}
+        <div className="lg:col-span-1">
+          <Card className="h-full">
+            <CardHeader>
+              <CardTitle className="text-sm">Conversations</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="space-y-1 max-h-96 overflow-y-auto">
+                {chatHistory.map((conversation: any) => (
+                  <button
+                    key={conversation.id}
+                    onClick={() => loadConversation(conversation.id)}
+                    className="w-full text-left p-3 hover:bg-gray-50 border-b text-xs"
+                  >
+                    <div className="font-medium truncate">{conversation.title}</div>
+                    <div className="text-gray-500 text-xs">
+                      {new Date(conversation.updated_at).toLocaleDateString()}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Main Chat Area */}
+        <div className="lg:col-span-3">
+          <Card className="h-full flex flex-col">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Brain className="h-5 w-5" />
+                Your Personal Health Assistant
+              </CardTitle>
+              <CardDescription>
+                I have full access to your biomarkers, genetics, and health history. Ask me anything!
+              </CardDescription>
+            </CardHeader>
+            
+            {/* Chat Messages */}
+            <CardContent className="flex-1 flex flex-col p-0">
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {chatMessages.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Brain className="h-16 w-16 text-blue-500 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Ready to optimize your health?</h3>
+                    <p className="text-gray-600 mb-6">
+                      I know your biomarkers ({extractedData.biomarkers}), genetic variants ({extractedData.snps}), 
+                      and current supplement plan. What would you like to discuss?
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl mx-auto">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => sendMessage("What do my biomarkers tell you about my health?")}
+                        className="text-left"
+                      >
+                        🩸 Analyze my biomarkers
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        onClick={() => sendMessage("Based on my genetics, what should I focus on?")}
+                        className="text-left"
+                      >
+                        🧬 Genetic insights
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        onClick={() => sendMessage("How can I optimize my energy levels?")}
+                        className="text-left"
+                      >
+                        ⚡ Boost energy
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        onClick={() => sendMessage("What biohacks would work best for me?")}
+                        className="text-left"
+                      >
+                        🚀 Personalized biohacks
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  chatMessages.map((message, index) => (
+                    <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <div
+                        className={`max-w-[70%] rounded-lg p-3 ${
+                          message.role === 'user'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-100 text-gray-900'
+                        }`}
+                      >
+                        <div className="whitespace-pre-wrap text-sm">{message.content}</div>
+                        <div className={`text-xs mt-1 ${
+                          message.role === 'user' ? 'text-blue-100' : 'text-gray-500'
+                        }`}>
+                          {new Date(message.timestamp).toLocaleTimeString()}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+                
+                {isChatLoading && (
+                  <div className="flex justify-start">
+                    <div className="bg-gray-100 rounded-lg p-3 max-w-[70%]">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                        <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Chat Input */}
+              <div className="border-t p-4">
+                <div className="flex space-x-2">
+                  <input
+                    type="text"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        sendMessage(chatInput);
+                      }
+                    }}
+                    placeholder="Ask about your biomarkers, genetics, supplements, or any health question..."
+                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={isChatLoading}
+                  />
+                  <Button
+                    onClick={() => sendMessage(chatInput)}
+                    disabled={!chatInput.trim() || isChatLoading}
+                    size="sm"
+                  >
+                    Send
+                  </Button>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  💡 I remember everything about your health profile and our previous conversations
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 
