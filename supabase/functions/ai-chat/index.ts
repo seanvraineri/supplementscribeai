@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
         supabase.from('user_conditions').select('condition_name').eq('user_id', userId).limit(20),
         supabase.from('user_medications').select('medication_name').eq('user_id', userId).limit(20),
         supabase.from('user_biomarkers').select('marker_name, value, unit').eq('user_id', userId).limit(50),
-        supabase.from('user_snps').select('snp_id, gene_name, genotype, allele').eq('user_id', userId).limit(30),
+        supabase.from('user_snps').select('snp_id, gene_name, genotype, allele').eq('user_id', userId).limit(100),
         supabase.from('supplement_plans').select('plan_details').eq('user_id', userId).order('created_at', { ascending: false }).limit(1).single()
       ]);
 
@@ -346,14 +346,27 @@ function buildOptimizedHealthContext(
     if (keyBiomarkers) parts.push(`**KEY BIOMARKERS**: ${keyBiomarkers}`);
   }
 
-  // Key genetic variants (top 10)
+  // All genetic variants (up to 100 most important)
   if (snps.length > 0) {
-    const keySnps = snps
-      .filter(s => ['MTHFR', 'COMT', 'VDR', 'FADS', 'APOE'].includes(s.gene_name))
-      .slice(0, 10)
-      .map(s => `**${s.gene_name}**(${s.snp_id}): **${s.genotype || s.allele}**`)
-      .join(', ');
-    if (keySnps) parts.push(`**GENETICS**: ${keySnps}`);
+    // Group by gene for better organization
+    const geneGroups: { [key: string]: any[] } = {};
+    snps.forEach((snp: any) => {
+      if (!geneGroups[snp.gene_name]) {
+        geneGroups[snp.gene_name] = [];
+      }
+      geneGroups[snp.gene_name].push(snp);
+    });
+
+    const formattedGenetics = Object.entries(geneGroups)
+      .map(([geneName, variants]) => {
+        const variantList = variants
+          .map((v: any) => `${v.snp_id}: **${v.genotype || v.allele}**`)
+          .join(', ');
+        return `**${geneName}**: ${variantList}`;
+      })
+      .join('\n');
+    
+    parts.push(`**GENETICS** (${snps.length} variants):\n${formattedGenetics}`);
   }
 
   // Current supplements (top 10)
@@ -382,9 +395,10 @@ ${healthContext}
 
 **APPROACH**:
 - Reference their specific data (biomarkers, genetics, symptoms)
+- When discussing genetics, cover ALL relevant variants, not just one gene
 - Provide actionable, personalized recommendations
 - Focus on root causes and optimization
-- Consider genetic predispositions
+- Consider genetic predispositions across multiple pathways
 - Be aware of medication interactions
 - Emphasize prevention and biohacking
 

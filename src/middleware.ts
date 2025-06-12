@@ -59,6 +59,12 @@ export async function middleware(request: NextRequest) {
   // Define public routes that don't require authentication
   const publicRoutes = ['/', '/login', '/auth/signup', '/auth/callback']
   const isPublicRoute = publicRoutes.includes(request.nextUrl.pathname)
+  const isApiRoute = request.nextUrl.pathname.startsWith('/api/')
+
+  // Skip middleware for API routes - they handle their own authentication
+  if (isApiRoute) {
+    return response
+  }
 
   // if user is not signed in and trying to access protected route, redirect to login
   if (!user && !isPublicRoute) {

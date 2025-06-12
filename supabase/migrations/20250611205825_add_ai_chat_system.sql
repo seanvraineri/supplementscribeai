@@ -2,7 +2,7 @@
 -- Create table for storing chat conversations
 CREATE TABLE IF NOT EXISTS public.user_chat_conversations (
     id uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
-    user_id uuid NOT NULL REFERENCES public.user_profiles(id) ON DELETE CASCADE,
+    user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     title text DEFAULT 'New Conversation',
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS public.user_chat_conversations (
 CREATE TABLE IF NOT EXISTS public.user_chat_messages (
     id uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
     conversation_id uuid NOT NULL REFERENCES public.user_chat_conversations(id) ON DELETE CASCADE,
-    user_id uuid NOT NULL REFERENCES public.user_profiles(id) ON DELETE CASCADE,
+    user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     role text NOT NULL CHECK (role IN ('user', 'assistant', 'system')),
     content text NOT NULL,
     metadata jsonb DEFAULT '{}',

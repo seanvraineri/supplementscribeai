@@ -28,33 +28,23 @@ export function LifestyleStep() {
         name="activity_level"
         render={({ field }) => (
           <FormItem className="space-y-3">
-            <FormLabel>On a scale of 1-5, how active are you? (1 = sedentary, 5 = very active)</FormLabel>
+            <FormLabel className="text-lg font-semibold text-gray-800">Your activity level (1 = sedentary, 5 = very active)</FormLabel>
             <FormControl>
                 <RadioGroup
                     onValueChange={field.onChange}
                     defaultValue={field.value}
-                    className="flex space-x-4"
+                    className="grid grid-cols-5 gap-4"
                 >
-                    <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl><RadioGroupItem value="1" /></FormControl>
-                        <FormLabel className="font-normal">1</FormLabel>
+                  {["1","2","3","4","5"].map((val)=> (
+                    <FormItem key={val} className="h-full">
+                      <FormControl>
+                        <label className={`group cursor-pointer flex items-center justify-center h-20 rounded-2xl border-2 transition-all duration-300 hover:shadow-lg ${field.value===val ? 'border-[#7DE1F4] bg-gradient-to-br from-[#7DE1F4]/10 to-[#86A8E7]/10 shadow-lg':'border-gray-200 bg-white/60 hover:border-gray-300'}` }>
+                          <RadioGroupItem value={val} className="hidden" />
+                          <span className="text-2xl font-bold text-gray-800 group-hover:text-gray-900 select-none">{val}</span>
+                        </label>
+                      </FormControl>
                     </FormItem>
-                    <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl><RadioGroupItem value="2" /></FormControl>
-                        <FormLabel className="font-normal">2</FormLabel>
-                    </FormItem>
-                    <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl><RadioGroupItem value="3" /></FormControl>
-                        <FormLabel className="font-normal">3</FormLabel>
-                    </FormItem>
-                    <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl><RadioGroupItem value="4" /></FormControl>
-                        <FormLabel className="font-normal">4</FormLabel>
-                    </FormItem>
-                    <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl><RadioGroupItem value="5" /></FormControl>
-                        <FormLabel className="font-normal">5</FormLabel>
-                    </FormItem>
+                  ))}
               </RadioGroup>
             </FormControl>
             <FormMessage />
@@ -69,7 +59,15 @@ export function LifestyleStep() {
           <FormItem>
             <FormLabel>On average, how many hours do you sleep per night?</FormLabel>
             <FormControl>
-              <Input type="number" {...field} />
+              <div className="relative">
+                <Input 
+                  type="number" 
+                  {...field} 
+                  placeholder="e.g., 7" 
+                  className="h-14 px-6 pr-14 text-lg bg-white/60 backdrop-blur-sm border-2 border-gray-200 rounded-2xl focus:border-[#7DE1F4] focus:ring-4 focus:ring-[#7DE1F4]/20 transition-all duration-300 placeholder:text-gray-400 hover:border-gray-300"
+                />
+                <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">hrs</span>
+              </div>
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -86,24 +84,23 @@ export function LifestyleStep() {
               <RadioGroup
                 onValueChange={field.onChange}
                 defaultValue={field.value}
-                className="flex flex-col space-y-1"
+                className="grid grid-cols-2 gap-4"
               >
-                <FormItem className="flex items-center space-x-3 space-y-0">
-                  <FormControl><RadioGroupItem value="0" /></FormControl>
-                  <FormLabel className="font-normal">0</FormLabel>
-                </FormItem>
-                <FormItem className="flex items-center space-x-3 space-y-0">
-                  <FormControl><RadioGroupItem value="1-2" /></FormControl>
-                  <FormLabel className="font-normal">1-2</FormLabel>
-                </FormItem>
-                <FormItem className="flex items-center space-x-3 space-y-0">
-                  <FormControl><RadioGroupItem value="3-5" /></FormControl>
-                  <FormLabel className="font-normal">3-5</FormLabel>
-                </FormItem>
-                <FormItem className="flex items-center space-x-3 space-y-0">
-                  <FormControl><RadioGroupItem value="6+" /></FormControl>
-                  <FormLabel className="font-normal">6+</FormLabel>
-                </FormItem>
+                {[
+                  {val:'0',label:'0'},
+                  {val:'1-2',label:'1 to 2'},
+                  {val:'3-5',label:'3 to 5'},
+                  {val:'6+',label:'6+'}
+                ].map(({val,label})=>(
+                  <FormItem key={val} className="h-full">
+                    <FormControl>
+                      <label className={`group cursor-pointer flex items-center justify-center h-14 rounded-2xl border-2 transition-all duration-300 hover:shadow-md ${field.value===val?'border-[#7DE1F4] bg-gradient-to-br from-[#7DE1F4]/10 to-[#86A8E7]/10 shadow-md':'border-gray-200 bg-white/60 hover:border-gray-300'}` }>
+                        <RadioGroupItem value={val} className="hidden" />
+                        <span className="text-base font-semibold text-gray-800 group-hover:text-gray-900 select-none">{label}</span>
+                      </label>
+                    </FormControl>
+                  </FormItem>
+                ))}
               </RadioGroup>
             </FormControl>
             <FormMessage />

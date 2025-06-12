@@ -9,7 +9,7 @@ const fileSchema = z.object({
 });
 
 export async function uploadLabReport(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {

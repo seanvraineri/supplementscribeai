@@ -4,8 +4,11 @@ const nextConfig = {
     // Ignore TypeScript errors in scripts folder during build
     ignoreBuildErrors: false,
   },
-  // Exclude scripts from TypeScript checking
-  exclude: ['scripts/**/*'],
+  transpilePackages: [
+    '@radix-ui/react-select',
+    '@radix-ui/react-dropdown-menu',
+    '@radix-ui',
+  ],
 }
 
 module.exports = nextConfig 

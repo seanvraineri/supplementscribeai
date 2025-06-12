@@ -73,13 +73,18 @@ export default function OnboardingPage() {
   ];
 
   const totalSteps = steps.length;
-  const CurrentStepComponent = steps[step - 1].component;
+  
+  // Ensure step is within valid bounds
+  const validStep = Math.max(1, Math.min(step, totalSteps));
+  const CurrentStepComponent = steps[validStep - 1].component;
 
   const nextStep = async () => {
+    if (step >= totalSteps) return; // Prevent going beyond last step
+    
     const currentStepConfig = steps[step - 1];
     
     if (currentStepConfig.id === 6) {
-       setStep(s => s + 1);
+       setStep(s => Math.min(s + 1, totalSteps));
        return;
     }
 
@@ -87,11 +92,11 @@ export default function OnboardingPage() {
     const isValid = fieldsToValidate ? await form.trigger(fieldsToValidate) : true;
 
     if (isValid) {
-      setStep((prev) => prev + 1);
+      setStep((prev) => Math.min(prev + 1, totalSteps));
     }
   };
 
-  const prevStep = () => setStep((prev) => prev - 1);
+  const prevStep = () => setStep((prev) => Math.max(prev - 1, 1));
 
   const onSubmit = async (data: OnboardingData) => {
     setIsSubmitting(true);
@@ -114,32 +119,97 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 flex items-center justify-center p-4 font-sans antialiased">
+      {/* Background Elements */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-white to-blue-50/30"></div>
+      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-blue-200/50 to-transparent"></div>
+      
       <FormProvider {...form}>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="bg-card p-8 rounded-lg shadow-lg w-full max-w-2xl">
-            <h1 className="text-2xl font-bold text-center mb-6 text-card-foreground">Your Health Profile</h1>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="relative bg-white/80 backdrop-blur-sm p-10 rounded-3xl shadow-2xl border border-gray-100/50 w-full max-w-3xl">
+            {/* Header */}
+            <div className="text-center mb-10">
+              <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4 tracking-tight">
+                Your Health Profile
+              </h1>
+              <p className="text-lg text-gray-600 font-light">
+                Step {validStep} of {totalSteps} • Let's personalize your supplement plan
+              </p>
+            </div>
             
-            <div className="w-full bg-muted rounded-full h-2.5 mb-8">
-              <div className="bg-primary h-2.5 rounded-full" style={{ width: `${(step / totalSteps) * 100}%` }}></div>
+            {/* Progress Bar */}
+            <div className="relative w-full bg-gray-100 rounded-full h-3 mb-12 overflow-hidden">
+              <div 
+                className="absolute top-0 left-0 h-full bg-gradient-to-r from-[#7DE1F4] to-[#86A8E7] rounded-full transition-all duration-700 ease-out shadow-lg"
+                style={{ width: `${(validStep / totalSteps) * 100}%` }}
+              >
+                <div className="absolute inset-0 bg-white/20 rounded-full animate-pulse"></div>
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent rounded-full"></div>
             </div>
 
-            <CurrentStepComponent onNext={() => setStep(s => s + 1)} />
+            {/* Step Content */}
+            <div className="min-h-[400px]">
+              <CurrentStepComponent onNext={() => setStep(s => Math.min(s + 1, totalSteps))} />
+            </div>
 
-            <div className="flex justify-between mt-8">
-              {step > 1 && (
-                <Button type="button" onClick={prevStep} variant="outline" disabled={isSubmitting}>
+            {/* Skip optional link */}
+            {validStep === 5 && (
+              <div className="text-right mt-4">
+                <button type="button" className="text-sm text-gray-500 hover:text-gray-700 underline" onClick={() => setStep(Math.min(step + 1, totalSteps))}>
+                  Skip this step
+                </button>
+              </div>
+            )}
+
+            {/* Navigation */}
+            <div className="flex justify-between items-center mt-12 pt-8 border-t border-gray-100">
+              {validStep > 1 ? (
+                <button
+                  type="button"
+                  onClick={prevStep}
+                  disabled={isSubmitting}
+                  className="group inline-flex items-center px-6 py-3 rounded-full text-gray-600 hover:text-gray-900 font-medium transition-all duration-300 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  <svg className="w-5 h-5 mr-2 transform group-hover:-translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                  </svg>
                   Back
-                </Button>
-              )}
-              {step < totalSteps ? (
-                <Button type="button" onClick={nextStep} className="ml-auto">
-                  Next
-                </Button>
+                </button>
               ) : (
-                <Button type="submit" className="ml-auto" disabled={isSubmitting}>
-                  {isSubmitting ? 'Submitting...' : 'Submit'}
-                </Button>
+                <div></div>
+              )}
+              
+              {validStep < totalSteps ? (
+                <button
+                  type="button"
+                  onClick={nextStep}
+                  className="group inline-flex items-center bg-gradient-to-r from-[#7DE1F4] to-[#86A8E7] text-white px-8 py-4 rounded-full font-semibold hover:shadow-2xl transition-all duration-500 transform hover:scale-105 shadow-lg hover:shadow-[#7DE1F4]/25 relative overflow-hidden"
+                >
+                  <span className="relative z-10">Continue</span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#86A8E7] to-[#C29FFF] opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  <svg className="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-300 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="group inline-flex items-center bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-8 py-4 rounded-full font-semibold hover:shadow-2xl transition-all duration-500 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
+                >
+                  <span className="relative z-10">
+                    {isSubmitting ? 'Creating Your Plan...' : 'Complete Profile'}
+                  </span>
+                  {isSubmitting && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-teal-700 animate-pulse"></div>
+                  )}
+                  {!isSubmitting && (
+                    <svg className="w-5 h-5 ml-2 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </button>
               )}
             </div>
           </form>
