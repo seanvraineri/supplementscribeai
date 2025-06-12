@@ -162,151 +162,214 @@ export default function DashboardPage() {
   ];
 
   const renderDashboardContent = () => (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Welcome Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-700 rounded-xl p-6 text-white">
-        <h1 className="text-3xl font-bold mb-2">
-          Welcome back, {profile?.full_name || user?.email?.split('@')[0] || 'User'}! 👋
-        </h1>
-        <p className="text-blue-100">
-          Your personalized health journey continues here. View your data and get AI-powered recommendations.
-        </p>
+      <div className="relative overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 rounded-3xl p-8 text-white">
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 via-purple-500/20 to-pink-500/20"></div>
+        <div className="relative">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+              <span className="text-2xl">🧬</span>
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-indigo-100 bg-clip-text text-transparent">
+                Welcome back, {profile?.full_name || user?.email?.split('@')[0] || 'User'}!
+              </h1>
+              <p className="text-indigo-100 text-lg mt-1">
+                Your personalized health optimization journey
+              </p>
+            </div>
+          </div>
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
+            <p className="text-white/90 text-lg leading-relaxed">
+              AI-powered insights from your biomarkers, genetics, and health data to optimize your wellness journey.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-green-700">Biomarkers</p>
-                <p className="text-2xl font-bold text-green-800">{extractedData.biomarkers}</p>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="group relative overflow-hidden bg-gradient-to-br from-emerald-400 to-teal-600 rounded-3xl p-6 text-white hover:scale-[1.02] transition-all duration-300 cursor-pointer">
+          <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
+          <div className="relative">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+                <Activity className="h-6 w-6" />
               </div>
-              <Activity className="h-8 w-8 text-green-600" />
+              <div className="text-right">
+                <div className="text-3xl font-bold">{extractedData.biomarkers}</div>
+                <div className="text-emerald-100">Total analyzed</div>
+              </div>
             </div>
-          </CardContent>
-        </Card>
+            <div>
+              <h3 className="text-xl font-semibold mb-1">Biomarkers</h3>
+              <p className="text-emerald-100">Health indicators tracked</p>
+            </div>
+          </div>
+        </div>
 
-        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-purple-700">Genetic Variants</p>
-                <p className="text-2xl font-bold text-purple-800">{extractedData.snps}</p>
+        <div className="group relative overflow-hidden bg-gradient-to-br from-violet-500 to-purple-700 rounded-3xl p-6 text-white hover:scale-[1.02] transition-all duration-300 cursor-pointer">
+          <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
+          <div className="relative">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+                <Dna className="h-6 w-6" />
               </div>
-              <Dna className="h-8 w-8 text-purple-600" />
+              <div className="text-right">
+                <div className="text-3xl font-bold">{extractedData.snps}</div>
+                <div className="text-violet-100">Variants found</div>
+              </div>
             </div>
-          </CardContent>
-        </Card>
+            <div>
+              <h3 className="text-xl font-semibold mb-1">Genetic Variants</h3>
+              <p className="text-violet-100">DNA insights unlocked</p>
+            </div>
+          </div>
+        </div>
 
-        <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-orange-700">Supplements</p>
-                <p className="text-2xl font-bold text-orange-800">{plan?.recommendations?.length || 0}</p>
+        <div className="group relative overflow-hidden bg-gradient-to-br from-orange-400 to-red-500 rounded-3xl p-6 text-white hover:scale-[1.02] transition-all duration-300 cursor-pointer">
+          <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
+          <div className="relative">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+                <Pill className="h-6 w-6" />
               </div>
-              <Pill className="h-8 w-8 text-orange-600" />
+              <div className="text-right">
+                <div className="text-3xl font-bold">{plan?.recommendations?.length || 0}</div>
+                <div className="text-orange-100">Personalized</div>
+              </div>
             </div>
-          </CardContent>
-        </Card>
+            <div>
+              <h3 className="text-xl font-semibold mb-1">Supplements</h3>
+              <p className="text-orange-100">AI recommendations</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Main Actions */}
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid md:grid-cols-2 gap-8">
         {/* Health Data Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Your Health Data
-            </CardTitle>
-            <CardDescription>
-              Files you've uploaded for analysis
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {uploadedFiles.length > 0 ? (
-              <div className="space-y-3">
-                {uploadedFiles.slice(0, 3).map((file, index) => (
-                  <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+        <div className="bg-white rounded-3xl p-8 shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-300">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl flex items-center justify-center text-white">
+              <FileText className="h-6 w-6" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-gray-900">Your Health Data</h3>
+              <p className="text-gray-600">Files uploaded for analysis</p>
+            </div>
+          </div>
+          
+          {uploadedFiles.length > 0 ? (
+            <div className="space-y-4">
+              {uploadedFiles.slice(0, 3).map((file, index) => (
+                <div key={index} className="flex justify-between items-center p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl border border-gray-200 hover:border-blue-300 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-blue-100 rounded-xl flex items-center justify-center">
+                      <FileText className="h-4 w-4 text-blue-600" />
+                    </div>
                     <div>
-                      <p className="font-medium text-sm">{file.file_name}</p>
+                      <p className="font-semibold text-gray-900 text-sm">{file.file_name}</p>
                       <p className="text-xs text-gray-600">
                         {file.report_type === 'lab_report' ? 'Lab Report' : 'Genetic Report'}
                       </p>
                     </div>
-                    <span className={`px-2 py-1 rounded text-xs ${
-                      file.status === 'parsed' ? 'bg-green-100 text-green-800' : 
-                      file.status === 'uploaded' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {file.status}
-                    </span>
                   </div>
-                ))}
-                {uploadedFiles.length > 3 && (
-                  <p className="text-sm text-gray-600 text-center">
+                  <span className={`px-3 py-1.5 rounded-xl text-xs font-medium ${
+                    file.status === 'parsed' ? 'bg-green-100 text-green-700 border border-green-200' : 
+                    file.status === 'uploaded' ? 'bg-yellow-100 text-yellow-700 border border-yellow-200' : 'bg-gray-100 text-gray-700 border border-gray-200'
+                  }`}>
+                    {file.status}
+                  </span>
+                </div>
+              ))}
+              {uploadedFiles.length > 3 && (
+                <div className="text-center py-3">
+                  <span className="text-sm text-gray-600 bg-gray-100 px-4 py-2 rounded-full">
                     +{uploadedFiles.length - 3} more files
-                  </p>
-                )}
+                  </span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <FileText className="h-8 w-8 text-gray-400" />
+              </div>
+              <p className="text-gray-600 mb-6">No files uploaded yet</p>
+              <Button 
+                className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-6 py-3 rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                onClick={() => router.push('/onboarding')}
+              >
+                Upload Your First File
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Generate Plan Card */}
+        <div className="bg-white rounded-3xl p-8 shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-300">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center text-white">
+              <Sparkles className="h-6 w-6" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-gray-900">AI Supplement Plan</h3>
+              <p className="text-gray-600">Personalized recommendations</p>
+            </div>
+          </div>
+          
+          <div className="text-center py-6">
+            {plan ? (
+              <div className="space-y-6">
+                <div className="bg-gradient-to-br from-green-50 to-emerald-100 p-6 rounded-2xl border border-green-200">
+                  <div className="w-12 h-12 bg-green-500 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                    <CheckCircle className="h-6 w-6 text-white" />
+                  </div>
+                  <p className="text-green-800 font-semibold text-lg">Plan Generated!</p>
+                  <p className="text-green-700 mt-1">{plan.recommendations?.length} supplements personalized for you</p>
+                </div>
+                <Button 
+                  onClick={() => setActiveTab('supplement-plan')}
+                  className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-6 py-4 rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 text-lg"
+                >
+                  View My Plan
+                </Button>
               </div>
             ) : (
-              <div className="text-center py-8">
-                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-600">No files uploaded yet</p>
-                <Button variant="outline" className="mt-3" onClick={() => router.push('/onboarding')}>
-                  Upload Files
+              <div className="space-y-6">
+                <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl flex items-center justify-center mx-auto">
+                  <Brain className="h-8 w-8 text-purple-600" />
+                </div>
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">Ready to optimize your health?</h4>
+                  <p className="text-gray-600">Get AI-powered supplement recommendations based on your unique data</p>
+                </div>
+                <Button 
+                  onClick={generatePlan} 
+                  disabled={isGenerating}
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-4 rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 text-lg disabled:opacity-50"
+                >
+                  {isGenerating ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Generating Plan...
+                    </div>
+                  ) : (
+                    'Generate AI Plan'
+                  )}
                 </Button>
               </div>
             )}
-          </CardContent>
-        </Card>
-
-        {/* Generate Plan Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5" />
-              AI Supplement Plan
-            </CardTitle>
-            <CardDescription>
-              Generate personalized recommendations
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center py-4">
-              {plan ? (
-                <div className="space-y-4">
-                  <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                    <p className="text-green-800 font-medium">✅ Plan Generated!</p>
-                    <p className="text-green-700 text-sm">{plan.recommendations?.length} supplements recommended</p>
-                  </div>
-                  <Button 
-                    onClick={() => setActiveTab('supplement-plan')}
-                    className="w-full"
-                  >
-                    View My Plan
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <Brain className="h-12 w-12 text-blue-500 mx-auto" />
-                  <Button 
-                    onClick={generatePlan} 
-                    disabled={isGenerating}
-                    className="w-full"
-                    size="lg"
-                  >
-                    {isGenerating ? 'Generating Plan...' : 'Generate AI Plan'}
-                  </Button>
-                </div>
-              )}
-              <p className="text-xs text-gray-600 mt-3">
-                Uses your biomarkers, genetics, and health profile
+            <div className="mt-6 p-4 bg-gray-50 rounded-2xl border border-gray-200">
+              <p className="text-sm text-gray-600">
+                🧬 Analyzes your biomarkers, genetics, and health profile for personalized insights
               </p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
       {/* Quick Actions */}
@@ -2209,103 +2272,160 @@ export default function DashboardPage() {
   }, [user, supabase]);
 
   const renderAIChat = () => (
-    <div className="space-y-6 h-full">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">🧬 AI Biohacker Assistant</h1>
-        <Button onClick={startNewConversation} variant="outline">
-          New Conversation
-        </Button>
+    <div className="space-y-8 h-full">
+      <div className="relative overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 rounded-3xl p-8">
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 via-purple-500/20 to-pink-500/20"></div>
+        <div className="relative flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 bg-white/20 rounded-3xl flex items-center justify-center backdrop-blur-sm">
+              <Brain className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-indigo-100 bg-clip-text text-transparent">
+                AI Biohacker Assistant
+              </h1>
+              <p className="text-indigo-100 text-lg mt-1">
+                Your personal health optimization expert
+              </p>
+            </div>
+          </div>
+          <Button 
+            onClick={startNewConversation} 
+            className="bg-white/20 hover:bg-white/30 text-white border border-white/30 backdrop-blur-sm px-6 py-3 rounded-2xl font-semibold transition-all duration-300"
+          >
+            New Chat
+          </Button>
+        </div>
       </div>
 
-      <div className="grid lg:grid-cols-4 gap-6 h-[calc(100vh-200px)]">
+      <div className="grid lg:grid-cols-4 gap-8 h-[calc(100vh-280px)]">
         {/* Conversation History Sidebar */}
         <div className="lg:col-span-1">
-          <Card className="h-full">
-            <CardHeader>
-              <CardTitle className="text-sm">Conversations</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="space-y-1 max-h-96 overflow-y-auto">
-                {chatHistory.map((conversation: any) => (
-                  <button
-                    key={conversation.id}
-                    onClick={() => loadConversation(conversation.id)}
-                    className="w-full text-left p-3 hover:bg-gray-50 border-b text-xs"
-                  >
-                    <div className="font-medium truncate">{conversation.title}</div>
-                    <div className="text-gray-500 text-xs">
-                      {new Date(conversation.updated_at).toLocaleDateString()}
-                    </div>
-                  </button>
-                ))}
+          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 h-full overflow-hidden">
+            <div className="p-6 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5 text-gray-600" />
+                <h3 className="font-semibold text-gray-900">Chat History</h3>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+            <div className="overflow-y-auto h-full">
+              <div className="p-2">
+                {chatHistory.length > 0 ? (
+                  chatHistory.map((conversation: any) => (
+                    <button
+                      key={conversation.id}
+                      onClick={() => loadConversation(conversation.id)}
+                      className="w-full text-left p-4 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 rounded-2xl transition-all duration-200 border border-transparent hover:border-blue-200 mb-2"
+                    >
+                      <div className="font-medium truncate text-gray-900 text-sm mb-1">{conversation.title}</div>
+                      <div className="text-gray-500 text-xs">
+                        {new Date(conversation.updated_at).toLocaleDateString()}
+                      </div>
+                    </button>
+                  ))
+                ) : (
+                  <div className="p-6 text-center">
+                    <MessageSquare className="h-8 w-8 text-gray-300 mx-auto mb-3" />
+                    <p className="text-gray-500 text-sm">No conversations yet</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Main Chat Area */}
         <div className="lg:col-span-3">
-          <Card className="h-full flex flex-col">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Brain className="h-5 w-5" />
-                Your Personal Health Assistant
-              </CardTitle>
-              <CardDescription>
-                I have full access to your biomarkers, genetics, and health history. Ask me anything!
-              </CardDescription>
-            </CardHeader>
+          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 h-full flex flex-col overflow-hidden">
+            <div className="p-6 bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center">
+                  <Brain className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">Your Personal Health Assistant</h3>
+                  <p className="text-gray-600 text-sm">
+                    Complete access to your biomarkers, genetics, and health history
+                  </p>
+                </div>
+              </div>
+            </div>
             
             {/* Chat Messages */}
-            <CardContent className="flex-1 flex flex-col p-0">
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div className="flex-1 flex flex-col p-0">
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
                 {chatMessages.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Brain className="h-16 w-16 text-blue-500 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Ready to optimize your health?</h3>
-                    <p className="text-gray-600 mb-6">
-                      I know your biomarkers ({extractedData.biomarkers}), genetic variants ({extractedData.snps}), 
-                      and current supplement plan. What would you like to discuss?
+                  <div className="text-center py-16">
+                    <div className="w-24 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                      <Brain className="h-12 w-12 text-indigo-600" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-gray-900 mb-3">Ready to optimize your health?</h3>
+                    <p className="text-gray-600 mb-8 text-lg max-w-md mx-auto leading-relaxed">
+                      I have complete access to your {extractedData.biomarkers} biomarkers, {extractedData.snps} genetic variants, 
+                      and supplement plan. Let's start optimizing!
                     </p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl mx-auto">
-                      <Button 
-                        variant="outline" 
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
+                      <button 
                         onClick={() => sendMessage("What do my biomarkers tell you about my health?")}
-                        className="text-left"
+                        className="group bg-gradient-to-br from-red-50 to-pink-100 hover:from-red-100 hover:to-pink-200 border border-red-200 hover:border-red-300 rounded-2xl p-6 text-left transition-all duration-300 hover:shadow-lg"
                       >
-                        🩸 Analyze my biomarkers
-                      </Button>
-                      <Button 
-                        variant="outline"
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-10 h-10 bg-red-500 rounded-2xl flex items-center justify-center">
+                            <span className="text-white text-lg">🩸</span>
+                          </div>
+                          <h4 className="font-semibold text-gray-900">Analyze Biomarkers</h4>
+                        </div>
+                        <p className="text-gray-600 text-sm">Deep dive into your lab results</p>
+                      </button>
+                      
+                      <button 
                         onClick={() => sendMessage("Based on my genetics, what should I focus on?")}
-                        className="text-left"
+                        className="group bg-gradient-to-br from-purple-50 to-indigo-100 hover:from-purple-100 hover:to-indigo-200 border border-purple-200 hover:border-purple-300 rounded-2xl p-6 text-left transition-all duration-300 hover:shadow-lg"
                       >
-                        🧬 Genetic insights
-                      </Button>
-                      <Button 
-                        variant="outline"
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-10 h-10 bg-purple-500 rounded-2xl flex items-center justify-center">
+                            <span className="text-white text-lg">🧬</span>
+                          </div>
+                          <h4 className="font-semibold text-gray-900">Genetic Insights</h4>
+                        </div>
+                        <p className="text-gray-600 text-sm">Personalized DNA recommendations</p>
+                      </button>
+                      
+                      <button 
                         onClick={() => sendMessage("How can I optimize my energy levels?")}
-                        className="text-left"
+                        className="group bg-gradient-to-br from-yellow-50 to-orange-100 hover:from-yellow-100 hover:to-orange-200 border border-yellow-200 hover:border-yellow-300 rounded-2xl p-6 text-left transition-all duration-300 hover:shadow-lg"
                       >
-                        ⚡ Boost energy
-                      </Button>
-                      <Button 
-                        variant="outline"
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-10 h-10 bg-yellow-500 rounded-2xl flex items-center justify-center">
+                            <span className="text-white text-lg">⚡</span>
+                          </div>
+                          <h4 className="font-semibold text-gray-900">Boost Energy</h4>
+                        </div>
+                        <p className="text-gray-600 text-sm">Optimize vitality and performance</p>
+                      </button>
+                      
+                      <button 
                         onClick={() => sendMessage("What biohacks would work best for me?")}
-                        className="text-left"
+                        className="group bg-gradient-to-br from-green-50 to-emerald-100 hover:from-green-100 hover:to-emerald-200 border border-green-200 hover:border-green-300 rounded-2xl p-6 text-left transition-all duration-300 hover:shadow-lg"
                       >
-                        🚀 Personalized biohacks
-                      </Button>
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-10 h-10 bg-green-500 rounded-2xl flex items-center justify-center">
+                            <span className="text-white text-lg">🚀</span>
+                          </div>
+                          <h4 className="font-semibold text-gray-900">Biohacks</h4>
+                        </div>
+                        <p className="text-gray-600 text-sm">Advanced optimization strategies</p>
+                      </button>
                     </div>
                   </div>
                 ) : (
                   chatMessages.map((message, index) => (
-                    <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-6`}>
                       <div
-                        className={`max-w-[70%] rounded-lg p-3 ${
+                        className={`max-w-[80%] rounded-3xl px-6 py-4 shadow-lg ${
                           message.role === 'user'
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-100 text-gray-900'
+                            ? 'bg-gradient-to-br from-indigo-600 to-purple-700 text-white'
+                            : 'bg-white border border-gray-200 text-gray-900'
                         }`}
                       >
                         {message.role === 'assistant' ? (
@@ -2314,7 +2434,7 @@ export default function DashboardPage() {
                               components={{
                                 // Custom rendering for beautiful formatting
                                 strong: ({ children }) => (
-                                  <strong className="font-semibold text-gray-900 bg-yellow-100 px-1 py-0.5 rounded">{children}</strong>
+                                  <strong className="font-semibold text-gray-900">{children}</strong>
                                 ),
                                 em: ({ children }) => (
                                   <em className="italic text-blue-700 font-medium">{children}</em>
@@ -2361,8 +2481,8 @@ export default function DashboardPage() {
                         ) : (
                           <div className="whitespace-pre-wrap text-sm">{message.content}</div>
                         )}
-                        <div className={`text-xs mt-1 ${
-                          message.role === 'user' ? 'text-blue-100' : 'text-gray-500'
+                        <div className={`text-xs mt-2 ${
+                          message.role === 'user' ? 'text-indigo-200' : 'text-gray-400'
                         }`}>
                           {new Date(message.timestamp).toLocaleTimeString()}
                         </div>
@@ -2372,12 +2492,13 @@ export default function DashboardPage() {
                 )}
                 
                 {isChatLoading && (
-                  <div className="flex justify-start">
-                    <div className="bg-gray-100 rounded-lg p-3 max-w-[70%]">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
-                        <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                        <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                  <div className="flex justify-start mb-6">
+                    <div className="bg-white border border-gray-200 rounded-3xl px-6 py-4 shadow-lg max-w-[80%]">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-3 h-3 bg-indigo-500 rounded-full animate-bounce"></div>
+                        <div className="w-3 h-3 bg-purple-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                        <div className="w-3 h-3 bg-pink-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                        <span className="text-gray-600 text-sm ml-2">AI is thinking...</span>
                       </div>
                     </div>
                   </div>
@@ -2385,8 +2506,8 @@ export default function DashboardPage() {
               </div>
 
               {/* Chat Input */}
-              <div className="border-t p-4">
-                <div className="flex space-x-2">
+              <div className="border-t border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100 p-6">
+                <div className="flex items-center space-x-4 bg-white rounded-2xl border border-gray-300 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-200 transition-all duration-200 shadow-sm">
                   <input
                     type="text"
                     value={chatInput}
@@ -2398,23 +2519,29 @@ export default function DashboardPage() {
                       }
                     }}
                     placeholder="Ask about your biomarkers, genetics, supplements, or any health question..."
-                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="flex-1 border-0 bg-transparent px-4 py-4 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-0"
                     disabled={isChatLoading}
                   />
-                  <Button
+                  <button
                     onClick={() => sendMessage(chatInput)}
                     disabled={!chatInput.trim() || isChatLoading}
-                    size="sm"
+                    className="mr-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:from-gray-300 disabled:to-gray-400 text-white p-3 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg disabled:shadow-none"
                   >
-                    Send
-                  </Button>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                  </button>
                 </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  💡 I remember everything about your health profile and our previous conversations
-                </p>
+                <div className="flex items-center justify-center mt-4 space-x-2">
+                  <div className="w-2 h-2 bg-indigo-400 rounded-full"></div>
+                  <p className="text-sm text-gray-600">
+                    Complete memory of your health profile and conversation history
+                  </p>
+                  <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
+                </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -2507,21 +2634,31 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gradient-to-br from-gray-50 via-indigo-50/30 to-purple-50/30">
       {/* Sidebar */}
-      <div className={`${sidebarCollapsed ? 'w-16' : 'w-64'} bg-white border-r border-gray-200 transition-all duration-300 flex flex-col`}>
+      <div className={`${sidebarCollapsed ? 'w-16' : 'w-64'} bg-white/95 backdrop-blur-xl border-r border-gray-200/50 transition-all duration-300 flex flex-col shadow-xl`}>
         {/* Logo/Header */}
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-6 border-b border-gray-200/50">
           {!sidebarCollapsed ? (
-            <h2 className="text-xl font-bold text-gray-800">SupplementAI</h2>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl flex items-center justify-center">
+                <span className="text-white font-bold text-lg">S</span>
+              </div>
+              <div>
+                <h2 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">SupplementAI</h2>
+                <p className="text-xs text-gray-500">Health Optimization</p>
+              </div>
+            </div>
           ) : (
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg"></div>
+            <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl flex items-center justify-center mx-auto">
+              <span className="text-white font-bold text-lg">S</span>
+            </div>
           )}
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-2">
-          <div className="space-y-1">
+        <nav className="flex-1 p-4">
+          <div className="space-y-2">
             {sidebarItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -2530,16 +2667,24 @@ export default function DashboardPage() {
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id as TabType)}
-                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-left transition-all duration-200 group ${
                     isActive 
-                      ? 'bg-blue-100 text-blue-700 border border-blue-200' 
-                      : 'text-gray-700 hover:bg-gray-100'
+                      ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg transform scale-[1.02]' 
+                      : 'text-gray-700 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-200 hover:shadow-md'
                   }`}
                 >
-                  <Icon className="h-5 w-5 flex-shrink-0" />
+                  <div className={`p-2 rounded-xl ${
+                    isActive 
+                      ? 'bg-white/20' 
+                      : 'bg-gray-100 group-hover:bg-gray-200'
+                  }`}>
+                    <Icon className={`h-4 w-4 flex-shrink-0 ${
+                      isActive ? 'text-white' : 'text-gray-600'
+                    }`} />
+                  </div>
                   {!sidebarCollapsed && (
                     <>
-                      <span className="font-medium">{item.label}</span>
+                      <span className="font-semibold text-sm">{item.label}</span>
                       {isActive && <ChevronRight className="h-4 w-4 ml-auto" />}
                     </>
                   )}
