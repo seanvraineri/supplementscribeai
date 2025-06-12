@@ -2013,13 +2013,74 @@ export default function DashboardPage() {
     setChatMessages(prev => [...prev, userMessage]);
     setChatInput('');
 
+    // Add placeholder AI message for streaming
+    const aiMessageId = Date.now();
+    const placeholderAiMessage = {
+      role: 'assistant' as const,
+      content: '',
+      timestamp: new Date().toISOString(),
+      id: aiMessageId
+    };
+    
+    setChatMessages(prev => [...prev, placeholderAiMessage]);
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
-      const response = await fetch('/api/ai-chat', {
+      // Call Supabase Edge Function directly for streaming
+      const { data, error } = await supabase.functions.invoke('ai-chat', {
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+        body: {
+          message,
+          conversation_id: conversationId
+        }
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Failed to get streaming response');
+      }
+
+      // Handle the response based on content type
+      if (data && typeof data === 'object' && data.success) {
+        // Non-streaming response (fallback)
+        setChatMessages(prev => 
+          prev.map(msg => 
+            msg.id === aiMessageId 
+              ? { ...msg, content: data.message }
+              : msg
+          )
+        );
+      } else {
+        // For streaming, we'll handle it via EventSource in a separate function
+        await handleStreamingResponse(message, conversationId, aiMessageId, session?.access_token);
+      }
+
+    } catch (error: any) {
+      console.error('Error sending message:', error);
+      
+      // Remove placeholder message and show error
+      setChatMessages(prev => prev.filter(msg => msg.id !== aiMessageId));
+      
+      const errorMessage = {
+        role: 'assistant' as const,
+        content: `Sorry, I encountered an error: ${error.message}. Please try again.`,
+        timestamp: new Date().toISOString()
+      };
+      
+      setChatMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsChatLoading(false);
+    }
+  };
+
+  const handleStreamingResponse = async (message: string, conversationId: string | undefined, aiMessageId: number, accessToken: string | undefined) => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/ai-chat`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${session?.access_token}`,
+          'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -2032,31 +2093,65 @@ export default function DashboardPage() {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const result = await response.json();
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
 
-      if (result.success) {
-        // Add AI response to chat
-        const aiMessage = {
-          role: 'assistant' as const,
-          content: result.message,
-          timestamp: new Date().toISOString()
-        };
-        
-        setChatMessages(prev => [...prev, aiMessage]);
-        
-        // Update conversation list if needed
-        if (result.conversations) {
-          setChatHistory(result.conversations);
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n');
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6);
+              
+              try {
+                const parsed = JSON.parse(data);
+                
+                if (parsed.type === 'content') {
+                  // Update the AI message with new content
+                  setChatMessages(prev => 
+                    prev.map(msg => 
+                      msg.id === aiMessageId 
+                        ? { ...msg, content: msg.content + parsed.content }
+                        : msg
+                    )
+                  );
+                } else if (parsed.type === 'done') {
+                  // Streaming complete
+                  console.log('Streaming complete, conversation ID:', parsed.conversation_id);
+                  // Update conversation list - refresh chat history
+                  const { data: conversations } = await supabase
+                    .from('user_chat_conversations')
+                    .select('id, title, updated_at')
+                    .eq('user_id', user?.id)
+                    .order('updated_at', { ascending: false });
+                  if (conversations) setChatHistory(conversations);
+                  break;
+                } else if (parsed.type === 'error') {
+                  throw new Error(parsed.error);
+                }
+              } catch (e) {
+                // Skip malformed JSON
+              }
+            }
+          }
         }
-      } else {
-        console.error('Failed to send message:', result.error);
-        alert(`Failed to send message: ${result.error}`);
       }
     } catch (error: any) {
-      console.error('Error sending message:', error);
-      alert(`An error occurred: ${error.message}`);
-    } finally {
-      setIsChatLoading(false);
+      console.error('Streaming error:', error);
+      
+      // Update the message with error
+      setChatMessages(prev => 
+        prev.map(msg => 
+          msg.id === aiMessageId 
+            ? { ...msg, content: `Error: ${error.message}` }
+            : msg
+        )
+      );
     }
   };
 

@@ -11,6 +11,10 @@ interface ChatMessage {
   metadata?: any;
 }
 
+// Health context cache (simple in-memory cache for session)
+const healthContextCache = new Map<string, { context: string, timestamp: number }>();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 Deno.serve(async (req) => {
   // Handle preflight requests
   if (req.method === 'OPTIONS') {
@@ -38,26 +42,51 @@ Deno.serve(async (req) => {
 
     console.log('Processing chat message for user:', userId);
 
-    // --- FETCH COMPREHENSIVE USER DATA ---
-    const [
-      { data: profile, error: profileError },
-      { data: allergies, error: allergiesError },
-      { data: conditions, error: conditionsError },
-      { data: medications, error: medicationsError },
-      { data: biomarkers, error: biomarkersError },
-      { data: snps, error: snpsError },
-      { data: supplementPlan, error: planError },
-      { data: conversations, error: conversationsError }
-    ] = await Promise.all([
-      supabase.from('user_profiles').select('*').eq('id', userId).single(),
-      supabase.from('user_allergies').select('ingredient_name').eq('user_id', userId),
-      supabase.from('user_conditions').select('condition_name').eq('user_id', userId),
-      supabase.from('user_medications').select('medication_name').eq('user_id', userId),
-      supabase.from('user_biomarkers').select('*').eq('user_id', userId),
-      supabase.from('user_snps').select('*').eq('user_id', userId),
-      supabase.from('supplement_plans').select('plan_details').eq('user_id', userId).order('created_at', { ascending: false }).limit(1).single(),
-      supabase.from('user_chat_conversations').select('id, title').eq('user_id', userId).order('updated_at', { ascending: false })
-    ]);
+    // Check cache for health context
+    const cacheKey = userId;
+    const cached = healthContextCache.get(cacheKey);
+    const now = Date.now();
+    
+    let healthContext: string;
+    
+    if (cached && (now - cached.timestamp < CACHE_DURATION)) {
+      console.log('Using cached health context');
+      healthContext = cached.context;
+    } else {
+      console.log('Fetching fresh health context');
+      // --- FETCH COMPREHENSIVE USER DATA (OPTIMIZED WITH PARALLEL QUERIES) ---
+      const [
+        { data: profile },
+        { data: allergies },
+        { data: conditions },
+        { data: medications },
+        { data: biomarkers },
+        { data: snps },
+        { data: supplementPlan }
+      ] = await Promise.all([
+        supabase.from('user_profiles').select('age, gender, weight_lbs, height_total_inches, health_goals, energy_levels, brain_fog, sleep_quality, anxiety_level, joint_pain, bloating, activity_level').eq('id', userId).single(),
+        supabase.from('user_allergies').select('ingredient_name').eq('user_id', userId).limit(20),
+        supabase.from('user_conditions').select('condition_name').eq('user_id', userId).limit(20),
+        supabase.from('user_medications').select('medication_name').eq('user_id', userId).limit(20),
+        supabase.from('user_biomarkers').select('marker_name, value, unit').eq('user_id', userId).limit(50),
+        supabase.from('user_snps').select('snp_id, gene_name, genotype, allele').eq('user_id', userId).limit(30),
+        supabase.from('supplement_plans').select('plan_details').eq('user_id', userId).order('created_at', { ascending: false }).limit(1).single()
+      ]);
+
+      // Build optimized health context
+      healthContext = buildOptimizedHealthContext(
+        profile || {},
+        allergies || [],
+        conditions || [],
+        medications || [],
+        biomarkers || [],
+        snps || [],
+        supplementPlan?.plan_details || null
+      );
+
+      // Cache the context
+      healthContextCache.set(cacheKey, { context: healthContext, timestamp: now });
+    }
 
     // Handle conversation logic
     let currentConversationId = conversation_id;
@@ -84,45 +113,40 @@ Deno.serve(async (req) => {
       currentConversationId = newConversation.id;
     }
 
-    // Fetch conversation history
-    const { data: messageHistory, error: historyError } = await supabase
+    // Fetch conversation history (limit to last 10 messages for speed)
+    const { data: messageHistory } = await supabase
       .from('user_chat_messages')
-      .select('role, content, created_at')
+      .select('role, content')
       .eq('conversation_id', currentConversationId)
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: false })
+      .limit(10);
 
-    // Store user message
-    const { error: userMessageError } = await supabase
-      .from('user_chat_messages')
-      .insert({
-        conversation_id: currentConversationId,
-        user_id: userId,
-        role: 'user',
-        content: message
-      });
-
-    if (userMessageError) {
-      console.error('Error storing user message:', userMessageError);
-    }
-
-    // --- BUILD COMPREHENSIVE HEALTH CONTEXT ---
-    const healthContext = buildHealthContext(
-      profile || {},
-      allergies || [],
-      conditions || [],
-      medications || [],
-      biomarkers || [],
-      snps || [],
-      supplementPlan?.plan_details || null
-    );
+    // Store user message (async, don't wait)
+    (async () => {
+      try {
+        await supabase
+          .from('user_chat_messages')
+          .insert({
+            conversation_id: currentConversationId,
+            user_id: userId,
+            role: 'user',
+            content: message
+          });
+        console.log('User message stored');
+      } catch (err: any) {
+        console.error('Error storing user message:', err);
+      }
+    })();
 
     // --- PREPARE CHAT HISTORY ---
-    const conversationHistory = (messageHistory || []).map(msg => ({
-      role: msg.role as 'user' | 'assistant',
-      content: msg.content
-    }));
+    const conversationHistory = (messageHistory || [])
+      .reverse() // Restore chronological order
+      .map(msg => ({
+        role: msg.role as 'user' | 'assistant',
+        content: msg.content
+      }));
 
-    // --- OPENAI API CALL ---
+    // --- OPENAI STREAMING API CALL ---
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openaiApiKey) {
       return new Response(JSON.stringify({ error: 'OpenAI API key not configured' }), {
@@ -131,78 +155,132 @@ Deno.serve(async (req) => {
       });
     }
 
-    const systemPrompt = createSystemPrompt(healthContext);
+    const systemPrompt = createOptimizedSystemPrompt(healthContext);
     
     const messages = [
       { role: 'system' as const, content: systemPrompt },
-      ...conversationHistory,
+      ...conversationHistory.slice(-8), // Only keep last 8 messages for speed
       { role: 'user' as const, content: message }
     ];
 
-    console.log('Calling OpenAI with health context...');
+    console.log('Calling OpenAI with streaming...');
 
-    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openaiApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4-turbo',
-        messages: messages,
-        max_tokens: 2000,
-        temperature: 0.3,
-        presence_penalty: 0.1,
-        frequency_penalty: 0.1,
-      }),
+    // Create a readable stream for Server-Sent Events
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${openaiApiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'gpt-4o', // Faster than GPT-4 Turbo
+              messages: messages,
+              max_tokens: 1500, // Reduced for speed
+              temperature: 0.2, // Reduced for faster, more focused responses
+              stream: true,
+              presence_penalty: 0.1,
+              frequency_penalty: 0.1,
+            }),
+          });
+
+          if (!openaiResponse.ok) {
+            const errorText = await openaiResponse.text();
+            console.error('OpenAI API error:', errorText);
+            controller.close();
+            return;
+          }
+
+          const reader = openaiResponse.body?.getReader();
+          const decoder = new TextDecoder();
+          let fullResponse = '';
+
+          if (reader) {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+
+              const chunk = decoder.decode(value);
+              const lines = chunk.split('\n');
+
+              for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                  const data = line.slice(6);
+                  if (data === '[DONE]') {
+                    // Store complete AI response (async)
+                    (async () => {
+                      try {
+                        await supabase
+                          .from('user_chat_messages')
+                          .insert({
+                            conversation_id: currentConversationId,
+                            user_id: userId,
+                            role: 'assistant',
+                            content: fullResponse,
+                            metadata: {
+                              model: 'gpt-4o',
+                              timestamp: new Date().toISOString()
+                            }
+                          });
+                        console.log('AI response stored');
+                      } catch (err: any) {
+                        console.error('Error storing AI response:', err);
+                      }
+                    })();
+                    
+                    // Send final event with conversation info
+                    controller.enqueue(new TextEncoder().encode(
+                      `data: ${JSON.stringify({
+                        type: 'done',
+                        conversation_id: currentConversationId
+                      })}\n\n`
+                    ));
+                    controller.close();
+                    return;
+                  }
+
+                  try {
+                    const parsed = JSON.parse(data);
+                    const content = parsed.choices[0]?.delta?.content;
+                    if (content) {
+                      fullResponse += content;
+                      // Send streaming content
+                      controller.enqueue(new TextEncoder().encode(
+                        `data: ${JSON.stringify({
+                          type: 'content',
+                          content: content
+                        })}\n\n`
+                      ));
+                    }
+                  } catch (e) {
+                    // Skip malformed JSON
+                  }
+                }
+              }
+            }
+          }
+        } catch (error: any) {
+          console.error('Streaming error:', error);
+          controller.enqueue(new TextEncoder().encode(
+            `data: ${JSON.stringify({
+              type: 'error',
+              error: error.message
+            })}\n\n`
+          ));
+          controller.close();
+        }
+      }
     });
 
-    if (!openaiResponse.ok) {
-      const errorText = await openaiResponse.text();
-      console.error('OpenAI API error:', errorText);
-      return new Response(JSON.stringify({ error: 'Failed to get AI response' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
-      });
-    }
-
-    const openaiData = await openaiResponse.json();
-    const aiResponse = openaiData.choices[0]?.message?.content;
-
-    if (!aiResponse) {
-      return new Response(JSON.stringify({ error: 'No response from AI' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
-      });
-    }
-
-    // Store AI response
-    const { error: aiMessageError } = await supabase
-      .from('user_chat_messages')
-      .insert({
-        conversation_id: currentConversationId,
-        user_id: userId,
-        role: 'assistant',
-        content: aiResponse,
-        metadata: {
-          model: 'gpt-4-turbo',
-          timestamp: new Date().toISOString()
-        }
-      });
-
-    if (aiMessageError) {
-      console.error('Error storing AI message:', aiMessageError);
-    }
-
-    console.log('Successfully processed chat message');
-
-    return new Response(JSON.stringify({
-      success: true,
-      message: aiResponse,
-      conversation_id: currentConversationId,
-      conversations: conversations || []
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    return new Response(stream, {
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
     });
 
   } catch (error: any) {
@@ -216,7 +294,7 @@ Deno.serve(async (req) => {
   }
 });
 
-function buildHealthContext(
+function buildOptimizedHealthContext(
   profile: any,
   allergies: any[],
   conditions: any[],
@@ -225,136 +303,97 @@ function buildHealthContext(
   snps: any[],
   supplementPlan: any
 ): string {
-  let context = "=== USER HEALTH PROFILE ===\n\n";
+  const parts = [];
 
-  // Personal Info
-  if (profile.age || profile.gender || profile.weight_lbs) {
-    context += "DEMOGRAPHICS:\n";
-    if (profile.age) context += `• Age: ${profile.age} years\n`;
-    if (profile.gender) context += `• Gender: ${profile.gender}\n`;
-    if (profile.weight_lbs) context += `• Weight: ${profile.weight_lbs} lbs\n`;
-    if (profile.height_total_inches) context += `• Height: ${profile.height_total_inches} inches\n`;
-    context += "\n";
+  // Essential demographics
+  if (profile.age || profile.gender) {
+    const demo = [];
+    if (profile.age) demo.push(`${profile.age}y`);
+    if (profile.gender) demo.push(profile.gender);
+    if (profile.weight_lbs) demo.push(`${profile.weight_lbs}lbs`);
+    parts.push(`PROFILE: ${demo.join(', ')}`);
   }
 
-  // Health Goals & Symptoms
-  if (profile.health_goals || profile.brain_fog || profile.sleep_quality) {
-    context += "HEALTH GOALS & SYMPTOMS:\n";
-    if (profile.health_goals?.length) context += `• Goals: ${profile.health_goals.join(', ')}\n`;
-    if (profile.energy_levels) context += `• Energy: ${profile.energy_levels}\n`;
-    if (profile.brain_fog && profile.brain_fog !== 'none') context += `• Brain fog: ${profile.brain_fog}\n`;
-    if (profile.sleep_quality && profile.sleep_quality !== 'excellent') context += `• Sleep quality: ${profile.sleep_quality}\n`;
-    if (profile.anxiety_level && profile.anxiety_level !== 'none') context += `• Anxiety: ${profile.anxiety_level}\n`;
-    if (profile.joint_pain && profile.joint_pain !== 'none') context += `• Joint pain: ${profile.joint_pain}\n`;
-    if (profile.bloating && profile.bloating !== 'none') context += `• Digestive issues: ${profile.bloating}\n`;
-    if (profile.activity_level) context += `• Activity level: ${profile.activity_level}\n`;
-    context += "\n";
+  // Key health goals & symptoms
+  if (profile.health_goals?.length || profile.energy_levels || profile.brain_fog) {
+    const health = [];
+    if (profile.health_goals?.length) health.push(`Goals: ${profile.health_goals.slice(0,3).join(', ')}`);
+    if (profile.energy_levels && profile.energy_levels !== 'high') health.push(`Energy: ${profile.energy_levels}`);
+    if (profile.brain_fog && profile.brain_fog !== 'none') health.push(`Brain fog: ${profile.brain_fog}`);
+    if (profile.sleep_quality && profile.sleep_quality !== 'excellent') health.push(`Sleep: ${profile.sleep_quality}`);
+    if (health.length) parts.push(`HEALTH: ${health.join(', ')}`);
   }
 
-  // Medical History
+  // Medical conditions (top 5)
   if (conditions.length > 0) {
-    context += "MEDICAL CONDITIONS:\n";
-    conditions.forEach(c => context += `• ${c.condition_name}\n`);
-    context += "\n";
+    parts.push(`CONDITIONS: ${conditions.slice(0,5).map(c => c.condition_name).join(', ')}`);
   }
 
+  // Current medications (top 5)
   if (medications.length > 0) {
-    context += "CURRENT MEDICATIONS:\n";
-    medications.forEach(m => context += `• ${m.medication_name}\n`);
-    context += "\n";
+    parts.push(`MEDS: ${medications.slice(0,5).map(m => m.medication_name).join(', ')}`);
   }
 
-  if (allergies.length > 0) {
-    context += "ALLERGIES/SENSITIVITIES:\n";
-    allergies.forEach(a => context += `• ${a.ingredient_name}\n`);
-    context += "\n";
-  }
-
-  // Biomarkers
+  // Key biomarkers (top 10 most important)
   if (biomarkers.length > 0) {
-    context += "LATEST BIOMARKERS:\n";
-    biomarkers.forEach(b => {
-      context += `• ${b.marker_name}: ${b.value} ${b.unit || ''}\n`;
-    });
-    context += "\n";
+    const keyBiomarkers = biomarkers
+      .filter(b => ['CRP', 'HDL', 'LDL', 'Glucose', 'HbA1c', 'Ferritin', 'Vitamin D', 'B12', 'TSH', 'Testosterone'].some(key => 
+        b.marker_name.toLowerCase().includes(key.toLowerCase())
+      ))
+      .slice(0, 10)
+      .map(b => `${b.marker_name}: ${b.value}${b.unit || ''}`)
+      .join(', ');
+    if (keyBiomarkers) parts.push(`BIOMARKERS: ${keyBiomarkers}`);
   }
 
-  // Genetics
+  // Key genetic variants (top 10)
   if (snps.length > 0) {
-    context += "GENETIC VARIANTS:\n";
-    snps.forEach(s => {
-      context += `• ${s.snp_id} (${s.gene_name}): ${s.genotype || s.allele}\n`;
-    });
-    context += "\n";
+    const keySnps = snps
+      .filter(s => ['MTHFR', 'COMT', 'VDR', 'FADS', 'APOE'].includes(s.gene_name))
+      .slice(0, 10)
+      .map(s => `${s.gene_name}(${s.snp_id}): ${s.genotype || s.allele}`)
+      .join(', ');
+    if (keySnps) parts.push(`GENETICS: ${keySnps}`);
   }
 
-  // Current Supplement Plan
+  // Current supplements (top 10)
   if (supplementPlan?.recommendations) {
-    context += "CURRENT SUPPLEMENT PLAN:\n";
-    supplementPlan.recommendations.forEach((rec: any) => {
-      context += `• ${rec.supplement}: ${rec.dosage} - ${rec.reason}\n`;
-    });
-    context += "\n";
+    const currentSupps = supplementPlan.recommendations
+      .slice(0, 10)
+      .map((rec: any) => `${rec.supplement}: ${rec.dosage}`)
+      .join(', ');
+    parts.push(`SUPPLEMENTS: ${currentSupps}`);
   }
 
-  return context;
+  // Allergies
+  if (allergies.length > 0) {
+    parts.push(`ALLERGIES: ${allergies.slice(0,10).map(a => a.ingredient_name).join(', ')}`);
+  }
+
+  return parts.join('\n\n');
 }
 
-function createSystemPrompt(healthContext: string): string {
-  return `You are an expert personalized biohacker and functional medicine practitioner with deep knowledge of:
-- Nutrigenomics and genetic variants
-- Biomarker interpretation and optimization
-- Supplement science and interactions
-- Lifestyle medicine and biohacking
-- Preventative health strategies
-- MAHA (Make America Healthy Again) principles
-
-CORE IDENTITY:
-You are the user's personal biohacking assistant with COMPLETE MEMORY of their health profile. You have access to their:
-✅ Biomarkers and lab results
-✅ Genetic variants (SNPs) 
-✅ Health symptoms and goals
-✅ Current supplements and medications
-✅ Previous conversations and recommendations
-
-YOUR APPROACH:
-- Be conversational but scientifically rigorous
-- Always reference their specific data when making recommendations
-- Provide actionable, personalized advice
-- Focus on root cause analysis and optimization
-- Emphasize prevention over treatment
-- Consider genetic predispositions in all recommendations
-- Be aware of supplement interactions and contraindications
-
-RESPONSE STYLE:
-- Use a friendly, knowledgeable tone like a trusted health advisor
-- Reference their specific biomarkers, genetics, and symptoms
-- Provide practical steps they can implement
-- Include scientific rationale but keep it accessible
-- Ask follow-up questions to gather more context when helpful
-- Remember details from previous conversations
-
-KEY FOCUS AREAS:
-🧬 Genetic optimization based on their SNPs
-🩸 Biomarker improvement strategies
-💊 Personalized supplementation
-🥗 Functional nutrition approaches
-🏃‍♂️ Lifestyle and biohacking interventions
-😴 Sleep and recovery optimization
-🧠 Cognitive enhancement
-⚡ Energy and metabolic health
-
-IMPORTANT GUIDELINES:
-- Always consider their specific genetic variants when recommending supplements
-- Reference their actual biomarker values and what they mean
-- Be mindful of their current medications and potential interactions
-- Provide dosing guidance based on their individual needs
-- Suggest monitoring and follow-up testing when appropriate
-- Acknowledge if something is outside your scope and suggest professional consultation
-
-Remember: You have FULL ACCESS to their complete health profile below. Use this information to provide highly personalized recommendations.
+function createOptimizedSystemPrompt(healthContext: string): string {
+  return `You are a personalized biohacker and functional medicine expert with complete access to this user's health data:
 
 ${healthContext}
 
-Based on this comprehensive health profile, provide personalized, actionable biohacking advice. Always reference their specific data points when making recommendations.`;
+PERSONALITY: Friendly, knowledgeable health advisor who remembers everything about their health profile.
+
+APPROACH:
+• Reference their specific data (biomarkers, genetics, symptoms)
+• Provide actionable, personalized recommendations
+• Focus on root causes and optimization
+• Consider genetic predispositions
+• Be aware of medication interactions
+• Emphasize prevention and biohacking
+
+RESPONSE STYLE:
+• Conversational but scientifically sound
+• Reference their specific data points
+• Provide practical next steps
+• Keep responses focused and actionable
+• Ask follow-up questions when helpful
+
+Focus on their unique health profile and provide personalized biohacking advice based on their actual data.`;
 } 
