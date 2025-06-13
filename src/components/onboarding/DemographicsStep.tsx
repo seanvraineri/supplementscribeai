@@ -34,7 +34,7 @@ export function DemographicsStep() {
                 <Input 
                   placeholder="Enter your full name" 
                   {...field} 
-                  className="h-14 px-6 text-lg bg-white/50 backdrop-blur-sm border-2 border-gray-200 rounded-2xl focus:border-[#7DE1F4] focus:ring-4 focus:ring-[#7DE1F4]/20 transition-all duration-300 placeholder:text-gray-400 hover:border-gray-300"
+                  className="h-14 px-6 text-lg bg-white/50 backdrop-blur-sm border-2 border-gray-200 rounded-2xl focus:border-[#7DE1F4] focus:ring-4 focus:ring-[#7DE1F4]/20 transition-all duration-300 placeholder:text-gray-400 hover:border-gray-300 text-gray-900"
                 />
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-[#7DE1F4]/5 to-[#86A8E7]/5 pointer-events-none opacity-0 group-focus-within:opacity-100 transition-opacity duration-300"></div>
               </div>
@@ -56,7 +56,7 @@ export function DemographicsStep() {
                     type="number" 
                     placeholder="25" 
                     {...field} 
-                    className="h-14 px-6 text-lg bg-white/50 backdrop-blur-sm border-2 border-gray-200 rounded-2xl focus:border-[#7DE1F4] focus:ring-4 focus:ring-[#7DE1F4]/20 transition-all duration-300 placeholder:text-gray-400 hover:border-gray-300"
+                    className="h-14 px-6 text-lg bg-white/50 backdrop-blur-sm border-2 border-gray-200 rounded-2xl focus:border-[#7DE1F4] focus:ring-4 focus:ring-[#7DE1F4]/20 transition-all duration-300 placeholder:text-gray-400 hover:border-gray-300 text-gray-900"
                   />
                 </div>
               </FormControl>
@@ -102,7 +102,7 @@ export function DemographicsStep() {
                       type="number" 
                       placeholder="5" 
                       {...field} 
-                      className="h-14 px-6 pr-12 text-lg bg-white/50 backdrop-blur-sm border-2 border-gray-200 rounded-2xl focus:border-[#7DE1F4] focus:ring-4 focus:ring-[#7DE1F4]/20 transition-all duration-300 placeholder:text-gray-400 hover:border-gray-300"
+                      className="h-14 px-6 pr-12 text-lg bg-white/50 backdrop-blur-sm border-2 border-gray-200 rounded-2xl focus:border-[#7DE1F4] focus:ring-4 focus:ring-[#7DE1F4]/20 transition-all duration-300 placeholder:text-gray-400 hover:border-gray-300 text-gray-900"
                     />
                     <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">
                       ft
@@ -124,7 +124,7 @@ export function DemographicsStep() {
                       type="number" 
                       placeholder="10" 
                       {...field} 
-                      className="h-14 px-6 pr-12 text-lg bg-white/50 backdrop-blur-sm border-2 border-gray-200 rounded-2xl focus:border-[#7DE1F4] focus:ring-4 focus:ring-[#7DE1F4]/20 transition-all duration-300 placeholder:text-gray-400 hover:border-gray-300"
+                      className="h-14 px-6 pr-12 text-lg bg-white/50 backdrop-blur-sm border-2 border-gray-200 rounded-2xl focus:border-[#7DE1F4] focus:ring-4 focus:ring-[#7DE1F4]/20 transition-all duration-300 placeholder:text-gray-400 hover:border-gray-300 text-gray-900"
                     />
                     <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">
                       in
@@ -150,7 +150,7 @@ export function DemographicsStep() {
                   type="number" 
                   placeholder="150" 
                   {...field} 
-                  className="h-14 px-6 pr-16 text-lg bg-white/50 backdrop-blur-sm border-2 border-gray-200 rounded-2xl focus:border-[#7DE1F4] focus:ring-4 focus:ring-[#7DE1F4]/20 transition-all duration-300 placeholder:text-gray-400 hover:border-gray-300"
+                  className="h-14 px-6 pr-16 text-lg bg-white/50 backdrop-blur-sm border-2 border-gray-200 rounded-2xl focus:border-[#7DE1F4] focus:ring-4 focus:ring-[#7DE1F4]/20 transition-all duration-300 placeholder:text-gray-400 hover:border-gray-300 text-gray-900"
                 />
                 <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">
                   lbs

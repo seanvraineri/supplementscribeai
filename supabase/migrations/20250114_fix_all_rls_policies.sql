@@ -36,8 +36,8 @@ ALTER TABLE supplement_plans DISABLE ROW LEVEL SECURITY;
 CREATE POLICY "Enable all for authenticated users on user_profiles" 
 ON user_profiles FOR ALL 
 TO authenticated 
-USING (auth.uid() = user_id)
-WITH CHECK (auth.uid() = user_id);
+USING (auth.uid() = id)
+WITH CHECK (auth.uid() = id);
 
 -- Lab reports  
 CREATE POLICY "Enable all for authenticated users on user_lab_reports"

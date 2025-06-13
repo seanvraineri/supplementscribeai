@@ -1,34 +1,52 @@
 import { createClient } from '@/lib/supabase/server';
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
     
-    // Debug: Log cookies
-    const cookies = request.headers.get('cookie');
-    console.log('Test auth - Received cookies:', cookies ? 'Present' : 'None');
-    
-    // Verify the user is authenticated
+    // Test authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
-    return new Response(JSON.stringify({ 
-      authenticated: !!user,
-      user_id: user?.id || null,
-      error: authError?.message || null,
-      has_cookies: !!cookies
-    }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
+    if (authError) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Auth error', 
+        details: authError.message 
+      }, { status: 401 });
+    }
+
+    if (!user) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'No user found' 
+      }, { status: 401 });
+    }
+
+    // Test database access
+    const { data: profile, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('id, full_name')
+      .eq('id', user.id)
+      .single();
+
+    return NextResponse.json({
+      success: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        created_at: user.created_at
+      },
+      profile: profile || null,
+      profileError: profileError?.message || null,
+      timestamp: new Date().toISOString()
     });
 
   } catch (error: any) {
-    console.error('Test auth error:', error);
-    return new Response(JSON.stringify({ 
-      error: error.message || 'Internal server error' 
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Server error', 
+      details: error.message 
+    }, { status: 500 });
   }
 } 

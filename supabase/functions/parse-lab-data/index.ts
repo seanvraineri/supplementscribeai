@@ -20,7 +20,7 @@ function isPDF(content: string): boolean {
   return content.startsWith('%PDF-');
 }
 
-// Simple PDF text extraction - extracts ALL readable text from PDF content
+// Simple PDF text extraction - extracts readable text from PDF content
 function extractTextFromPDF(pdfContent: string): string {
   console.log('Attempting to extract text from PDF...');
   
@@ -34,16 +34,7 @@ function extractTextFromPDF(pdfContent: string): string {
       extractedText += match[1] + ' ';
     }
     
-    // Method 2: Find text in square brackets (another PDF format: [text])
-    const bracketTextRegex = /\[([^\]]+)\]/g;
-    while ((match = bracketTextRegex.exec(pdfContent)) !== null) {
-      // Only add if it looks like text, not PDF commands
-      if (!match[1].match(/^[\d\s.,]+$/)) {
-        extractedText += match[1] + ' ';
-      }
-    }
-    
-    // Method 3: Extract any readable sequences of letters and numbers
+    // Method 2: Extract any readable sequences of letters and numbers
     const readableTextRegex = /[A-Za-z][A-Za-z0-9\s.,;:!?\-()\/]{5,}/g;
     const readableMatches = pdfContent.match(readableTextRegex);
     
@@ -56,22 +47,33 @@ function extractTextFromPDF(pdfContent: string): string {
       });
     }
     
-    // Method 4: Look for lab value patterns specifically
-    const labValueRegex = /([A-Za-z\s]+)[\s:=]+(\d+\.?\d*)[\s]*([A-Za-z\/\%]+)/g;
-    while ((match = labValueRegex.exec(pdfContent)) !== null) {
-      extractedText += `${match[1]}: ${match[2]} ${match[3]} `;
-    }
+    // Method 3: Look for genetic patterns specifically
+    const geneticPatterns = [
+      /rs\d+/gi,  // SNP IDs
+      /[A-Z]{2,}/g,  // Gene names
+      /[ATCG]{2,}/g,  // Genetic sequences
+    ];
     
-    // Just basic cleanup - remove excessive whitespace
+    geneticPatterns.forEach(pattern => {
+      const matches = pdfContent.match(pattern);
+      if (matches) {
+        matches.forEach(match => {
+          if (match.length > 2) {
+            extractedText += match + ' ';
+          }
+        });
+      }
+    });
+    
+    // Basic cleanup - remove excessive whitespace
     extractedText = extractedText.replace(/\s+/g, ' ').trim();
     
     console.log(`Extracted text length: ${extractedText.length}`);
     console.log(`First 1000 chars of extracted text: ${extractedText.substring(0, 1000)}`);
     
     if (extractedText.length < 20) {
-      console.log('Very little text extracted - this might be a scanned PDF or encrypted');
-      console.log('Returning original content for Gemini to try...');
-      return pdfContent; // Let Gemini try the raw content
+      console.log('Very little text extracted - returning original content for Gemini');
+      return pdfContent;
     }
     
     return extractedText;
@@ -455,7 +457,7 @@ Deno.serve(async (req) => {
     }
 
     const genAI = new GoogleGenerativeAI(geminiApiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' }); // Use stable model
     
     const systemPrompt = `You are an expert at parsing lab reports and genetic data. Extract ALL biomarkers and genetic markers from the provided text.
 
@@ -470,6 +472,8 @@ CRITICAL RULES:
 6. For SNPs: Include the gene name, rsID (if present), and allele/genotype
 7. Do not skip any values - extract everything that looks medical
 8. Handle fragmented text - pieces of test names and values might be separated
+9. **USE EXISTING CONTEXT**: If the report already contains interpreted genetic information, use that context
+10. **PRESERVE TRANSLATIONS**: If gene names are already translated (like "MTHFR C677T"), keep those exact descriptions
 
 EXAMPLES of what to look for:
 - "Glucose 95 mg/dL" or "Glucose: 95 mg/dL" 
@@ -477,6 +481,16 @@ EXAMPLES of what to look for:
 - "Total Cholesterol 180" (even without unit)
 - "TSH 2.1 mIU/L"
 - "rs1801133 MTHFR CT" or "MTHFR C677T: CT"
+- "APOE ε4/ε4 status: Present"
+- "CYP2D6 *1/*4 genotype: Intermediate metabolizer"
+- "COMT Val158Met (rs4680): AG"
+
+GENETIC CONTEXT PATTERNS:
+- Already translated gene variants (C677T, A1298C, Val158Met, etc.)
+- Star allele nomenclature (*1, *2, *3, *4, etc.)
+- Epsilon notation (ε2, ε3, ε4)
+- Common gene symbols with descriptions
+- Phenotype interpretations (fast metabolizer, slow metabolizer, etc.)
 
 OUTPUT FORMAT:
 Return ONLY a valid JSON object with either "biomarkers" or "snps" key.
@@ -517,6 +531,12 @@ EXTRACT ALL GENETIC MARKERS FROM THIS REPORT. Look for:
 - Gene names (MTHFR, COMT, APOE, etc.)
 - Genotypes/Alleles (CC, CT, TT, etc.)
 - Any genetic variants or mutations
+- **TRANSLATED VARIANTS**: Already interpreted names like "MTHFR C677T", "COMT Val158Met", "APOE ε4"
+- **STAR ALLELES**: Like CYP2D6 *1/*4, CYP1A2 *1F/*1F
+- **PHENOTYPES**: Fast metabolizer, slow metabolizer, increased risk, etc.
+- **COMBINED DESCRIPTIONS**: "rs1801133 (MTHFR C677T): CT genotype"
+
+If the report contains already-translated genetic information, preserve that exact context and terminology.
 
 SCAN EVERY LINE for genetic information.` : ''}
       
@@ -581,18 +601,19 @@ SCAN EVERY LINE for genetic information.` : ''}
       });
     }
 
-    // Filter the data based on the supported markers/SNPs - BUT BE LESS STRICT FOR DEBUGGING
+    // Keep ALL extracted data - don't filter strictly
     const filteredData: { biomarkers?: any[]; snps?: any[] } = {};
     
     if (parsedData.biomarkers && Array.isArray(parsedData.biomarkers)) {
       console.log('Processing biomarkers:', parsedData.biomarkers.length);
+      // Keep ALL biomarkers, try to map to canonical names but store originals too
       filteredData.biomarkers = parsedData.biomarkers.map((b: any) => {
         const canonical = getCanonicalBiomarker(b.marker_name);
-        console.log(`Biomarker "${b.marker_name}" -> canonical: "${canonical}"`);
+        console.log(`Biomarker "${b.marker_name}" -> canonical: "${canonical || 'KEEP ORIGINAL'}"`);
         return {
           ...b,
-          marker_name: canonical || b.marker_name, // Keep original if no match
-          original_name: b.marker_name, // Store original for debugging
+          marker_name: canonical || b.marker_name, // Use canonical if found, otherwise keep original
+          original_name: b.marker_name, // Always store original
           matched: canonical !== null
         };
       });
@@ -602,13 +623,14 @@ SCAN EVERY LINE for genetic information.` : ''}
     
     if (parsedData.snps && Array.isArray(parsedData.snps)) {
       console.log('Processing SNPs:', parsedData.snps.length);
+      // Keep ALL SNPs, try to map to canonical names but store originals too
       filteredData.snps = parsedData.snps.map((s: any) => {
         const canonical = getCanonicalSnp(s.snp_id);
-        console.log(`SNP "${s.snp_id}" -> canonical: "${canonical}"`);
+        console.log(`SNP "${s.snp_id}" -> canonical: "${canonical || 'KEEP ORIGINAL'}"`);
         return {
           ...s,
-          snp_id: canonical || s.snp_id, // Keep original if no match
-          original_id: s.snp_id, // Store original for debugging
+          snp_id: canonical || s.snp_id, // Use canonical if found, otherwise keep original
+          original_id: s.snp_id, // Always store original
           matched: canonical !== null
         };
       });
@@ -618,6 +640,27 @@ SCAN EVERY LINE for genetic information.` : ''}
 
     console.log("Final Filtered Data:", JSON.stringify(filteredData, null, 2));
     
+    // If lab report and no biomarkers extracted, attempt quick regex extraction as fallback
+    if ((reportType === 'lab_report') && (!filteredData.biomarkers || filteredData.biomarkers.length === 0)) {
+      console.log('Gemini returned no biomarkers, running fallback regex extraction...');
+      const quickBiomarkers: any[] = [];
+      // Generic regex: e.g., "Glucose 95 mg/dL" or "Glucose: 95 mg/dL"
+      const lineRegex = /([A-Za-z][A-Za-z0-9 \-/()%]{3,40}?)\s*[:]?\s*(-?\d+\.?\d*)\s*([a-zA-Z%\/\.]+)?/g;
+      let match;
+      while ((match = lineRegex.exec(processedContent)) !== null) {
+        const rawName = match[1].trim();
+        const value = parseFloat(match[2]);
+        const unit = match[3] ? match[3] : 'not specified';
+        if (!isNaN(value)) {
+          quickBiomarkers.push({ marker_name: rawName, value, unit });
+        }
+      }
+      console.log(`Fallback extracted ${quickBiomarkers.length} potential biomarkers`);
+      if (quickBiomarkers.length > 0) {
+        filteredData.biomarkers = quickBiomarkers;
+      }
+    }
+
     // Return the successfully parsed and filtered data
     return new Response(JSON.stringify(filteredData), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -643,3 +686,4 @@ SCAN EVERY LINE for genetic information.` : ''}
     --data '{"name":"Functions"}'
 
 */
+

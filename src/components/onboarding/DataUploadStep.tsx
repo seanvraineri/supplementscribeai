@@ -164,12 +164,14 @@ export function DataUploadStep({ onNext }: DataUploadStepProps) {
                 // Store extracted biomarkers
                 if (parseData.biomarkers && parseData.biomarkers.length > 0) {
                     console.log(`Storing ${parseData.biomarkers.length} biomarkers...`);
+                    
+                    // Store ALL biomarkers - don't filter them
                     const biomarkerInserts = parseData.biomarkers.map((biomarker: any) => ({
                         user_id: user.id,
                         report_id: reportData.id,
-                        marker_name: biomarker.marker_name,
+                        marker_name: biomarker.marker_name || biomarker.original_name || 'Unknown Marker',
                         value: biomarker.value,
-                        unit: biomarker.unit,
+                        unit: biomarker.unit || 'not specified',
                         reference_range: biomarker.reference_range || null
                     }));
 
@@ -189,25 +191,177 @@ export function DataUploadStep({ onNext }: DataUploadStepProps) {
                 // Store extracted SNPs
                 if (parseData.snps && parseData.snps.length > 0) {
                     console.log(`Storing ${parseData.snps.length} SNPs...`);
-                    const snpInserts = parseData.snps.map((snp: any) => ({
-                        user_id: user.id,
-                        report_id: reportData.id,
-                        snp_id: snp.snp_id,
-                        gene_name: snp.gene_name,
-                        allele: snp.allele,
-                        genotype: snp.genotype || snp.allele
-                    }));
+                    
+                    // EXTREMELY FLEXIBLE SNP matching - try to match with supported SNPs
+                    const { data: supportedSnps } = await supabase
+                        .from('supported_snps')
+                        .select('id, rsid, gene');
+                    
+                    // Create MULTIPLE lookup maps for MAXIMUM flexibility including translated context
+                    const rsidLookup = new Map();
+                    const geneLookup = new Map();
+                    const combinedLookup = new Map();
+                    const variantLookup = new Map();
+                    
+                    supportedSnps?.forEach(snp => {
+                        if (snp.rsid) {
+                            // Multiple rsID formats
+                            const cleanRsid = snp.rsid.toLowerCase().replace(/^rs/, '');
+                            rsidLookup.set(snp.rsid.toLowerCase(), snp);
+                            rsidLookup.set(`rs${cleanRsid}`, snp);
+                            rsidLookup.set(cleanRsid, snp);
+                            rsidLookup.set(snp.rsid.toUpperCase(), snp);
+                        }
+                        if (snp.gene) {
+                            // Multiple gene formats
+                            geneLookup.set(snp.gene.toLowerCase(), snp);
+                            geneLookup.set(snp.gene.toUpperCase(), snp);
+                            geneLookup.set(snp.gene, snp);
+                        }
+                        if (snp.rsid && snp.gene) {
+                            // Combined lookups
+                            combinedLookup.set(`${snp.rsid.toLowerCase()}_${snp.gene.toLowerCase()}`, snp);
+                            combinedLookup.set(`${snp.gene.toLowerCase()}_${snp.rsid.toLowerCase()}`, snp);
+                            
+                            // Handle common translated variants
+                            if (snp.gene.toLowerCase() === 'mthfr') {
+                                if (snp.rsid === 'rs1801133') {
+                                    variantLookup.set('mthfr_c677t', snp);
+                                    variantLookup.set('c677t', snp);
+                                }
+                                if (snp.rsid === 'rs1801131') {
+                                    variantLookup.set('mthfr_a1298c', snp);
+                                    variantLookup.set('a1298c', snp);
+                                }
+                            }
+                            if (snp.gene.toLowerCase() === 'comt' && snp.rsid === 'rs4680') {
+                                variantLookup.set('val158met', snp);
+                                variantLookup.set('v158m', snp);
+                            }
+                            if (snp.gene.toLowerCase() === 'apoe') {
+                                variantLookup.set('apoe_e4', snp);
+                                variantLookup.set('apolipoprotein_e', snp);
+                            }
+                        }
+                    });
+                    
+                    const snpInserts = parseData.snps.map((snp: any) => {
+                        let matchedSnp = null;
+                        
+                        // SUPER FLEXIBLE MATCHING - try multiple strategies
+                        const snpId = snp.snp_id || snp.rsid || '';
+                        const geneName = snp.gene_name || snp.gene || '';
+                        
+                        // Strategy 1: Exact rsID match (multiple formats)
+                        if (snpId) {
+                            const cleanId = snpId.toLowerCase().replace(/^rs/, '').replace(/[^a-z0-9]/g, '');
+                            matchedSnp = rsidLookup.get(snpId.toLowerCase()) ||
+                                        rsidLookup.get(`rs${cleanId}`) ||
+                                        rsidLookup.get(cleanId) ||
+                                        rsidLookup.get(snpId.toUpperCase());
+                        }
+                        
+                        // Strategy 2: Gene name match (if no rsID match)
+                        if (!matchedSnp && geneName) {
+                            const cleanGene = geneName.toLowerCase().replace(/[^a-z0-9]/g, '');
+                            matchedSnp = geneLookup.get(geneName.toLowerCase()) ||
+                                        geneLookup.get(geneName.toUpperCase()) ||
+                                        geneLookup.get(cleanGene);
+                            
+                            // Try partial gene matching for common variations
+                            if (!matchedSnp) {
+                                for (const [key, value] of geneLookup.entries()) {
+                                    if (key.includes(cleanGene) || cleanGene.includes(key)) {
+                                        matchedSnp = value;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // Strategy 3: Combined matching
+                        if (!matchedSnp && snpId && geneName) {
+                            const cleanId = snpId.toLowerCase().replace(/^rs/, '');
+                            const cleanGene = geneName.toLowerCase();
+                            matchedSnp = combinedLookup.get(`${cleanId}_${cleanGene}`) ||
+                                        combinedLookup.get(`${cleanGene}_${cleanId}`) ||
+                                        combinedLookup.get(`rs${cleanId}_${cleanGene}`);
+                        }
+                        
+                        // Strategy 4: Translated variant matching (for already processed reports)
+                        if (!matchedSnp) {
+                            const searchTerms = [
+                                `${geneName}_${snpId}`.toLowerCase().replace(/[^a-z0-9_]/g, ''),
+                                `${snpId}_${geneName}`.toLowerCase().replace(/[^a-z0-9_]/g, ''),
+                                geneName.toLowerCase().replace(/[^a-z0-9]/g, ''),
+                                snpId.toLowerCase().replace(/[^a-z0-9]/g, '')
+                            ];
+                            
+                            for (const term of searchTerms) {
+                                if (variantLookup.has(term)) {
+                                    matchedSnp = variantLookup.get(term);
+                                    console.log(`🎯 Matched translated variant: ${term} -> ${matchedSnp.rsid}/${matchedSnp.gene}`);
+                                    break;
+                                }
+                            }
+                            
+                            // Special handling for common variant patterns
+                            const fullText = `${snpId} ${geneName}`.toLowerCase();
+                            if (fullText.includes('c677t') || fullText.includes('677')) {
+                                matchedSnp = variantLookup.get('c677t');
+                            } else if (fullText.includes('a1298c') || fullText.includes('1298')) {
+                                matchedSnp = variantLookup.get('a1298c');
+                            } else if (fullText.includes('val158met') || fullText.includes('158')) {
+                                matchedSnp = variantLookup.get('val158met');
+                            }
+                        }
+                        
+                        // Safely create SNP data with proper validation
+                        const snpData: any = {
+                            user_id: user.id,
+                            report_id: reportData.id,
+                            genotype: (snp.genotype || snp.allele || 'Unknown').toString().substring(0, 10) // Limit length
+                        };
+                        
+                        if (matchedSnp) {
+                            snpData.supported_snp_id = matchedSnp.id;
+                            console.log(`✅ Matched SNP: ${snpId} / ${geneName} -> ${matchedSnp.rsid} / ${matchedSnp.gene}`);
+                        } else {
+                            // Store unmatched SNPs with sanitized direct fields
+                            snpData.snp_id = snpId ? snpId.substring(0, 50) : null;
+                            snpData.gene_name = geneName ? geneName.substring(0, 50) : null;
+                            console.log(`📝 Storing unmatched SNP: ${snpId} / ${geneName}`);
+                        }
+                        
+                        return snpData;
+                    });
 
-                    const { error: snpError } = await supabase
+                    // Split into matched (supported_snp_id) and unmatched (snp_id/gene_name) arrays
+                    const matchedSnps = snpInserts.filter((s: any) => s.supported_snp_id);
+                    const unmatchedSnps = snpInserts.filter((s: any) => !s.supported_snp_id);
+
+                    // Helper to perform upsert and handle errors
+                    const upsertSnps = async (records: any[], conflictCols: string) => {
+                      if (records.length === 0) return { inserted: 0 };
+                      const { error } = await supabase
                         .from('user_snps')
-                        .insert(snpInserts);
+                        .upsert(records, { onConflict: conflictCols });
+                      if (error) {
+                        console.error('SNP upsert error:', error);
+                        console.error('Failed SNP data:', records);
+                        toast.warning(`Some SNPs could not be saved due to duplicates.`);
+                        return { inserted: 0 };
+                      }
+                      return { inserted: records.length };
+                    };
 
-                    if (snpError) {
-                        console.error('SNP insert error:', snpError);
-                        toast.error(`Failed to store SNPs from ${file.name}: ${snpError.message}`);
-                    } else {
-                        console.log(`Successfully stored ${parseData.snps.length} SNPs`);
-                        toast.success(`Extracted ${parseData.snps.length} SNPs from ${file.name}`);
+                    const matchedResult = await upsertSnps(matchedSnps, 'user_id,supported_snp_id');
+                    const unmatchedResult = await upsertSnps(unmatchedSnps, 'user_id,snp_id,gene_name');
+
+                    const totalInserted = matchedResult.inserted + unmatchedResult.inserted;
+                    if (totalInserted > 0) {
+                      console.log(`Successfully stored ${totalInserted} SNPs`);
+                      toast.success(`Extracted ${totalInserted} SNPs from ${file.name}`);
                     }
                 }
 

@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
       supabase.from('user_conditions').select('condition_name').eq('user_id', userId),
       supabase.from('user_medications').select('medication_name').eq('user_id', userId),
       supabase.from('user_biomarkers').select('marker_name, value, unit, reference_range').eq('user_id', userId),
-      supabase.from('user_snps').select('snp_id, gene_name, allele, genotype').eq('user_id', userId),
+      supabase.from('user_snps').select('*').eq('user_id', userId),
       supabase.from('products').select('id, supplement_name, brand, product_name, product_url, price')
     ]);
 
@@ -95,7 +95,27 @@ Deno.serve(async (req) => {
     });
 
     console.log('Sample biomarkers:', biomarkers?.slice(0, 5).map(b => `${b.marker_name}: ${b.value} ${b.unit}`));
-    console.log('Sample SNPs:', snps?.slice(0, 5).map(s => `${s.snp_id} (${s.gene_name}): ${s.allele}`));
+
+    // Fetch supported SNPs for manual joining
+    const { data: allSupportedSnps } = await supabase
+      .from('supported_snps')
+      .select('id, rsid, gene');
+    
+    // Create lookup map for SNPs
+    const snpLookup = new Map();
+    if (allSupportedSnps) {
+      allSupportedSnps.forEach(snp => {
+        snpLookup.set(snp.id, { rsid: snp.rsid, gene: snp.gene });
+      });
+    }
+
+    // Enrich SNPs with gene data
+    const enrichedSnps = snps?.map(userSnp => ({
+      ...userSnp,
+      supported_snps: snpLookup.get(userSnp.supported_snp_id) || null
+    })) || [];
+
+    console.log('Sample enriched SNPs:', enrichedSnps?.slice(0, 5).map(s => `${s.supported_snps?.rsid} (${s.supported_snps?.gene}): ${s.genotype}`));
     console.log('Profile questionnaire data:', {
       hasHealthGoals: !!(profile?.health_goals?.length),
       brainFog: profile?.brain_fog || 'not specified',
@@ -116,7 +136,7 @@ Deno.serve(async (req) => {
     };
     
     const labData = biomarkers || [];
-    const geneticData = snps || [];
+    const geneticData = enrichedSnps || []; // Use enriched SNPs with gene data
     const availableProducts = products || [];
 
     // Log the actual data being used for recommendations
@@ -365,7 +385,7 @@ Please analyze the following comprehensive health profile and provide 8-12 evide
     // Show only the first 15 most important SNPs to save tokens
     const importantSNPs = geneticData.slice(0, 15);
     importantSNPs.forEach((snp: any) => {
-      prompt += `• ${snp.snp_id} (${snp.gene_name}): ${snp.genotype || snp.allele}\n`;
+      prompt += `• ${snp.supported_snps?.rsid} (${snp.supported_snps?.gene}): ${snp.genotype}\n`;
     });
     
     if (geneticData.length > 15) {
@@ -374,9 +394,9 @@ Please analyze the following comprehensive health profile and provide 8-12 evide
     
     // Simplified genetic analysis
     prompt += `\n=== KEY GENETIC INSIGHTS ===\n`;
-    const mthfrVar = geneticData.find(s => s.gene_name.includes('MTHFR'));
-    const comtVar = geneticData.find(s => s.gene_name.includes('COMT'));
-    const apoeVar = geneticData.find(s => s.gene_name.includes('APOE'));
+    const mthfrVar = geneticData.find(s => s.supported_snps?.gene?.includes('MTHFR'));
+    const comtVar = geneticData.find(s => s.supported_snps?.gene?.includes('COMT'));
+    const apoeVar = geneticData.find(s => s.supported_snps?.gene?.includes('APOE'));
     
     if (mthfrVar) prompt += `🧬 MTHFR variant - recommend methylfolate\n`;
     if (comtVar) prompt += `🧬 COMT variant - consider magnesium\n`;

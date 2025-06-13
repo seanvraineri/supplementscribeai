@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import React, { useState } from 'react'
 import Link from 'next/link'
+import AuthDebugger from '@/components/AuthDebugger'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -96,6 +97,7 @@ export default function LoginPage() {
           </div>
         </div>
       </main>
+      <AuthDebugger />
     </div>
   )
 } 

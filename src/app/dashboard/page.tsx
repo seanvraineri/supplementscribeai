@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
+import ReactMarkdown from 'react-markdown';
 import { 
   Dna, 
   FileText, 
@@ -23,10 +24,14 @@ import {
   CheckCircle,
   AlertCircle,
   Info,
-  LogOut
+  LogOut,
+  Search,
+  ExternalLink,
+  BookOpen,
+  Star,
+  TrendingUp
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import ReactMarkdown from 'react-markdown';
 import { SVGProps } from 'react';
 import SymptomModal from '@/components/SymptomModal';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -37,10 +42,12 @@ import {
   interpretBiomarker,
   interpretSNP,
 } from '@/lib/analysis-helpers';
+import { useEducationData } from '@/hooks/useEducationData';
+
 
 const supabase = createClient();
 
-type TabType = 'dashboard' | 'supplement-plan' | 'analysis' | 'tracking' | 'ai-chat' | 'settings';
+type TabType = 'dashboard' | 'supplement-plan' | 'analysis' | 'tracking' | 'ai-chat' | 'product-checker' | 'study-buddy' | 'settings';
 
 const MindIcon = (props: SVGProps<SVGSVGElement>) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" {...props}>
@@ -91,11 +98,22 @@ export default function DashboardPage() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [biomarkersData, setBiomarkersData] = useState<any[]>([]);
   const [snpsData, setSnpsData] = useState<any[]>([]);
+  const [userConditions, setUserConditions] = useState<any[]>([]);
+  const [userAllergies, setUserAllergies] = useState<any[]>([]);
   const [expandedBiomarkers, setExpandedBiomarkers] = useState<Set<number>>(new Set());
   const [expandedSnps, setExpandedSnps] = useState<Set<number>>(new Set());
   const [biomarkersExpanded, setBiomarkersExpanded] = useState(false);
   const [snpsExpanded, setSnpsExpanded] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Product Checker state
+  const [productUrl, setProductUrl] = useState('');
+  const [isCheckingProduct, setIsCheckingProduct] = useState(false);
+  const [productAnalysis, setProductAnalysis] = useState<any>(null);
+  const [productCheckError, setProductCheckError] = useState<string | null>(null);
+  const [showArchive, setShowArchive] = useState(false);
+  const [productHistory, setProductHistory] = useState<any[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   
   // AI Chat state
   const [chatMessages, setChatMessages] = useState<any[]>([]);
@@ -104,6 +122,18 @@ export default function DashboardPage() {
   const [chatHistory, setChatHistory] = useState<any[]>([]);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  
+
+  
+  // Study Buddy state
+  const [studyUrl, setStudyUrl] = useState('');
+  const [isAnalyzingStudy, setIsAnalyzingStudy] = useState(false);
+  const [studyAnalysis, setStudyAnalysis] = useState<any>(null);
+  const [studyError, setStudyError] = useState<string | null>(null);
+
+  const [userStudies, setUserStudies] = useState<any[]>([]);
+  const [selectedStudy, setSelectedStudy] = useState<any>(null);
+  const [isLoadingStudies, setIsLoadingStudies] = useState(false);
   
   // Tracking state
   const [activeTrackingTab, setActiveTrackingTab] = useState<'symptoms' | 'supplements'>('symptoms');
@@ -129,6 +159,14 @@ export default function DashboardPage() {
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const router = useRouter();
+
+  // Load education data for biomarkers and SNPs
+  const { biomarkerEducation, snpEducation, loading: educationLoading } = useEducationData(
+    biomarkersData,
+    snpsData,
+    userConditions,
+    userAllergies
+  );
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -190,20 +228,73 @@ export default function DashboardPage() {
             .select('*')
             .eq('user_id', user.id);
 
+          const { data: conditions, error: conditionsError } = await supabase
+            .from('user_conditions')
+            .select('*')
+            .eq('user_id', user.id);
+
+          const { data: allergies, error: allergiesError } = await supabase
+            .from('user_allergies')
+            .select('*')
+            .eq('user_id', user.id);
+
           if (biomarkersError) {
             console.warn('Biomarkers fetch error:', biomarkersError);
           }
           if (snpsError) {
             console.warn('SNPs fetch error:', snpsError);
           }
+          if (conditionsError) {
+            console.warn('Conditions fetch error:', conditionsError);
+          }
+          if (allergiesError) {
+            console.warn('Allergies fetch error:', allergiesError);
+          }
+
+          // Fetch supported SNPs for manual joining
+          const { data: allSupportedSnps, error: supportedSnpsError } = await supabase
+            .from('supported_snps')
+            .select('id, rsid, gene');
+          
+          // Create lookup map for SNPs
+          const snpLookup = new Map();
+          if (allSupportedSnps) {
+            allSupportedSnps.forEach(snp => {
+              snpLookup.set(snp.id, { rsid: snp.rsid, gene: snp.gene });
+            });
+          }
+
+          // Handle both matched SNPs (with supported_snp_id) and direct SNPs (with snp_id/gene_name)
+          const mappedSnps = (snps || []).map(snp => {
+            if (snp.supported_snp_id) {
+              // SNP linked to supported_snps table
+              const supportedSnp = snpLookup.get(snp.supported_snp_id);
+              return {
+                ...snp,
+                snp_id: supportedSnp?.rsid,
+                gene_name: supportedSnp?.gene,
+                supported_snps: supportedSnp
+              };
+            } else {
+              // SNP with direct fields (backward compatibility)
+              return {
+                ...snp,
+                snp_id: snp.snp_id,
+                gene_name: snp.gene_name,
+                supported_snps: snp.snp_id && snp.gene_name ? { rsid: snp.snp_id, gene: snp.gene_name } : null
+              };
+            }
+          });
 
           const extractedCounts = {
             biomarkers: biomarkers?.length || 0,
-            snps: snps?.length || 0
+            snps: mappedSnps?.length || 0
           };
           setExtractedData(extractedCounts);
           setBiomarkersData(biomarkers || []);
-          setSnpsData(snps || []);
+          setSnpsData(mappedSnps || []);
+          setUserConditions(conditions || []);
+          setUserAllergies(allergies || []);
         } catch (error) {
           console.warn('Health data fetch failed:', error);
           setExtractedData({ biomarkers: 0, snps: 0 });
@@ -392,12 +483,83 @@ export default function DashboardPage() {
     }
   }, [activeTab, selectedDate]);
 
+  // Study Buddy functions
+  const analyzeStudy = async () => {
+    if (!studyUrl || !user) return;
+    
+    setIsAnalyzingStudy(true);
+    setStudyAnalysis(null);
+    setStudyError(null);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const { data, error } = await supabase.functions.invoke('analyze-study', {
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+        body: { 
+          studyUrl: studyUrl
+        },
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Failed to analyze study');
+      }
+
+      setStudyAnalysis(data);
+      setStudyUrl('');
+      loadUserStudies(); // Refresh the studies list
+    } catch (error: any) {
+      setStudyError(error.message);
+    } finally {
+      setIsAnalyzingStudy(false);
+    }
+  };
+
+  const loadUserStudies = async () => {
+    if (!user) return;
+    
+    setIsLoadingStudies(true);
+    try {
+      const { data, error } = await supabase
+        .from('user_studies')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) {
+        console.error('Error loading studies:', error);
+        setUserStudies([]);
+      } else {
+        setUserStudies(data || []);
+      }
+    } catch (error) {
+      console.error('Failed to load studies:', error);
+      setUserStudies([]);
+    } finally {
+      setIsLoadingStudies(false);
+    }
+  };
+
+
+
+  // Load studies when Study Buddy tab becomes active
+  useEffect(() => {
+    if (activeTab === 'study-buddy') {
+      loadUserStudies();
+    }
+  }, [activeTab]);
+
   const sidebarItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'supplement-plan', label: 'Supplement Plan', icon: Pill },
     { id: 'analysis', label: 'Comprehensive Analysis', icon: BarChart3 },
     { id: 'tracking', label: 'Tracking', icon: Activity },
     { id: 'ai-chat', label: 'AI Chat', icon: MessageSquare },
+    { id: 'product-checker', label: 'Product Checker', icon: Search },
+    { id: 'study-buddy', label: 'Study Buddy', icon: BookOpen },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
@@ -507,13 +669,9 @@ export default function DashboardPage() {
                 <div className="w-16 h-16 bg-dark-border rounded-full mx-auto flex items-center justify-center">
                   <Sparkles className="h-8 w-8 text-dark-accent" />
                 </div>
-                <p className="text-dark-secondary">Get a supplement plan based on your unique data.</p>
-                <Button 
-                  onClick={generatePlan} 
-                  disabled={isGenerating}
-                  className="w-full bg-dark-accent text-white hover:bg-dark-accent/80 rounded-lg"
-                >
-                  {isGenerating ? 'Generating...' : 'Generate AI Plan'}
+                <p className="text-dark-secondary">No supplement plan generated yet.</p>
+                <Button onClick={generatePlan} disabled={isGenerating}>
+                  {isGenerating ? 'Generating Plan...' : 'Generate My Personal Plan'}
                 </Button>
               </div>
             )}
@@ -618,7 +776,7 @@ export default function DashboardPage() {
       <div>
         <h1 className="text-4xl font-bold text-dark-primary">Comprehensive Analysis</h1>
         <p className="text-lg text-dark-secondary mt-1">
-          Drill down into your biomarker and genetic data.
+          Deep dive into your biomarker and genetic data with personalized insights and recommendations.
         </p>
       </div>
 
@@ -631,7 +789,13 @@ export default function DashboardPage() {
           </div>
           {biomarkersData.length > 0 ? biomarkersData.map((marker, index) => {
             const interpretation = interpretBiomarker(marker);
-            const referenceRange = getBiomarkerReferenceRange(marker.marker_name);
+            const education = biomarkerEducation[index] || { 
+              name: marker.marker_name, 
+              description: 'Loading analysis...', 
+              recommendations: ['Analysis in progress...'],
+              symptoms: ['Loading...'],
+              referenceRange: 'Loading...'
+            };
             const isExpanded = expandedBiomarkers.has(index);
             
             return (
@@ -641,25 +805,77 @@ export default function DashboardPage() {
                     <h4 className="font-semibold text-lg text-dark-primary">{cleanBiomarkerName(marker.marker_name)}</h4>
                     <span className="font-mono text-dark-accent">{marker.value} {marker.unit}</span>
                   </div>
-                  <p className={`text-sm ${interpretation.color === 'red' ? 'text-red-400' : 'text-green-400'}`}>{interpretation.status}</p>
+                  <p className={`text-sm ${interpretation.color === 'red' ? 'text-red-400' : interpretation.color === 'yellow' ? 'text-yellow-400' : 'text-green-400'}`}>
+                    {interpretation.status}
+                  </p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="text-xs text-dark-secondary">Click to learn more</span>
+                    {isExpanded ? <ChevronUp className="h-4 w-4 text-dark-secondary" /> : <ChevronDown className="h-4 w-4 text-dark-secondary" />}
+                  </div>
                 </div>
                 {isExpanded && (
                   <div className="border-t border-dark-border p-4 space-y-4">
                     <div>
-                      <h5 className="font-semibold text-dark-secondary mb-1">Reference Range</h5>
-                      <p className="font-mono text-dark-primary bg-dark-background p-2 rounded">{referenceRange}</p>
+                      <h5 className="font-semibold text-dark-accent mb-2 flex items-center gap-2">
+                        <Info className="h-4 w-4" />
+                        What is {cleanBiomarkerName(marker.marker_name)}?
+                      </h5>
+                      <p className="text-dark-primary text-sm leading-relaxed">{education.description}</p>
                     </div>
+                    
                     <div>
-                      <h5 className="font-semibold text-dark-secondary mb-1">Health Impact</h5>
-                      <p className="text-dark-primary">{interpretation.impact}</p>
+                      <h5 className="font-semibold text-dark-accent mb-2">Reference Range</h5>
+                      <p className="font-mono text-dark-primary bg-dark-background p-2 rounded text-sm">{education.referenceRange}</p>
                     </div>
+                    
+                    <div>
+                      <h5 className="font-semibold text-dark-accent mb-2">Your Result Analysis</h5>
+                      <p className="text-dark-primary text-sm leading-relaxed">{education.interpretation}</p>
+                    </div>
+                    
+                    {education.symptoms && (
+                      <div>
+                        <h5 className="font-semibold text-yellow-400 mb-2 flex items-center gap-2">
+                          <AlertTriangle className="h-4 w-4" />
+                          Potential Symptoms
+                        </h5>
+                        <p className="text-dark-primary text-sm leading-relaxed">{education.symptoms}</p>
+                      </div>
+                    )}
+                    
+                    <div>
+                      <h5 className="font-semibold text-green-400 mb-2 flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4" />
+                        Personalized Recommendations
+                      </h5>
+                      <ul className="space-y-1 text-sm">
+                        {education.recommendations.map((rec: string, i: number) => (
+                          <li key={i} className="flex items-start gap-2">
+                            <span className="text-green-400 mt-1">•</span>
+                            <span className="text-dark-primary">{rec}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    
+                    {education.interactions && (
+                      <div className="bg-red-900/20 border border-red-700/50 rounded-lg p-3">
+                        <h5 className="font-semibold text-red-400 mb-2 flex items-center gap-2">
+                          <AlertCircle className="h-4 w-4" />
+                          Important Considerations
+                        </h5>
+                        <p className="text-red-300 text-sm leading-relaxed">{education.interactions}</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             )
           }) : (
             <div className="text-center py-12 bg-dark-panel border border-dark-border rounded-lg">
+              <Activity className="h-12 w-12 text-dark-secondary mx-auto mb-4" />
               <p className="text-dark-secondary">No biomarker data available.</p>
+              <p className="text-dark-secondary text-sm">Upload lab reports to see detailed analysis.</p>
             </div>
           )}
         </div>
@@ -671,8 +887,15 @@ export default function DashboardPage() {
             <h2 className="text-2xl font-bold text-dark-primary">Genetic Variants ({snpsData.length})</h2>
           </div>
           {snpsData.length > 0 ? snpsData.map((snp, index) => {
-             const interpretation = interpretSNP(snp);
-             const isExpanded = expandedSnps.has(index);
+            const interpretation = interpretSNP(snp);
+            const education = snpEducation[index] || {
+              name: `${snp.gene_name} ${snp.snp_id}`,
+              description: 'Loading analysis...',
+              recommendations: ['Analysis in progress...'],
+              variantEffect: 'Loading...',
+              functionalImpact: 'Loading...'
+            };
+            const isExpanded = expandedSnps.has(index);
 
             return (
               <div key={index} className="bg-dark-panel border border-dark-border rounded-lg">
@@ -681,25 +904,77 @@ export default function DashboardPage() {
                     <h4 className="font-semibold text-lg text-dark-primary">{cleanSnpName(snp.snp_id, snp.gene_name)}</h4>
                     <span className="font-mono text-dark-accent">{snp.genotype || snp.allele}</span>
                   </div>
-                   <p className={`text-sm ${interpretation.color === 'red' ? 'text-red-400' : interpretation.color === 'orange' ? 'text-yellow-400' : 'text-green-400'}`}>{interpretation.severity}</p>
+                  <p className={`text-sm ${interpretation.color === 'red' ? 'text-red-400' : interpretation.color === 'orange' ? 'text-yellow-400' : 'text-green-400'}`}>
+                    {interpretation.severity}
+                  </p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="text-xs text-dark-secondary">Click to learn more</span>
+                    {isExpanded ? <ChevronUp className="h-4 w-4 text-dark-secondary" /> : <ChevronDown className="h-4 w-4 text-dark-secondary" />}
+                  </div>
                 </div>
                 {isExpanded && (
                   <div className="border-t border-dark-border p-4 space-y-4">
                     <div>
-                      <h5 className="font-semibold text-dark-secondary mb-1">Functional Impact</h5>
-                      <p className="text-dark-primary">{interpretation.impact}</p>
+                      <h5 className="font-semibold text-dark-accent mb-2 flex items-center gap-2">
+                        <Dna className="h-4 w-4" />
+                        What is {cleanSnpName(snp.snp_id, snp.gene_name)}?
+                      </h5>
+                      <p className="text-dark-primary text-sm leading-relaxed">{education.description}</p>
                     </div>
+                    
                     <div>
-                      <h5 className="font-semibold text-dark-secondary mb-1">Associated Symptoms</h5>
-                       <p className="text-dark-primary">{interpretation.symptoms}</p>
+                      <h5 className="font-semibold text-dark-accent mb-2">Your Variant Analysis</h5>
+                      <p className="text-dark-primary text-sm leading-relaxed">{education.variantEffect}</p>
                     </div>
+                    
+                    <div>
+                      <h5 className="font-semibold text-dark-accent mb-2">Functional Impact</h5>
+                      <p className="text-dark-primary text-sm leading-relaxed">{education.functionalImpact}</p>
+                    </div>
+                    
+                    {education.symptoms && (
+                      <div>
+                        <h5 className="font-semibold text-yellow-400 mb-2 flex items-center gap-2">
+                          <AlertTriangle className="h-4 w-4" />
+                          Potential Effects
+                        </h5>
+                        <p className="text-dark-primary text-sm leading-relaxed">{education.symptoms}</p>
+                      </div>
+                    )}
+                    
+                    <div>
+                      <h5 className="font-semibold text-green-400 mb-2 flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4" />
+                        Personalized Strategies
+                      </h5>
+                      <ul className="space-y-1 text-sm">
+                        {education.recommendations.map((rec: string, i: number) => (
+                          <li key={i} className="flex items-start gap-2">
+                            <span className="text-green-400 mt-1">•</span>
+                            <span className="text-dark-primary">{rec}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    
+                    {education.interactions && (
+                      <div className="bg-red-900/20 border border-red-700/50 rounded-lg p-3">
+                        <h5 className="font-semibold text-red-400 mb-2 flex items-center gap-2">
+                          <AlertCircle className="h-4 w-4" />
+                          Important Considerations
+                        </h5>
+                        <p className="text-red-300 text-sm leading-relaxed">{education.interactions}</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             )
           }) : (
             <div className="text-center py-12 bg-dark-panel border border-dark-border rounded-lg">
+              <Dna className="h-12 w-12 text-dark-secondary mx-auto mb-4" />
               <p className="text-dark-secondary">No genetic data available.</p>
+              <p className="text-dark-secondary text-sm">Upload genetic reports to see detailed analysis.</p>
             </div>
           )}
         </div>
@@ -761,8 +1036,9 @@ export default function DashboardPage() {
   );
 
   const renderAIChat = () => (
-    <div className="h-full flex flex-col max-h-[calc(100vh-6rem)]">
-      <header className="flex items-center justify-between mb-6 flex-shrink-0">
+    <div className="h-[calc(100vh-8rem)] flex flex-col">
+      {/* Fixed Header */}
+      <div className="flex items-center justify-between mb-6 flex-shrink-0">
         <div>
           <h1 className="text-4xl font-bold text-dark-primary tracking-tight">AI Assistant</h1>
           <p className="text-dark-secondary mt-1">Your personalized health optimization expert.</p>
@@ -770,10 +1046,12 @@ export default function DashboardPage() {
         <Button onClick={startNewConversation} variant="outline" className="bg-dark-panel border-dark-border text-dark-secondary hover:bg-dark-border hover:text-dark-primary">
           New Chat
         </Button>
-      </header>
+      </div>
 
+      {/* Main Chat Area - Fixed Height */}
       <div className="grid lg:grid-cols-12 gap-8 flex-1 min-h-0">
-        <div className="lg:col-span-4 h-full flex flex-col">
+        {/* Chat History Sidebar */}
+        <div className="lg:col-span-4 flex flex-col">
           <div className="bg-dark-panel border border-dark-border rounded-lg h-full flex flex-col">
             <h3 className="font-semibold text-dark-primary p-4 border-b border-dark-border flex-shrink-0">Chat History</h3>
             <div className="overflow-y-auto p-2 space-y-2 flex-1">
@@ -791,9 +1069,11 @@ export default function DashboardPage() {
           </div>
         </div>
         
-        <div className="lg:col-span-8 h-full flex flex-col">
+        {/* Main Chat Panel */}
+        <div className="lg:col-span-8 flex flex-col">
           <div className="bg-dark-panel border border-dark-border rounded-lg h-full flex flex-col">
-            <div ref={chatContainerRef} className="flex-1 p-6 space-y-6 overflow-y-auto">
+            {/* Messages Container - Scrollable */}
+            <div ref={chatContainerRef} className="flex-1 p-6 overflow-y-auto min-h-0">
               {chatMessages.length === 0 && (
                 <div className="text-center text-dark-secondary h-full flex flex-col justify-center items-center">
                   <MessageSquare className="h-12 w-12 mb-4"/>
@@ -801,36 +1081,62 @@ export default function DashboardPage() {
                   <p>Start a conversation by asking a question below.</p>
                 </div>
               )}
-              {chatMessages.map((msg, index) => (
-                <div key={index} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  {msg.role === 'assistant' && <div className="w-8 h-8 rounded-full bg-dark-accent flex-shrink-0" />}
-                  <div className={`p-4 rounded-lg max-w-xl prose prose-invert prose-p:my-0 ${msg.role === 'user' ? 'bg-dark-accent text-white' : 'bg-dark-border text-dark-primary'}`}>
-                    <p>{msg.content}</p>
-                  </div>
-                </div>
-              ))}
-              {isChatLoading && (
-                <div className="flex justify-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-dark-accent flex-shrink-0" />
-                  <div className="p-4 rounded-lg bg-dark-border text-dark-primary">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-dark-accent rounded-full animate-pulse" />
-                      <div className="w-2 h-2 bg-dark-accent rounded-full animate-pulse delay-75" />
-                      <div className="w-2 h-2 bg-dark-accent rounded-full animate-pulse delay-150" />
+              
+              <div className="space-y-6">
+                {chatMessages.map((msg, index) => (
+                  <div key={index} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    {msg.role === 'assistant' && <div className="w-8 h-8 rounded-full bg-dark-accent flex-shrink-0" />}
+                    <div className={`p-4 rounded-lg max-w-2xl ${msg.role === 'user' ? 'bg-dark-accent text-white' : 'bg-dark-border text-dark-primary'}`}>
+                      {msg.role === 'assistant' ? (
+                        <div className="prose prose-invert prose-sm max-w-none prose-headings:text-dark-primary prose-p:text-dark-primary prose-strong:text-dark-accent prose-ul:text-dark-primary prose-li:text-dark-primary prose-code:text-dark-accent prose-code:bg-dark-background prose-code:px-1 prose-code:rounded">
+                          <ReactMarkdown>{msg.content}</ReactMarkdown>
+                        </div>
+                      ) : (
+                        <p className="text-white">{msg.content}</p>
+                      )}
                     </div>
                   </div>
-                </div>
-              )}
+                ))}
+                
+                {isChatLoading && (
+                  <div className="flex justify-start gap-3">
+                    <div className="w-8 h-8 rounded-full bg-dark-accent flex-shrink-0" />
+                    <div className="p-4 rounded-lg bg-dark-border text-dark-primary">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-dark-accent rounded-full animate-pulse" />
+                        <div className="w-2 h-2 bg-dark-accent rounded-full animate-pulse delay-75" />
+                        <div className="w-2 h-2 bg-dark-accent rounded-full animate-pulse delay-150" />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="p-4 border-t border-dark-border flex-shrink-0">
+            
+            {/* Fixed Input Area */}
+            <div className="p-4 border-t border-dark-border flex-shrink-0 bg-dark-panel">
               <form onSubmit={(e) => { e.preventDefault(); sendMessage(chatInput); }} className="flex gap-4">
                 <input
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   placeholder="Ask about your results, supplements, or health..."
-                  className="flex-1 bg-dark-background border border-dark-border rounded-lg px-4 py-2 text-dark-primary focus:outline-none focus:ring-2 focus:ring-dark-accent"
+                  className="flex-1 bg-dark-background border border-dark-border rounded-lg px-4 py-3 text-dark-primary placeholder-dark-secondary focus:outline-none focus:ring-2 focus:ring-dark-accent transition-all"
+                  disabled={isChatLoading}
                 />
-                <Button type="submit" disabled={isChatLoading} className="bg-dark-accent text-white hover:bg-dark-accent/80">Send</Button>
+                <Button 
+                  type="submit" 
+                  disabled={isChatLoading || !chatInput.trim()} 
+                  className="bg-dark-accent text-white hover:bg-dark-accent/80 px-6 py-3 transition-all disabled:opacity-50"
+                >
+                  {isChatLoading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      Sending...
+                    </div>
+                  ) : (
+                    'Send'
+                  )}
+                </Button>
               </form>
             </div>
           </div>
@@ -908,6 +1214,441 @@ export default function DashboardPage() {
     </div>
   );
 
+  const renderProductChecker = () => (
+    <div className="space-y-8">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-3xl font-bold text-dark-primary">Product Compatibility Checker</h2>
+          <p className="text-dark-secondary mt-1">Analyze any supplement product against your unique health profile.</p>
+        </div>
+        <Button 
+          variant="outline" 
+          onClick={toggleArchive}
+          className="bg-dark-panel border-dark-border text-dark-primary hover:bg-dark-border"
+        >
+          {showArchive ? 'Hide Archive' : 'View Archive'}
+        </Button>
+      </div>
+
+      <div className="flex space-x-2">
+        <input
+          type="url"
+          value={productUrl}
+          onChange={(e) => setProductUrl(e.target.value)}
+          placeholder="Paste product URL from Amazon, iHerb, etc."
+          className="flex-grow bg-dark-panel border border-dark-border rounded-md px-4 py-2 text-dark-primary placeholder-dark-secondary focus:ring-2 focus:ring-dark-accent focus:outline-none"
+          disabled={isCheckingProduct}
+        />
+        <Button onClick={checkProduct} disabled={isCheckingProduct || !productUrl}>
+          {isCheckingProduct ? 'Analyzing...' : <><Search className="w-4 h-4 mr-2" /> Analyze</>}
+        </Button>
+      </div>
+
+      {productCheckError && (
+        <div className="p-4 bg-red-900/50 border border-red-700 text-red-300 rounded-md">
+          <p><strong>Analysis Failed:</strong> {productCheckError}</p>
+        </div>
+      )}
+
+      {isCheckingProduct && (
+        <div className="text-center py-10">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-dark-accent mx-auto"></div>
+          <p className="mt-4 text-dark-secondary">Scraping product page and running analysis...</p>
+        </div>
+      )}
+
+      {productAnalysis && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+          <Card className="bg-dark-panel border-dark-border">
+            <CardHeader>
+              <CardTitle className="text-2xl text-dark-primary">{productAnalysis.productName}</CardTitle>
+              <CardDescription className="text-dark-secondary">{productAnalysis.brand}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center space-x-4">
+                <div className={`text-4xl font-bold ${productAnalysis.overallScore > 75 ? 'text-green-400' : productAnalysis.overallScore > 50 ? 'text-yellow-400' : 'text-red-400'}`}>{productAnalysis.overallScore}/100</div>
+                <div>
+                  <h4 className="font-semibold text-dark-primary">Overall Compatibility</h4>
+                  <p className="text-dark-secondary">{productAnalysis.summary}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            <Card className="bg-dark-panel border-dark-border">
+              <CardHeader><CardTitle className="text-lg text-green-400 flex items-center"><CheckCircle className="w-5 h-5 mr-2"/>Pros</CardTitle></CardHeader>
+              <CardContent>
+                <ul className="space-y-2 list-disc list-inside text-dark-secondary">
+                  {productAnalysis.pros.map((pro: string, i: number) => <li key={i}>{pro}</li>)}
+                </ul>
+              </CardContent>
+            </Card>
+            <Card className="bg-dark-panel border-dark-border">
+              <CardHeader><CardTitle className="text-lg text-yellow-400 flex items-center"><AlertTriangle className="w-5 h-5 mr-2"/>Cons & Considerations</CardTitle></CardHeader>
+              <CardContent>
+                <ul className="space-y-2 list-disc list-inside text-dark-secondary">
+                  {productAnalysis.cons.map((con: string, i: number) => <li key={i}>{con}</li>)}
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+          
+          {productAnalysis.warnings?.length > 0 && (
+            <Card className="bg-red-900/30 border-red-700">
+              <CardHeader><CardTitle className="text-lg text-red-300 flex items-center"><AlertCircle className="w-5 h-5 mr-2"/>Important Warnings</CardTitle></CardHeader>
+              <CardContent>
+                <ul className="space-y-2 list-disc list-inside text-red-300">
+                  {productAnalysis.warnings.map((warning: string, i: number) => <li key={i}>{warning}</li>)}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
+
+
+
+        </motion.div>
+      )}
+
+      {/* Archive Section */}
+      {showArchive && (
+        <motion.div 
+          initial={{ opacity: 0, height: 0 }} 
+          animate={{ opacity: 1, height: 'auto' }} 
+          exit={{ opacity: 0, height: 0 }}
+          className="space-y-4"
+        >
+          <div className="border-t border-dark-border pt-8">
+            <h3 className="text-2xl font-bold text-dark-primary mb-4">Product Check History</h3>
+            
+            {isLoadingHistory ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-dark-accent mx-auto"></div>
+                <p className="mt-2 text-dark-secondary">Loading history...</p>
+              </div>
+            ) : productHistory.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-dark-secondary">No product checks yet. Analyze a product to start building your history!</p>
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                {productHistory.map((check) => (
+                  <Card key={check.id} className="bg-dark-panel border-dark-border">
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-dark-primary">{check.product_name}</h4>
+                          <p className="text-sm text-dark-secondary">{check.brand}</p>
+                          <p className="text-xs text-dark-secondary mt-1">{getTimeAgo(check.created_at)}</p>
+                        </div>
+                        <div className="flex items-center space-x-4">
+                          <div className={`text-2xl font-bold ${check.overall_score > 75 ? 'text-green-400' : check.overall_score > 50 ? 'text-yellow-400' : 'text-red-400'}`}>
+                            {check.overall_score}/100
+                          </div>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => setProductAnalysis(check.full_analysis)}
+                            className="bg-dark-background border-dark-border text-dark-primary hover:bg-dark-border"
+                          >
+                            View Details
+                          </Button>
+                        </div>
+                      </div>
+                      <p className="text-sm text-dark-secondary mt-2 line-clamp-2">{check.analysis_summary}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        </motion.div>
+      )}
+    </div>
+  );
+
+  const renderStudyBuddy = () => (
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="bg-dark-panel border border-dark-border rounded-xl p-8">
+        <div className="flex items-center gap-4 mb-4">
+          <div className="p-3 bg-dark-border rounded-lg">
+            <BookOpen className="h-6 w-6 text-dark-accent" />
+          </div>
+          <div>
+            <h1 className="text-4xl font-bold text-dark-primary">Study Buddy</h1>
+            <p className="text-lg text-dark-secondary mt-1">
+              Personalized analysis of scientific research based on your genetics, biomarkers, and health profile
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* URL Input Section */}
+      <div className="bg-dark-panel border border-dark-border rounded-xl p-6">
+        <h2 className="text-xl font-semibold text-dark-primary mb-4">Analyze a New Study</h2>
+        <div className="flex gap-4">
+          <div className="flex-1">
+            <input
+              type="url"
+              value={studyUrl}
+              onChange={(e) => setStudyUrl(e.target.value)}
+              placeholder="Enter PubMed URL or any scientific study link..."
+              className="w-full px-4 py-3 bg-dark-background border border-dark-border rounded-lg text-dark-primary placeholder-dark-secondary focus:outline-none focus:ring-2 focus:ring-dark-accent"
+            />
+          </div>
+          <Button
+            onClick={analyzeStudy}
+            disabled={isAnalyzingStudy || !studyUrl}
+            className="bg-dark-accent text-white hover:bg-dark-accent/80 px-6 py-3"
+          >
+            {isAnalyzingStudy ? (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                Analyzing...
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" />
+                Analyze Study
+              </div>
+            )}
+          </Button>
+
+        </div>
+        {studyError && (
+          <div className="mt-4 p-4 bg-red-900/50 border border-red-600 rounded-lg">
+            <p className="text-red-400">{studyError}</p>
+          </div>
+        )}
+      </div>
+
+
+
+      {/* Latest Analysis */}
+      {studyAnalysis && (
+        <div className="bg-dark-panel border border-dark-border rounded-xl p-6">
+          <h2 className="text-xl font-semibold text-dark-primary mb-4">Latest Analysis</h2>
+          <div className="space-y-6">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Star className="h-5 w-5 text-yellow-400" />
+                <span className="text-dark-secondary">Personal Relevance:</span>
+                <span className="text-2xl font-bold text-dark-accent">{studyAnalysis.relevanceScore}/10</span>
+              </div>
+            </div>
+            
+            <div>
+              <h3 className="font-semibold text-dark-accent mb-2">Personalized Summary</h3>
+              <p className="text-dark-secondary">{studyAnalysis.personalizedSummary}</p>
+            </div>
+            
+            <div>
+              <h3 className="font-semibold text-dark-accent mb-2">Personal Explanation</h3>
+              <p className="text-dark-secondary">{studyAnalysis.personalizedExplanation}</p>
+            </div>
+            
+            <div>
+              <h3 className="font-semibold text-dark-accent mb-2">Key Findings</h3>
+              <ul className="space-y-2">
+                {studyAnalysis.keyFindings?.map((finding: string, index: number) => (
+                  <li key={index} className="flex items-start gap-2">
+                    <span className="text-dark-accent mt-1">•</span>
+                    <span className="text-dark-secondary">{finding}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            
+            <div>
+              <h3 className="font-semibold text-dark-accent mb-2">Your Personalized Recommendations</h3>
+              <ul className="space-y-2">
+                {studyAnalysis.actionableRecommendations?.map((rec: string, index: number) => (
+                  <li key={index} className="flex items-start gap-2">
+                    <span className="text-green-400 mt-1">✓</span>
+                    <span className="text-dark-secondary">{rec}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {studyAnalysis.limitations && studyAnalysis.limitations.length > 0 && (
+              <div>
+                <h3 className="font-semibold text-dark-accent mb-2">Important Considerations</h3>
+                <ul className="space-y-2">
+                  {studyAnalysis.limitations.map((limitation: string, index: number) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <span className="text-yellow-400 mt-1">⚠</span>
+                      <span className="text-dark-secondary">{limitation}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Studies History */}
+      <div className="bg-dark-panel border border-dark-border rounded-xl p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-dark-primary">Your Analyzed Studies</h2>
+          <Button
+            onClick={loadUserStudies}
+            variant="outline"
+            className="border-dark-border text-dark-secondary hover:bg-dark-border"
+          >
+            Refresh
+          </Button>
+        </div>
+        
+        {isLoadingStudies ? (
+          <div className="text-center py-8">
+            <div className="w-8 h-8 border-2 border-dark-border border-t-dark-accent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-dark-secondary">Loading your studies...</p>
+          </div>
+        ) : userStudies.length > 0 ? (
+          <div className="space-y-4">
+            {userStudies.map((study) => (
+              <div
+                key={study.id}
+                className="p-4 bg-dark-background border border-dark-border rounded-lg hover:border-dark-accent transition-colors cursor-pointer"
+                onClick={() => setSelectedStudy(study)}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-dark-primary mb-1">
+                      {study.study_title || 'Unknown Title'}
+                    </h3>
+                    <p className="text-dark-secondary text-sm mb-2 line-clamp-2">
+                      {study.personalized_summary || 'No summary available'}
+                    </p>
+                    <div className="flex items-center gap-4 text-xs text-dark-secondary">
+                      <span>Relevance: {study.relevance_score}/10</span>
+                      <span>{new Date(study.created_at).toLocaleDateString()}</span>
+                      {study.pmid && <span>PMID: {study.pmid}</span>}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-dark-border text-dark-secondary hover:bg-dark-border"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        window.open(study.study_url, '_blank');
+                      }}
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <BookOpen className="h-12 w-12 text-dark-secondary mx-auto mb-4" />
+            <p className="text-dark-secondary">No studies analyzed yet.</p>
+            <p className="text-dark-secondary text-sm">Add a study URL above to get started!</p>
+          </div>
+        )}
+      </div>
+
+      {/* Selected Study Detail Modal */}
+      {selectedStudy && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-dark-panel border border-dark-border rounded-xl p-6 max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-dark-primary">Study Analysis</h2>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedStudy(null)}
+                className="border-dark-border text-dark-secondary hover:bg-dark-border"
+              >
+                ✕
+              </Button>
+            </div>
+            
+            <div className="space-y-6">
+              <div>
+                <h3 className="font-semibold text-dark-primary mb-2">{selectedStudy.study_title}</h3>
+                {selectedStudy.study_authors && (
+                  <p className="text-dark-secondary text-sm mb-2">{selectedStudy.study_authors}</p>
+                )}
+                <div className="flex items-center gap-4 text-xs text-dark-secondary mb-4">
+                  <span>Personal Relevance: {selectedStudy.relevance_score}/10</span>
+                  <span>{new Date(selectedStudy.created_at).toLocaleDateString()}</span>
+                  {selectedStudy.pmid && <span>PMID: {selectedStudy.pmid}</span>}
+                  {selectedStudy.journal_name && <span>{selectedStudy.journal_name}</span>}
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="font-semibold text-dark-accent mb-2">Personalized Summary</h4>
+                <p className="text-dark-secondary">{selectedStudy.personalized_summary}</p>
+              </div>
+
+              <div>
+                <h4 className="font-semibold text-dark-accent mb-2">Personal Explanation</h4>
+                <p className="text-dark-secondary">{selectedStudy.personalized_explanation}</p>
+              </div>
+              
+              <div>
+                <h4 className="font-semibold text-dark-accent mb-2">Your Recommendations</h4>
+                <ul className="space-y-2">
+                  {selectedStudy.actionable_recommendations?.map((rec: string, index: number) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <span className="text-green-400 mt-1">✓</span>
+                      <span className="text-dark-secondary">{rec}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              
+              <div>
+                <h4 className="font-semibold text-dark-accent mb-2">Key Findings</h4>
+                <ul className="space-y-2">
+                  {selectedStudy.key_findings?.map((finding: string, index: number) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <span className="text-dark-accent mt-1">•</span>
+                      <span className="text-dark-secondary">{finding}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {selectedStudy.limitations && selectedStudy.limitations.length > 0 && (
+                <div>
+                  <h4 className="font-semibold text-dark-accent mb-2">Important Considerations</h4>
+                  <ul className="space-y-2">
+                    {selectedStudy.limitations.map((limitation: string, index: number) => (
+                      <li key={index} className="flex items-start gap-2">
+                        <span className="text-yellow-400 mt-1">⚠</span>
+                        <span className="text-dark-secondary">{limitation}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+            
+            <div className="pt-4 border-t border-dark-border">
+              <Button
+                onClick={() => window.open(selectedStudy.study_url, '_blank')}
+                className="bg-dark-accent text-white hover:bg-dark-accent/80"
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                View Original Study
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
@@ -920,6 +1661,10 @@ export default function DashboardPage() {
         return renderTracking();
       case 'ai-chat':
         return renderAIChat();
+      case 'product-checker':
+        return renderProductChecker();
+      case 'study-buddy':
+        return renderStudyBuddy();
       case 'settings':
         return renderSettings();
       default:
@@ -963,6 +1708,8 @@ export default function DashboardPage() {
     setChatMessages([]);
   };
 
+
+
   const sendMessage = async (message: string) => {
     if (!message.trim() || isChatLoading) return;
 
@@ -979,56 +1726,39 @@ export default function DashboardPage() {
     try {
       const sessionId = initializeChatSession();
       
-      const response = await fetch('/api/ai-chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ message, conversation_id: currentConversationId, session_id: sessionId }),
+      const requestBody = { 
+        message, 
+        conversation_id: currentConversationId, 
+        session_id: sessionId 
+      };
+      
+            const { data: { session } } = await supabase.auth.getSession();
+      
+      const { data, error } = await supabase.functions.invoke('ai-chat', {
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+        body: requestBody,
       });
 
-      if (!response.ok || !response.body) {
-        throw new Error('Failed to get response from server.');
+      if (error) {
+        throw new Error(error.message || 'Failed to get AI response.');
+      }
+
+      // Handle the response from Supabase Edge Function (non-streaming)
+      setChatMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: data.response || 'No response received.' 
+      }]);
+
+      // Update conversation ID if provided
+      if (data.conversation_id && !currentConversationId) {
+        setCurrentConversationId(data.conversation_id);
       }
       
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let fullResponse = '';
-      
-      setChatMessages(prev => [...prev, { role: 'assistant', content: '' }]);
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6);
-            if (data === '[DONE]') break;
-            try {
-              const parsed = JSON.parse(data);
-              if(parsed.type === 'content') {
-                fullResponse += parsed.content;
-                setChatMessages(prev => {
-                  const newMessages = [...prev];
-                  if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === 'assistant') {
-                    newMessages[newMessages.length - 1].content = fullResponse;
-                  }
-                  return newMessages;
-                });
-              } else if (parsed.type === 'done') {
-                if (parsed.conversation_id && !currentConversationId) {
-                  setCurrentConversationId(parsed.conversation_id);
-                }
-                if (parsed.is_new_session) {
-                  loadChatHistory();
-                }
-              }
-            } catch (e) { /* Ignore parsing errors */ }
-          }
-        }
+      // Refresh chat history if new session
+      if (data.is_new_session) {
+        loadChatHistory();
       }
     } catch (error: any) {
       console.error('Error sending message:', error);
@@ -1094,6 +1824,78 @@ export default function DashboardPage() {
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
     return `${Math.floor(diffInSeconds / 86400)}d ago`;
+  };
+
+  const checkProduct = async () => {
+    if (!productUrl) return;
+    setIsCheckingProduct(true);
+    setProductAnalysis(null);
+    setProductCheckError(null);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const { data, error } = await supabase.functions.invoke('check-product', {
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+        body: { productUrl },
+      });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Failed to check product.');
+      }
+
+      setProductAnalysis(data);
+      // Refresh history after successful check
+      if (showArchive) {
+        loadProductHistory();
+      }
+    } catch (error: any) {
+      setProductCheckError(error.message);
+    } finally {
+      setIsCheckingProduct(false);
+    }
+  };
+
+  const loadProductHistory = async () => {
+    if (!user) return;
+    setIsLoadingHistory(true);
+    try {
+      const { data, error } = await supabase
+        .from('product_check_history')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) {
+        console.error('Error loading product history:', error);
+        console.error('Error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+        setProductHistory([]);
+      } else {
+        setProductHistory(data || []);
+        console.log('Loaded product history:', data?.length || 0, 'items');
+      }
+    } catch (error) {
+      console.error('Failed to load product history:', error);
+      setProductHistory([]);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  const toggleArchive = () => {
+    setShowArchive(!showArchive);
+    if (!showArchive && productHistory.length === 0) {
+      loadProductHistory();
+    }
   };
 
   return (

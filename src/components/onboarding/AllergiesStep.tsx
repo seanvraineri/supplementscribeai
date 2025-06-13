@@ -120,7 +120,11 @@ const HealthProfileSection: React.FC<HealthProfileSectionProps> = ({ name, title
                     <FormLabel className={index !== 0 ? "sr-only" : ""}>Custom {title}</FormLabel>
                     <div className="flex items-center gap-2">
                       <FormControl>
-                        <Input {...field} placeholder={placeholder} />
+                        <Input 
+                          {...field} 
+                          placeholder={placeholder}
+                          className="h-14 px-6 text-lg bg-white/50 backdrop-blur-sm border-2 border-gray-200 rounded-2xl focus:border-[#7DE1F4] focus:ring-4 focus:ring-[#7DE1F4]/20 transition-all duration-300 placeholder:text-gray-400 hover:border-gray-300 text-gray-900"
+                        />
                       </FormControl>
                       <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
                         <XCircle className="h-5 w-5" />

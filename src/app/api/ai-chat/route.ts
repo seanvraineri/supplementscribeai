@@ -304,7 +304,7 @@ async function buildHealthContext(supabase: any, userId: string): Promise<string
       supabase.from('user_conditions').select('condition_name').eq('user_id', userId).limit(20),
       supabase.from('user_medications').select('medication_name').eq('user_id', userId).limit(20),
       supabase.from('user_biomarkers').select('marker_name, value, unit').eq('user_id', userId).limit(50),
-      supabase.from('user_snps').select('snp_id, gene_name, genotype, allele').eq('user_id', userId).limit(100),
+      supabase.from('user_snps').select('*').eq('user_id', userId).limit(100),
       supabase.from('supplement_plans').select('plan_details').eq('user_id', userId).order('created_at', { ascending: false }).limit(1).single()
     ]);
 
@@ -351,21 +351,43 @@ async function buildHealthContext(supabase: any, userId: string): Promise<string
       if (keyBiomarkers) parts.push(`**KEY BIOMARKERS**: ${keyBiomarkers}`);
     }
 
-    // All genetic variants (up to 30 most important)
+    // All genetic variants with manual joining (up to 30 most important)
     if (snps?.length > 0) {
+      // Fetch supported SNPs data for manual joining
+      const { data: allSupportedSnps } = await supabase
+        .from('supported_snps')
+        .select('id, rsid, gene');
+      
+      // Create lookup map
+      const snpLookup = new Map();
+      if (allSupportedSnps) {
+        allSupportedSnps.forEach((snp: any) => {
+          snpLookup.set(snp.id, { rsid: snp.rsid, gene: snp.gene });
+        });
+      }
+
+      // Enrich SNPs with gene data
+      const enrichedSnps = snps.map((userSnp: any) => ({
+        ...userSnp,
+        supported_snps: snpLookup.get(userSnp.supported_snp_id) || null
+      }));
+
       // Group by gene for better organization
       const geneGroups: { [key: string]: any[] } = {};
-      snps.forEach((snp: any) => {
-        if (!geneGroups[snp.gene_name]) {
-          geneGroups[snp.gene_name] = [];
+      enrichedSnps.forEach((snp: any) => {
+        const geneName = snp.supported_snps?.gene || 'Unknown';
+        if (!geneGroups[geneName]) {
+          geneGroups[geneName] = [];
         }
-        geneGroups[snp.gene_name].push(snp);
+        geneGroups[geneName].push(snp);
       });
 
       const formattedGenetics = Object.entries(geneGroups)
+        .slice(0, 15) // Limit to first 15 genes to avoid token overflow
         .map(([geneName, variants]) => {
           const variantList = variants
-            .map((v: any) => `${v.snp_id}: **${v.genotype || v.allele}**`)
+            .slice(0, 3) // Limit variants per gene
+            .map((v: any) => `${v.supported_snps?.rsid || 'Unknown'}: **${v.genotype || 'Unknown'}**`)
             .join(', ');
           return `**${geneName}**: ${variantList}`;
         })
