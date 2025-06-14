@@ -12,12 +12,35 @@ module.exports = {
   theme: {
     container: {
       center: true,
-      padding: "2rem",
+      padding: {
+        DEFAULT: "1rem", // px-4
+        sm: "1.5rem",    // px-6
+        md: "3rem",      // px-12
+      },
       screens: {
-        "2xl": "1400px",
+        "sm": "640px",
+        "md": "768px", 
+        "lg": "1024px",
+        "xl": "1200px", // Max 1200px
+        "2xl": "1200px", // Keep at 1200px
       },
     },
     extend: {
+      fontSize: {
+        'xs': ['12px', { lineHeight: '1.4' }],
+        'sm': ['14px', { lineHeight: '1.4' }], 
+        'base': ['16px', { lineHeight: '1.5' }],
+        'lg': ['18px', { lineHeight: '1.5' }],
+        'xl': ['24px', { lineHeight: '1.4' }],
+        '2xl': ['32px', { lineHeight: '1.3' }],
+        '3xl': ['48px', { lineHeight: '1.2' }],
+        '4xl': ['64px', { lineHeight: '1.1' }],
+        // Keep existing responsive sizes for compatibility
+        '5xl': ['48px', { lineHeight: '1.2' }],
+        '6xl': ['64px', { lineHeight: '1.1' }],
+        '7xl': ['72px', { lineHeight: '1.1' }],
+        '8xl': ['96px', { lineHeight: '1.1' }],
+      },
       colors: {
         brand: {
           white: '#FAFAFA',
@@ -126,7 +149,7 @@ module.exports = {
           '0%': { transform: 'translateX(-100%)', opacity: '0' },
           '50%': { opacity: '1' },
           '100%': { transform: 'translateX(100%)', opacity: '0' },
-        },
+        }
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",

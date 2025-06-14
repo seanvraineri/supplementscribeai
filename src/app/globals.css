@@ -116,6 +116,44 @@
   .backdrop-blur-xs {
     backdrop-filter: blur(2px);
   }
+
+  /* Mobile tap states */
+  .tap-highlight-none {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+
+  /* Enhanced mobile interactions */
+  @media (hover: none) and (pointer: coarse) {
+    .mobile-tap:active {
+      transform: scale(0.95);
+      transition: transform 0.1s ease-in-out;
+    }
+    
+    .mobile-tap-subtle:active {
+      opacity: 0.7;
+      transition: opacity 0.1s ease-in-out;
+    }
+  }
+
+  /* Skeleton loading animation */
+  .skeleton {
+    background: linear-gradient(90deg, #333333 25%, #404040 50%, #333333 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+  }
+
+  @keyframes skeleton-loading {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
 }
 
 @keyframes fadeInUp {

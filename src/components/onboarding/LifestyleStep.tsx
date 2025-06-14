@@ -16,9 +16,9 @@ export function LifestyleStep() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h3 className="text-lg font-medium">Lifestyle</h3>
-        <p className="text-sm text-muted-foreground">
+      <div className="text-center">
+        <h3 className="text-3xl font-bold text-dark-primary mb-3 tracking-tight">Lifestyle</h3>
+        <p className="text-lg text-dark-secondary font-medium">
           Tell us a bit about your lifestyle.
         </p>
       </div>
@@ -27,8 +27,8 @@ export function LifestyleStep() {
         control={form.control}
         name="activity_level"
         render={({ field }) => (
-          <FormItem className="space-y-3">
-            <FormLabel className="text-lg font-semibold text-gray-800">Your activity level (1 = sedentary, 5 = very active)</FormLabel>
+          <FormItem className="space-y-4">
+            <FormLabel className="text-lg font-semibold text-dark-primary">Your activity level (1 = sedentary, 5 = very active)</FormLabel>
             <FormControl>
                 <RadioGroup
                     onValueChange={field.onChange}
@@ -38,9 +38,9 @@ export function LifestyleStep() {
                   {["1","2","3","4","5"].map((val)=> (
                     <FormItem key={val} className="h-full">
                       <FormControl>
-                        <label className={`group cursor-pointer flex items-center justify-center h-20 rounded-2xl border-2 transition-all duration-300 hover:shadow-lg ${field.value===val ? 'border-[#7DE1F4] bg-gradient-to-br from-[#7DE1F4]/10 to-[#86A8E7]/10 shadow-lg':'border-gray-200 bg-white/60 hover:border-gray-300'}` }>
+                        <label className={`group cursor-pointer flex items-center justify-center h-20 rounded-2xl border-2 transition-all duration-300 hover:shadow-lg ${field.value===val ? 'border-dark-accent bg-dark-accent/10 shadow-lg':'border-dark-border bg-dark-background hover:border-dark-accent/50'}` }>
                           <RadioGroupItem value={val} className="hidden" />
-                          <span className="text-2xl font-bold text-gray-800 group-hover:text-gray-900 select-none">{val}</span>
+                          <span className="text-2xl font-bold text-dark-primary group-hover:text-dark-primary select-none">{val}</span>
                         </label>
                       </FormControl>
                     </FormItem>
@@ -57,16 +57,16 @@ export function LifestyleStep() {
         name="sleep_hours"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>On average, how many hours do you sleep per night?</FormLabel>
+            <FormLabel className="text-lg font-semibold text-dark-primary">On average, how many hours do you sleep per night?</FormLabel>
             <FormControl>
               <div className="relative">
                 <Input 
                   type="number" 
                   {...field} 
                   placeholder="e.g., 7" 
-                  className="h-14 px-6 pr-14 text-lg bg-white/60 backdrop-blur-sm border-2 border-gray-200 rounded-2xl focus:border-[#7DE1F4] focus:ring-4 focus:ring-[#7DE1F4]/20 transition-all duration-300 placeholder:text-gray-400 hover:border-gray-300"
+                  className="h-14 px-6 pr-14 text-lg bg-dark-background border-2 border-dark-border rounded-2xl focus:border-dark-accent focus:ring-4 focus:ring-dark-accent/20 transition-all duration-300 placeholder:text-dark-secondary/60 hover:border-dark-accent/50 text-dark-primary"
                 />
-                <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">hrs</span>
+                <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-dark-secondary font-medium">hrs</span>
               </div>
             </FormControl>
             <FormMessage />
@@ -78,8 +78,8 @@ export function LifestyleStep() {
         control={form.control}
         name="alcohol_intake"
         render={({ field }) => (
-          <FormItem className="space-y-3">
-            <FormLabel>How many alcoholic beverages do you consume per week?</FormLabel>
+          <FormItem className="space-y-4">
+            <FormLabel className="text-lg font-semibold text-dark-primary">How many alcoholic beverages do you consume per week?</FormLabel>
             <FormControl>
               <RadioGroup
                 onValueChange={field.onChange}
@@ -94,9 +94,9 @@ export function LifestyleStep() {
                 ].map(({val,label})=>(
                   <FormItem key={val} className="h-full">
                     <FormControl>
-                      <label className={`group cursor-pointer flex items-center justify-center h-14 rounded-2xl border-2 transition-all duration-300 hover:shadow-md ${field.value===val?'border-[#7DE1F4] bg-gradient-to-br from-[#7DE1F4]/10 to-[#86A8E7]/10 shadow-md':'border-gray-200 bg-white/60 hover:border-gray-300'}` }>
+                      <label className={`group cursor-pointer flex items-center justify-center h-14 rounded-2xl border-2 transition-all duration-300 hover:shadow-md ${field.value===val?'border-dark-accent bg-dark-accent/10 shadow-md':'border-dark-border bg-dark-background hover:border-dark-accent/50'}` }>
                         <RadioGroupItem value={val} className="hidden" />
-                        <span className="text-base font-semibold text-gray-800 group-hover:text-gray-900 select-none">{label}</span>
+                        <span className="text-base font-semibold text-dark-primary group-hover:text-dark-primary select-none">{label}</span>
                       </label>
                     </FormControl>
                   </FormItem>

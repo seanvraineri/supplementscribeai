@@ -1011,7 +1011,7 @@ export default function DashboardPage() {
                     <button
                       key={i}
                       onClick={() => logSymptom(symptom.name, i + 1)}
-                      className={`h-7 rounded text-xs font-mono transition-colors ${symptomRatings[symptom.name] === i + 1 ? 'bg-dark-accent text-white' : 'bg-dark-border hover:bg-dark-accent/50'}`}
+                      className={`h-11 rounded text-xs font-mono transition-colors active:scale-95 transition-transform duration-150 ${symptomRatings[symptom.name] === i + 1 ? 'bg-dark-accent text-white' : 'bg-dark-border hover:bg-dark-accent/50'}`}
                     >
                       {i + 1}
                     </button>
@@ -1966,7 +1966,7 @@ export default function DashboardPage() {
 
             {/* Main Content */}
             <main className="flex-1 overflow-auto">
-              <div className="p-8">
+              <div className="container mx-auto">
                 {renderContent()}
               </div>
             </main>

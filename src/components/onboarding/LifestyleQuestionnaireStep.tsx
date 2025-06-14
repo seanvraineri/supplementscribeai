@@ -39,14 +39,14 @@ function CardRadioGroup({ fieldName, options, question, stepId }: CardRadioProps
 
   return (
     <div className="space-y-6" data-step={stepId}>
-      <FormLabel className="text-lg font-semibold text-gray-800">{question}</FormLabel>
+      <FormLabel className="text-lg font-semibold text-dark-primary">{question}</FormLabel>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
         {options.map(opt=>{
           const selected = current===opt.value;
           return (
             <button type="button" key={opt.value} onClick={()=>handleSelect(opt.value)}
-              className={`group w-full flex items-center justify-center h-16 rounded-2xl border-2 transition-all duration-300 text-center px-4 leading-snug ${selected?'border-[#86A8E7] bg-gradient-to-br from-[#86A8E7]/10 to-[#C29FFF]/10 shadow-md':'border-gray-200 bg-white/60 hover:border-gray-300'}`}> 
-              <span className="text-sm font-semibold text-gray-800 group-hover:text-gray-900 select-none">{opt.label}</span>
+              className={`group w-full flex items-center justify-center h-16 rounded-2xl border-2 transition-all duration-300 text-center px-4 leading-snug ${selected?'border-dark-accent bg-dark-accent/10 shadow-md':'border-dark-border bg-dark-background hover:border-dark-accent/50'}`}> 
+              <span className="text-sm font-semibold text-dark-primary group-hover:text-dark-primary select-none">{opt.label}</span>
             </button>
           );
         })}
@@ -61,8 +61,8 @@ export function LifestyleQuestionnaireStep() {
   return (
     <div className="space-y-10">
       <div className="text-center">
-        <h3 className="text-3xl font-bold text-gray-900 mb-3 tracking-tight">Lifestyle Assessment</h3>
-        <p className="text-lg text-gray-600 font-light">
+        <h3 className="text-3xl font-bold text-dark-primary mb-3 tracking-tight">Lifestyle Assessment</h3>
+        <p className="text-lg text-dark-secondary font-medium">
           This helps us create a more precise supplement plan for you
         </p>
       </div>
@@ -110,8 +110,8 @@ export function LifestyleQuestionnaireStep() {
           control={form.control}
           name="brain_fog"
           render={({ field }) => (
-            <FormItem className="space-y-3">
-              <FormLabel>Do you struggle with brain fog or difficulty concentrating?</FormLabel>
+            <FormItem className="space-y-4">
+              <FormLabel className="text-lg font-semibold text-dark-primary">Do you struggle with brain fog or difficulty concentrating?</FormLabel>
               <FormControl>
                 <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-2 gap-4">
                   {[
@@ -122,9 +122,9 @@ export function LifestyleQuestionnaireStep() {
                   ].map(opt => (
                     <FormItem key={opt.value} className="h-full">
                       <FormControl>
-                        <label className={`group cursor-pointer flex items-center justify-center h-16 rounded-2xl border-2 transition-all duration-300 hover:shadow-md ${field.value===opt.value ? 'border-[#86A8E7] bg-gradient-to-br from-[#86A8E7]/10 to-[#C29FFF]/10 shadow-md' : 'border-gray-200 bg-white/60 hover:border-gray-300'}` }>
+                        <label className={`group cursor-pointer flex items-center justify-center h-16 rounded-2xl border-2 transition-all duration-300 hover:shadow-md ${field.value===opt.value ? 'border-dark-accent bg-dark-accent/10 shadow-md' : 'border-dark-border bg-dark-background hover:border-dark-accent/50'}` }>
                           <RadioGroupItem value={opt.value} className="hidden" />
-                          <span className="text-sm font-semibold text-gray-800 group-hover:text-gray-900 select-none text-center px-2 leading-snug">{opt.label}</span>
+                          <span className="text-sm font-semibold text-dark-primary group-hover:text-dark-primary select-none text-center px-2 leading-snug">{opt.label}</span>
                         </label>
                       </FormControl>
                     </FormItem>
@@ -203,7 +203,7 @@ export function LifestyleQuestionnaireStep() {
           name="low_nutrients"
           render={({ field }) => (
             <FormItem className="space-y-6">
-              <FormLabel className="text-lg font-semibold text-gray-800">Are you aware of any low nutrient levels (e.g., Vitamin D, B12)?</FormLabel>
+              <FormLabel className="text-lg font-semibold text-dark-primary">Are you aware of any low nutrient levels (e.g., Vitamin D, B12)?</FormLabel>
               <div className="flex flex-wrap gap-3">
                 {lowNutrientOptions.map(opt=>{
                   const selected = field.value?.includes(opt.id);
@@ -222,8 +222,8 @@ export function LifestyleQuestionnaireStep() {
                   };
                   return (
                     <button key={opt.id} type="button" onClick={handleClick}
-                      className={`px-5 py-3 rounded-full border-2 transition-all duration-300 text-sm font-medium select-none ${selected?'border-[#7DE1F4] bg-gradient-to-br from-[#7DE1F4]/10 to-[#86A8E7]/10 shadow':'border-gray-200 bg-white/60 hover:border-gray-300'}`}> 
-                      {opt.label}
+                      className={`px-5 py-3 rounded-full border-2 transition-all duration-300 text-sm font-medium select-none ${selected?'border-dark-accent bg-dark-accent/10 shadow':'border-dark-border bg-dark-background hover:border-dark-accent/50'}`}> 
+                      <span className="text-dark-primary">{opt.label}</span>
                     </button>
                   )
                 })}

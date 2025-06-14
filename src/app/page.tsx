@@ -1,7 +1,7 @@
 'use client'
 
 import { motion, Variants } from 'framer-motion';
-import { CheckCircle, ChevronsRight, ChevronDown } from 'lucide-react';
+import { CheckCircle, ChevronsRight, ChevronDown, LogIn, Database, Users, Brain, Dna, HeartHandshake, Microscope } from 'lucide-react';
 import { Disclosure } from '@headlessui/react';
 import Link from 'next/link';
 import { SVGProps } from 'react';
@@ -35,6 +35,40 @@ const DashboardGradient = () => (
   </div>
 );
 
+// Navigation Component
+const Navigation = () => (
+  <nav className="fixed top-0 left-0 right-0 z-50 bg-dark-background/80 backdrop-blur-md border-b border-dark-border">
+    <div className="container mx-auto px-6 max-w-6xl">
+      <div className="flex items-center justify-between h-16">
+        <Link href="/" className="text-xl font-bold text-dark-primary tracking-tight">
+          SupplementScribe
+        </Link>
+        <div className="flex items-center gap-6">
+          <Link href="/how-it-works" className="text-dark-secondary hover:text-dark-primary transition-colors">
+            How It Works
+          </Link>
+          <Link href="/for-everyone" className="text-dark-secondary hover:text-dark-primary transition-colors">
+            For Everyone
+          </Link>
+          <Link href="/science" className="text-dark-secondary hover:text-dark-primary transition-colors">
+            Science
+          </Link>
+          <Link href="/login">
+            <button className="inline-flex items-center px-4 py-2 text-sm font-medium text-dark-secondary hover:text-dark-primary border border-dark-border rounded-lg hover:border-dark-accent transition-all duration-200">
+              <LogIn className="w-4 h-4 mr-2" />
+              Log In
+            </button>
+          </Link>
+          <Link href="/auth/signup">
+            <button className="inline-flex items-center px-4 py-2 text-sm font-bold text-dark-background bg-dark-accent rounded-lg hover:bg-dark-accent/90 transition-all duration-200">
+              Get Started
+            </button>
+          </Link>
+        </div>
+      </div>
+    </div>
+  </nav>
+);
 
 // Updated icons for the dark theme
 const AnalyzeIcon = (props: SVGProps<SVGSVGElement>) => (
@@ -89,6 +123,7 @@ export default function HomePage() {
 
   return (
     <main className="bg-dark-background text-dark-primary font-sans overflow-x-hidden">
+      <Navigation />
       <DashboardGradient />
       
       {/* Hero Section */}
@@ -144,6 +179,69 @@ export default function HomePage() {
             </Link>
           </motion.div>
         </motion.div>
+      </section>
+
+      {/* Learn More Navigation */}
+      <section className="py-16 bg-dark-panel/30 border-t border-dark-border">
+        <div className="container mx-auto px-6 max-w-6xl">
+          <motion.div 
+            className="text-center mb-12"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-3xl font-bold mb-4 text-dark-primary">Learn More</h2>
+            <p className="text-dark-secondary max-w-2xl mx-auto">
+              Discover how personalized nutrition can work for you
+            </p>
+          </motion.div>
+          
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                title: "How It Works",
+                description: "Understanding the science behind personalized nutrition and why your biology matters",
+                href: "/how-it-works",
+                icon: <Dna className="w-8 h-8 text-dark-accent" />
+              },
+              {
+                title: "For Everyone",
+                description: "How everyday people benefit from personalized nutrition without being health experts",
+                href: "/for-everyone", 
+                icon: <HeartHandshake className="w-8 h-8 text-dark-accent" />
+              },
+              {
+                title: "The Science",
+                description: "Research evidence and genetic variations that influence your nutritional needs",
+                href: "/science",
+                icon: <Microscope className="w-8 h-8 text-dark-accent" />
+              }
+            ].map((item, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                viewport={{ once: true }}
+              >
+                <Link href={item.href}>
+                  <div className="group bg-dark-panel border border-dark-border rounded-2xl p-8 text-center hover:border-dark-accent transition-all duration-300 cursor-pointer h-full">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-dark-accent/10 rounded-2xl mb-6">
+                      {item.icon}
+                    </div>
+                    <h3 className="text-xl font-bold mb-4 text-dark-primary group-hover:text-dark-accent transition-colors">
+                      {item.title}
+                    </h3>
+                    <p className="text-dark-secondary leading-relaxed">
+                      {item.description}
+                    </p>
+                  </div>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+        </div>
       </section>
 
       {/* How It Works Section */}
