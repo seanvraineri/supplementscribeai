@@ -119,57 +119,57 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 flex items-center justify-center p-4 font-sans antialiased">
+    <div className="min-h-screen bg-dark-background flex items-center justify-center p-4 font-sans antialiased">
       {/* Background Elements */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-white to-blue-50/30"></div>
-      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-blue-200/50 to-transparent"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-dark-background via-dark-panel/20 to-dark-background"></div>
+      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-dark-accent/30 to-transparent"></div>
       
       <FormProvider {...form}>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="relative bg-white/80 backdrop-blur-sm p-10 rounded-3xl shadow-2xl border border-gray-100/50 w-full max-w-3xl">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="relative bg-dark-panel border border-dark-border backdrop-blur-sm p-10 rounded-3xl shadow-2xl w-full max-w-4xl">
             {/* Header */}
             <div className="text-center mb-10">
-              <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4 tracking-tight">
+              <h1 className="text-4xl lg:text-5xl font-bold text-dark-primary mb-4 tracking-tight">
                 Your Health Profile
               </h1>
-              <p className="text-lg text-gray-600 font-light">
+              <p className="text-lg text-dark-secondary font-medium">
                 Step {validStep} of {totalSteps} • Let's personalize your supplement plan
               </p>
             </div>
             
             {/* Progress Bar */}
-            <div className="relative w-full bg-gray-100 rounded-full h-3 mb-12 overflow-hidden">
+            <div className="relative w-full bg-dark-border rounded-full h-3 mb-12 overflow-hidden">
               <div 
-                className="absolute top-0 left-0 h-full bg-gradient-to-r from-[#7DE1F4] to-[#86A8E7] rounded-full transition-all duration-700 ease-out shadow-lg"
+                className="absolute top-0 left-0 h-full bg-gradient-to-r from-dark-accent to-dark-accent/80 rounded-full transition-all duration-700 ease-out shadow-lg"
                 style={{ width: `${(validStep / totalSteps) * 100}%` }}
               >
-                <div className="absolute inset-0 bg-white/20 rounded-full animate-pulse"></div>
+                <div className="absolute inset-0 bg-white/10 rounded-full animate-pulse"></div>
               </div>
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent rounded-full"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent rounded-full"></div>
             </div>
 
             {/* Step Content */}
-            <div className="min-h-[400px]">
+            <div className="min-h-[500px]">
               <CurrentStepComponent onNext={() => setStep(s => Math.min(s + 1, totalSteps))} />
             </div>
 
             {/* Skip optional link */}
             {validStep === 5 && (
-              <div className="text-right mt-4">
-                <button type="button" className="text-sm text-gray-500 hover:text-gray-700 underline" onClick={() => setStep(Math.min(step + 1, totalSteps))}>
+              <div className="text-right mt-6">
+                <button type="button" className="text-sm text-dark-secondary hover:text-dark-primary underline transition-colors" onClick={() => setStep(Math.min(step + 1, totalSteps))}>
                   Skip this step
                 </button>
               </div>
             )}
 
             {/* Navigation */}
-            <div className="flex justify-between items-center mt-12 pt-8 border-t border-gray-100">
+            <div className="flex justify-between items-center mt-12 pt-8 border-t border-dark-border">
               {validStep > 1 ? (
                 <button
                   type="button"
                   onClick={prevStep}
                   disabled={isSubmitting}
-                  className="group inline-flex items-center px-6 py-3 rounded-full text-gray-600 hover:text-gray-900 font-medium transition-all duration-300 hover:bg-gray-50 disabled:opacity-50"
+                  className="group inline-flex items-center px-6 py-3 rounded-full text-dark-secondary hover:text-dark-primary font-semibold transition-all duration-300 hover:bg-dark-border disabled:opacity-50"
                 >
                   <svg className="w-5 h-5 mr-2 transform group-hover:-translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
@@ -184,10 +184,9 @@ export default function OnboardingPage() {
                 <button
                   type="button"
                   onClick={nextStep}
-                  className="group inline-flex items-center bg-gradient-to-r from-[#7DE1F4] to-[#86A8E7] text-white px-8 py-4 rounded-full font-semibold hover:shadow-2xl transition-all duration-500 transform hover:scale-105 shadow-lg hover:shadow-[#7DE1F4]/25 relative overflow-hidden"
+                  className="group inline-flex items-center bg-dark-accent text-dark-background px-8 py-4 rounded-full font-semibold hover:bg-dark-accent/90 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-dark-accent/25 relative overflow-hidden"
                 >
                   <span className="relative z-10">Continue</span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-[#86A8E7] to-[#C29FFF] opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                   <svg className="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-300 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
                   </svg>
@@ -196,13 +195,13 @@ export default function OnboardingPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="group inline-flex items-center bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-8 py-4 rounded-full font-semibold hover:shadow-2xl transition-all duration-500 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
+                  className="group inline-flex items-center bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-4 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
                 >
                   <span className="relative z-10">
                     {isSubmitting ? 'Creating Your Plan...' : 'Complete Profile'}
                   </span>
                   {isSubmitting && (
-                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-teal-700 animate-pulse"></div>
+                    <div className="absolute inset-0 bg-emerald-600 animate-pulse"></div>
                   )}
                   {!isSubmitting && (
                     <svg className="w-5 h-5 ml-2 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">

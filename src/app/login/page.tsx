@@ -1,103 +1,115 @@
 'use client'
 
+import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
-import React, { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
-import AuthDebugger from '@/components/AuthDebugger'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
   const supabase = createClient()
 
-  const handleSignIn = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    setLoading(true)
     setMessage('')
-    setIsLoading(true)
-    console.log('Attempting to sign in user:', email)
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-    
-    setIsLoading(false)
-    
-    if (!error) {
-      console.log('Sign in successful for:', email, 'Redirecting to onboarding.')
-      router.push('/onboarding')
-    } else {
-      console.error('Sign in error:', error.message)
-      setMessage(`Sign in failed: ${error.message}`)
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+
+      if (error) {
+        setMessage(error.message)
+      } else {
+        setMessage('Login successful! Redirecting...')
+        // Redirect will happen automatically via middleware
+        window.location.href = '/dashboard'
+      }
+    } catch (error) {
+      setMessage('An unexpected error occurred')
+    } finally {
+      setLoading(false)
     }
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen py-2 bg-gray-50">
-      <main className="flex flex-col items-center justify-center flex-1 px-6 text-center">
-        <div className="w-full max-w-md space-y-8">
-          <div>
-            <h1 className="text-4xl font-bold mb-2">
-              Welcome back to <span className="text-blue-600">SupplementScribe</span>
-            </h1>
-            <p className="text-gray-600 mb-8">
-              Sign in to access your personalized supplement recommendations
-            </p>
-          </div>
-
-          <form onSubmit={handleSignIn} className="space-y-4">
-            <div>
-              <input
+    <div className="min-h-screen flex items-center justify-center bg-dark-background p-4">
+      {/* Background gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-dark-background via-dark-panel/20 to-dark-background"></div>
+      
+      <Card className="w-full max-w-md relative z-10 bg-dark-panel border-dark-border shadow-2xl">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-3xl font-bold text-dark-primary tracking-tight">Welcome Back</CardTitle>
+          <CardDescription className="text-dark-secondary text-lg">
+            Sign in to your SupplementScribe account
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div className="space-y-2">
+              <label htmlFor="email" className="text-sm font-semibold text-dark-primary tracking-wide">
+                Email Address
+              </label>
+              <Input
+                id="email"
                 type="email"
-                name="email"
+                placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email address"
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="h-12 px-4 text-base bg-dark-background border-dark-border text-dark-primary placeholder:text-dark-secondary/60 focus:border-dark-accent focus:ring-2 focus:ring-dark-accent/20 transition-all duration-200"
               />
             </div>
-            <div>
-              <input
+            <div className="space-y-2">
+              <label htmlFor="password" className="text-sm font-semibold text-dark-primary tracking-wide">
+                Password
+              </label>
+              <Input
+                id="password"
                 type="password"
-                name="password"
+                placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="h-12 px-4 text-base bg-dark-background border-dark-border text-dark-primary placeholder:text-dark-secondary/60 focus:border-dark-accent focus:ring-2 focus:ring-dark-accent/20 transition-all duration-200"
               />
             </div>
-
-            {message && (
-              <div className="p-3 rounded-lg text-sm bg-red-100 text-red-700">
-                {message}
-              </div>
-            )}
-
-            <button 
+            <Button 
               type="submit" 
-              disabled={isLoading}
-              className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:bg-blue-400 transition-colors duration-300"
+              className="w-full h-12 text-base font-semibold bg-dark-accent hover:bg-dark-accent/90 text-dark-background transition-all duration-200" 
+              disabled={loading}
             >
-              {isLoading ? 'Signing In...' : 'Sign In'}
-            </button>
+              {loading ? 'Signing in...' : 'Sign In'}
+            </Button>
           </form>
+          
+          {message && (
+            <div className={`p-4 rounded-lg text-sm font-medium ${
+              message.includes('successful') 
+                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                : 'bg-red-500/10 text-red-400 border border-red-500/20'
+            }`}>
+              {message}
+            </div>
+          )}
 
-          <div className="text-center">
-            <p className="text-gray-600">
+          <div className="text-center pt-4 border-t border-dark-border">
+            <p className="text-sm text-dark-secondary">
               Don't have an account?{' '}
-              <Link href="/auth/signup" className="text-blue-600 hover:text-blue-700 font-semibold">
-                Get started here
+              <Link href="/auth/signup" className="font-semibold text-dark-accent hover:text-dark-accent/80 transition-colors">
+                Sign up
               </Link>
             </p>
           </div>
-        </div>
-      </main>
-      <AuthDebugger />
+        </CardContent>
+      </Card>
     </div>
   )
 } 

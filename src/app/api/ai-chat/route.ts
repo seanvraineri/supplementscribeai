@@ -1,38 +1,35 @@
 import { createClient } from '@/lib/supabase/server';
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
-    // Debug: Log cookies
+    // Get cookies from request
     const cookies = request.headers.get('cookie');
-    console.log('Received cookies:', cookies ? 'Present' : 'None');
     
+    // Create Supabase client with cookies
     const supabase = await createClient();
     
-    // Verify the user is authenticated
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      console.error('Authentication failed:', authError);
-      console.log('Available cookies:', cookies?.substring(0, 100) + '...' || 'None');
-      return new Response(JSON.stringify({ 
-        error: 'Authentication failed',
-        details: authError?.message || 'No user found'
-      }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' }
-      });
+    // Get the current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user) {
+      console.error('Authentication failed in ai-chat route');
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
     }
 
     console.log('User authenticated:', user.id);
 
-    // Parse the request body to get message and conversation_id
+    // Parse the request body
     const { message, conversation_id, session_id } = await request.json();
     
     if (!message) {
-      return new Response(JSON.stringify({ error: 'Message is required' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return NextResponse.json(
+        { error: 'Message is required' },
+        { status: 400 }
+      );
     }
 
     const userId = user.id;
@@ -69,10 +66,10 @@ export async function POST(request: NextRequest) {
       
       if (convError) {
         console.error('Error creating conversation:', convError);
-        return new Response(JSON.stringify({ error: 'Failed to create conversation' }), {
-          status: 500,
-          headers: { 'Content-Type': 'application/json' }
-        });
+        return NextResponse.json(
+          { error: 'Failed to create conversation' },
+          { status: 500 }
+        );
       }
       
       currentConversationId = newConversation.id;
@@ -279,12 +276,10 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('API route error:', error);
-    return new Response(JSON.stringify({ 
-      error: error.message || 'Internal server error' 
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return NextResponse.json(
+      { error: error.message || 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
 

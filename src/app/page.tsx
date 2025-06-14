@@ -5,6 +5,7 @@ import { CheckCircle, ChevronsRight, ChevronDown } from 'lucide-react';
 import { Disclosure } from '@headlessui/react';
 import Link from 'next/link';
 import { SVGProps } from 'react';
+import BackgroundAnimation from '@/components/BackgroundAnimation';
 
 // Re-using the dark, animated gradient from the dashboard for a consistent theme
 const DashboardGradient = () => (
@@ -92,6 +93,7 @@ export default function HomePage() {
       
       {/* Hero Section */}
       <section className="min-h-screen relative flex items-center justify-center pt-32 pb-24">
+        <BackgroundAnimation />
         <motion.div 
           className="container mx-auto px-4 z-10 text-center"
           initial="hidden"

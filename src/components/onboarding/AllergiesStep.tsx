@@ -70,35 +70,35 @@ const HealthProfileSection: React.FC<HealthProfileSectionProps> = ({ name, title
   }
 
   return (
-    <div className="space-y-8 bg-white/70 backdrop-blur-sm border border-gray-100/60 rounded-3xl p-8 shadow-lg">
+    <div className="space-y-8 bg-dark-panel/50 border border-dark-border rounded-3xl p-8 shadow-lg">
       {/* Header */}
       <div className="text-center">
-        <h3 className="text-2xl font-bold text-gray-900 mb-2 tracking-tight">{title}</h3>
-        <p className="text-sm text-gray-600 font-light">{description}</p>
+        <h3 className="text-2xl font-bold text-dark-primary mb-2 tracking-tight">{title}</h3>
+        <p className="text-sm text-dark-secondary font-medium">{description}</p>
       </div>
 
       {/* None checkbox */}
-      <label className={`group relative flex items-center p-4 rounded-2xl border-2 cursor-pointer transition-all duration-300 hover:shadow-md ${hasNone ? 'border-emerald-400 bg-gradient-to-br from-emerald-100/60 to-emerald-50/60 shadow-md' : 'border-gray-200 bg-white/80 hover:border-gray-300'}` }>
+      <label className={`group relative flex items-center p-4 rounded-2xl border-2 cursor-pointer transition-all duration-300 hover:shadow-md ${hasNone ? 'border-emerald-400 bg-emerald-500/10 shadow-md' : 'border-dark-border bg-dark-background hover:border-dark-accent/50'}` }>
         <Checkbox
           checked={hasNone}
           onCheckedChange={handleNoneChange}
           className="mr-4 w-6 h-6 rounded-lg border-2 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
         />
-        <span className="text-base font-semibold text-gray-800">I have no {title.toLowerCase()}</span>
+        <span className="text-base font-semibold text-dark-primary">I have no {title.toLowerCase()}</span>
       </label>
 
       {!hasNone && (
        <div className="space-y-6">
           {/* Preset Chips */}
           <div>
-            <FormLabel className="text-base font-semibold text-gray-700 tracking-wide">Common {title}</FormLabel>
+            <FormLabel className="text-base font-semibold text-dark-primary tracking-wide">Common {title}</FormLabel>
             <div className="flex flex-wrap gap-3 pt-3">
               {presetOptions[name].map((option) => (
                 <button
                   key={option}
                   type="button"
                   onClick={() => handlePresetClick(option)}
-                  className="px-4 py-2 rounded-full border-2 border-gray-200 bg-white/60 hover:border-[#7DE1F4] hover:bg-gradient-to-br hover:from-[#7DE1F4]/10 hover:to-[#86A8E7]/10 transition-all duration-300 text-sm font-medium text-gray-700"
+                  className="px-4 py-2 rounded-full border-2 border-dark-border bg-dark-background hover:border-dark-accent hover:bg-dark-accent/10 transition-all duration-300 text-sm font-medium text-dark-primary"
                 >
                   {option}
                 </button>
@@ -123,10 +123,10 @@ const HealthProfileSection: React.FC<HealthProfileSectionProps> = ({ name, title
                         <Input 
                           {...field} 
                           placeholder={placeholder}
-                          className="h-14 px-6 text-lg bg-white/50 backdrop-blur-sm border-2 border-gray-200 rounded-2xl focus:border-[#7DE1F4] focus:ring-4 focus:ring-[#7DE1F4]/20 transition-all duration-300 placeholder:text-gray-400 hover:border-gray-300 text-gray-900"
+                          className="h-14 px-6 text-lg bg-dark-background border-2 border-dark-border rounded-2xl focus:border-dark-accent focus:ring-4 focus:ring-dark-accent/20 transition-all duration-300 placeholder:text-dark-secondary/60 hover:border-dark-accent/50 text-dark-primary"
                         />
                       </FormControl>
-                      <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
+                      <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} className="text-red-400 hover:text-red-300 hover:bg-red-500/10">
                         <XCircle className="h-5 w-5" />
                         <span className="sr-only">Remove</span>
                       </Button>
@@ -141,7 +141,7 @@ const HealthProfileSection: React.FC<HealthProfileSectionProps> = ({ name, title
           <button
             type="button"
             onClick={handleAppend}
-            className="group w-full flex items-center justify-center p-4 rounded-2xl border-2 border-dashed border-gray-300 hover:border-[#7DE1F4] bg-white/60 hover:bg-gradient-to-br hover:from-[#7DE1F4]/5 hover:to-[#86A8E7]/5 transition-all duration-300 text-gray-600 hover:text-gray-900"
+            className="group w-full flex items-center justify-center p-4 rounded-2xl border-2 border-dashed border-dark-border hover:border-dark-accent bg-dark-background hover:bg-dark-accent/5 transition-all duration-300 text-dark-secondary hover:text-dark-primary"
           >
             <PlusCircle className="mr-3 h-5 w-5 group-hover:scale-110 transition-transform duration-200" />
             <span className="font-medium">Add Custom {title}</span>

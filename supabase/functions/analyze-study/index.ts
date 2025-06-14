@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const FIRECRAWL_API_KEY = 'fc-79599254e22f4e608cfe3102ed4b817e';
+// Firecrawl API key will be loaded from environment variables
 
 Deno.serve(async (req) => {
   // Handle preflight requests
@@ -14,28 +14,41 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Log incoming request details for debugging
+    console.log('Analyze study request received');
+    console.log('Authorization header present:', !!req.headers.get('Authorization'));
+    console.log('Content-Type:', req.headers.get('Content-Type'));
+    
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_ANON_KEY')!,
       { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
     );
 
+    console.log('Supabase client created, attempting to get user...');
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError) {
-      console.error('User auth error:', userError);
-      return new Response(JSON.stringify({ error: 'Authentication failed' }), {
+      console.error('User auth error details:', userError);
+      return new Response(JSON.stringify({ 
+        error: 'Authentication failed', 
+        details: userError.message,
+        code: userError.code || 'unknown'
+      }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 401,
       });
     }
 
     if (!user) {
+      console.error('No user found after auth check');
       return new Response(JSON.stringify({ error: 'User not found' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 404,
       });
     }
+
+    console.log('User authenticated successfully:', user.id);
 
     // Parse request body
     const { studyUrl } = await req.json();
@@ -55,6 +68,17 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
       });
+    }
+
+    // Get API keys from environment variables
+    const FIRECRAWL_API_KEY = Deno.env.get('FIRECRAWL_API_KEY');
+    if (!FIRECRAWL_API_KEY) {
+      throw new Error('Firecrawl API key not configured');
+    }
+
+    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+    if (!OPENAI_API_KEY) {
+      throw new Error('OpenAI API key not configured');
     }
 
     // Scrape study content using Firecrawl (following your exact pattern)
@@ -245,20 +269,11 @@ Deno.serve(async (req) => {
 
     // Generate AI analysis
     console.log('Generating AI analysis...');
-    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openaiApiKey) {
-      console.error('OpenAI API key not found');
-      return new Response(JSON.stringify({ error: 'OpenAI API key not configured' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
-      });
-    }
-
     try {
       const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${openaiApiKey}`,
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
