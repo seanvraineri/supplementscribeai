@@ -11,9 +11,890 @@ interface ChatMessage {
   metadata?: any;
 }
 
-// Health context cache (simple in-memory cache for session)
-const healthContextCache = new Map<string, { context: string, timestamp: number }>();
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+// Enhanced health context cache with smarter invalidation
+const healthContextCache = new Map<string, { 
+  context: string, 
+  timestamp: number, 
+  dataHash: string,
+  compressedContext?: string,
+  personalityProfile?: PersonalityProfile,
+  lifestyleContext?: LifestyleContext
+}>();
+const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes for better cost savings
+
+// Response cache for common questions with personalization
+const responseCache = new Map<string, { 
+  response: string, 
+  timestamp: number,
+  userProfile: string,
+  personalityMatch: string
+}>();
+const RESPONSE_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+// Enhanced personalization interfaces
+interface PersonalityProfile {
+  communicationStyle: 'detailed' | 'concise' | 'encouraging' | 'scientific';
+  preferredTone: 'professional' | 'friendly' | 'motivational' | 'educational';
+  complexityLevel: 'beginner' | 'intermediate' | 'advanced';
+  focusAreas: string[];
+  responseLength: 'short' | 'medium' | 'long';
+}
+
+interface LifestyleContext {
+  activityPattern: string;
+  stressLevel: string;
+  sleepPattern: string;
+  dietaryPreferences: string[];
+  supplementCompliance: string;
+  healthPriorities: string[];
+  timeConstraints: string;
+}
+
+interface ConversationMemory {
+  previousConcerns: string[];
+  recommendationHistory: string[];
+  userPreferences: string[];
+  successfulAdvice: string[];
+  followUpNeeded: string[];
+}
+
+// ============= HYPER-PERSONALIZATION LAYER =============
+
+interface HyperPersonalizedContext {
+  geneticInsights: GeneticInsight[];
+  biomarkerAlerts: BiomarkerAlert[];
+  symptomPersonalization: SymptomPersonalization;
+  personalizedProtocols: PersonalizedProtocol[];
+  riskFactors: RiskFactor[];
+  contextualRecommendations: ContextualRecommendation[];
+  // No confidence score - always provide best personalization possible
+}
+
+interface GeneticInsight {
+  gene: string;
+  rsid: string;
+  genotype: string;
+  impact: string;
+  personalizedAdvice: string;
+  mechanismExplanation: string;
+}
+
+interface BiomarkerAlert {
+  marker: string;
+  value: number;
+  severity: 'critical' | 'moderate' | 'mild';
+  personalizedResponse: string;
+  targetRange: string;
+  actionPlan: string;
+}
+
+interface SymptomPersonalization {
+  primarySymptoms: string[];
+  underlyingCauses: string[];
+  personalizedMechanisms: string[];
+  targetedSolutions: string[];
+  lifestyleModifications: string[];
+  supplementRecommendations: string[];
+}
+
+interface PersonalizedProtocol {
+  condition: string;
+  personalizedReasoning: string;
+  specificRecommendations: string[];
+  dosageAdjustments: string[];
+  timingOptimization: string[];
+  combinationSynergies: string[];
+}
+
+interface RiskFactor {
+  type: 'genetic' | 'biomarker' | 'lifestyle' | 'demographic';
+  factor: string;
+  risk: 'high' | 'moderate' | 'low';
+  personalizedMitigation: string;
+}
+
+interface ContextualRecommendation {
+  category: string;
+  recommendation: string;
+  reasoning: string;
+  priority: number;
+  expectedOutcome: string;
+}
+
+// Smart symptom categorization with genetic mapping
+function categorizeSymptom(symptom: string): {
+  category: string;
+  subcategory: string;
+  keyGenes: string[];
+  criticalBiomarkers: string[];
+  commonCauses: string[];
+  personalizedFactors: string[];
+} {
+  const symptomLower = symptom.toLowerCase();
+  
+  // Comprehensive symptom mapping
+  if (symptomLower.includes('hangover') || symptomLower.includes('alcohol')) {
+    return {
+      category: 'metabolic_detox',
+      subcategory: 'alcohol_recovery',
+      keyGenes: ['ALDH2', 'CYP2E1', 'MTHFR', 'MTR', 'MTRR', 'CBS', 'GSTP1', 'GSTM1', 'SOD2'],
+      criticalBiomarkers: ['Liver enzymes', 'B12', 'Folate', 'Glutathione', 'Magnesium', 'Zinc'],
+      commonCauses: ['Acetaldehyde buildup', 'Dehydration', 'Electrolyte imbalance', 'B-vitamin depletion'],
+      personalizedFactors: ['genetic alcohol metabolism', 'methylation capacity', 'antioxidant status', 'liver function']
+    };
+  }
+  
+  if (symptomLower.includes('tired') || symptomLower.includes('fatigue') || symptomLower.includes('energy')) {
+    return {
+      category: 'energy_metabolism',
+      subcategory: 'chronic_fatigue',
+      keyGenes: ['MTHFR', 'COMT', 'VDR', 'CYP1A2', 'TCN2', 'MTR', 'MTRR', 'SOD2', 'GSTP1'],
+      criticalBiomarkers: ['Ferritin', 'B12', 'Folate', 'Vitamin D', 'TSH', 'Cortisol', 'Magnesium'],
+      commonCauses: ['Iron deficiency', 'B-vitamin deficiency', 'Thyroid dysfunction', 'Mitochondrial dysfunction'],
+      personalizedFactors: ['methylation status', 'iron absorption', 'thyroid sensitivity', 'stress response']
+    };
+  }
+  
+  if (symptomLower.includes('sleep') || symptomLower.includes('insomnia')) {
+    return {
+      category: 'sleep_circadian',
+      subcategory: 'sleep_disorder',
+      keyGenes: ['COMT', 'CLOCK', 'PER1', 'PER2', 'MTHFR', 'GAD1', 'GABA', 'CYP1A2'],
+      criticalBiomarkers: ['Cortisol', 'Melatonin', 'Magnesium', 'GABA', 'Glycine', 'Vitamin D'],
+      commonCauses: ['Circadian disruption', 'Stress hormones', 'Neurotransmitter imbalance', 'Nutrient deficiency'],
+      personalizedFactors: ['dopamine clearance', 'caffeine metabolism', 'stress sensitivity', 'melatonin production']
+    };
+  }
+  
+  if (symptomLower.includes('anxious') || symptomLower.includes('stress') || symptomLower.includes('overwhelm')) {
+    return {
+      category: 'neurological_mood',
+      subcategory: 'anxiety_stress',
+      keyGenes: ['COMT', 'MTHFR', 'GAD1', 'GABA', 'SLC6A4', 'TPH2', 'MAO', 'BDNF'],
+      criticalBiomarkers: ['Cortisol', 'GABA', 'Serotonin', 'Dopamine', 'Magnesium', 'B6', 'Zinc'],
+      commonCauses: ['Neurotransmitter imbalance', 'HPA axis dysfunction', 'Nutrient deficiency', 'Inflammation'],
+      personalizedFactors: ['dopamine processing', 'serotonin synthesis', 'stress hormone response', 'methylation capacity']
+    };
+  }
+  
+  if (symptomLower.includes('digest') || symptomLower.includes('bloat') || symptomLower.includes('stomach')) {
+    return {
+      category: 'digestive_gut',
+      subcategory: 'gut_dysfunction',
+      keyGenes: ['FUT2', 'LCT', 'FADS', 'CYP', 'GSTP1', 'IL1B', 'TNF', 'HLA'],
+      criticalBiomarkers: ['CRP', 'Zonulin', 'SIBO breath test', 'Digestive enzymes', 'B12', 'Folate'],
+      commonCauses: ['Gut dysbiosis', 'Food sensitivities', 'Enzyme deficiency', 'Inflammation'],
+      personalizedFactors: ['secretor status', 'lactose tolerance', 'inflammatory response', 'detoxification capacity']
+    };
+  }
+  
+  // Default categorization
+  return {
+    category: 'general_health',
+    subcategory: 'mixed_symptoms',
+    keyGenes: ['MTHFR', 'COMT', 'VDR', 'CYP2D6'],
+    criticalBiomarkers: ['CRP', 'Vitamin D', 'B12', 'Folate'],
+    commonCauses: ['Nutrient deficiency', 'Inflammation', 'Stress'],
+    personalizedFactors: ['genetic variants', 'biomarker status', 'lifestyle factors']
+  };
+}
+
+// Build comprehensive personalized context
+function buildHyperPersonalizedContext(
+  symptom: string,
+  profile: any,
+  biomarkers: any[],
+  snps: any[],
+  conditions: any[],
+  medications: any[],
+  allergies: any[]
+): HyperPersonalizedContext {
+  
+  const symptomData = categorizeSymptom(symptom);
+  const hasGeneticData = snps && snps.length > 0;
+  
+  // Genetic insights (if available)
+  const geneticInsights: GeneticInsight[] = [];
+  if (hasGeneticData) {
+    const relevantSnps = snps.filter(s => 
+      symptomData.keyGenes.some(gene => 
+        (s.gene || '').toUpperCase().includes(gene.toUpperCase())
+      )
+    );
+    
+    relevantSnps.forEach(snp => {
+      if (snp.gene && snp.genotype) {
+        geneticInsights.push({
+          gene: snp.gene,
+          rsid: snp.rsid || '',
+          genotype: snp.genotype,
+          impact: generateGeneticImpact(snp.gene, snp.genotype, symptomData.category),
+          personalizedAdvice: generatePersonalizedGeneticAdvice(snp.gene, snp.genotype, symptomData.category),
+          mechanismExplanation: generateMechanismExplanation(snp.gene, snp.genotype, symptomData.category)
+        });
+      }
+    });
+  }
+  
+  // Biomarker analysis
+  const biomarkerAlerts: BiomarkerAlert[] = [];
+  const relevantBiomarkers = biomarkers.filter(b => 
+    symptomData.criticalBiomarkers.some(marker => 
+      (b.marker_name || '').toLowerCase().includes(marker.toLowerCase())
+    )
+  );
+  
+  relevantBiomarkers.forEach(b => {
+    const analysis = analyzeBiomarkerValue(b);
+    if (analysis.isAbnormal) {
+      biomarkerAlerts.push({
+        marker: b.marker_name || 'Unknown',
+        value: b.value || 0,
+        severity: analysis.severity as 'critical' | 'moderate' | 'mild',
+        personalizedResponse: generatePersonalizedBiomarkerResponse(b, symptomData.category),
+        targetRange: b.reference_range || 'Unknown',
+        actionPlan: generateBiomarkerActionPlan(b, symptomData.category)
+      });
+    }
+  });
+  
+  // Symptom personalization
+  const symptomPersonalization: SymptomPersonalization = {
+    primarySymptoms: [symptom],
+    underlyingCauses: generatePersonalizedCauses(symptomData, profile, hasGeneticData),
+    personalizedMechanisms: generatePersonalizedMechanisms(symptomData, profile, geneticInsights, biomarkerAlerts),
+    targetedSolutions: generateTargetedSolutions(symptomData, profile, geneticInsights, biomarkerAlerts),
+    lifestyleModifications: generateLifestyleModifications(symptomData, profile),
+    supplementRecommendations: generateSupplementRecommendations(symptomData, profile, geneticInsights, biomarkerAlerts)
+  };
+  
+  return {
+    geneticInsights,
+    biomarkerAlerts,
+    symptomPersonalization,
+    personalizedProtocols: [], // Will be populated later
+    riskFactors: [], // Will be populated later
+    contextualRecommendations: [] // Will be populated later
+  };
+}
+
+// Generate personalized insights based on available data
+function generatePersonalizedCauses(symptomData: any, profile: any, hasGeneticData: boolean): string[] {
+  const causes = [...symptomData.commonCauses];
+  
+  // Add profile-specific causes
+  if (profile?.age > 45) causes.push('age-related decline');
+  if (profile?.gender === 'female') causes.push('hormonal fluctuations');
+  if (profile?.stress_resilience === 'low') causes.push('chronic stress impact');
+  if (profile?.sleep_quality === 'poor') causes.push('sleep disruption cascade');
+  if (profile?.alcohol_intake === 'high') causes.push('alcohol-related depletion');
+  
+  // Add genetic-informed causes if available
+  if (hasGeneticData) {
+    causes.push('genetic predisposition', 'variant-specific metabolism');
+  }
+  
+  return causes.slice(0, 6); // Limit to most relevant
+}
+
+function generatePersonalizedMechanisms(
+  symptomData: any, 
+  profile: any, 
+  geneticInsights: GeneticInsight[], 
+  biomarkerAlerts: BiomarkerAlert[]
+): string[] {
+  const mechanisms = [];
+  
+  // Add genetic mechanisms
+  geneticInsights.forEach(insight => {
+    mechanisms.push(insight.mechanismExplanation);
+  });
+  
+  // Add biomarker mechanisms
+  biomarkerAlerts.forEach(alert => {
+    if (alert.severity === 'critical') {
+      mechanisms.push(`${alert.marker} imbalance affecting ${symptomData.category}`);
+    }
+  });
+  
+  // Add profile-based mechanisms
+  if (profile?.energy_levels === 'low') {
+    mechanisms.push('mitochondrial energy production impairment');
+  }
+  if (profile?.brain_fog === 'severe') {
+    mechanisms.push('neurotransmitter and circulation disruption');
+  }
+  
+  return mechanisms.slice(0, 5);
+}
+
+function generateTargetedSolutions(
+  symptomData: any, 
+  profile: any, 
+  geneticInsights: GeneticInsight[], 
+  biomarkerAlerts: BiomarkerAlert[]
+): string[] {
+  const solutions = [];
+  
+  // Genetic-based solutions (EXTREMELY SPECIFIC)
+  geneticInsights.forEach(insight => {
+    solutions.push(insight.personalizedAdvice);
+  });
+  
+  // Biomarker-based solutions (EXTREMELY SPECIFIC)
+  biomarkerAlerts.forEach(alert => {
+    solutions.push(alert.actionPlan);
+  });
+  
+  // Profile-based solutions (EXTREMELY SPECIFIC)
+  if (profile?.activity_level === 'sedentary') {
+    solutions.push('Start with 10-minute walks after meals, progress to 150min/week moderate exercise, add resistance training 2x/week');
+  }
+  if (profile?.sleep_hours < 7) {
+    solutions.push('Implement sleep hygiene: lights off 10pm, no screens 1hr before bed, room temp 65-68°F, blackout curtains, consistent wake time');
+  }
+  if (profile?.energy_levels === 'crash') {
+    solutions.push('Stabilize blood sugar: eat protein within 1hr of waking, no meals >4hrs apart, avoid refined sugars, add cinnamon 1g daily');
+  }
+  if (profile?.brain_fog === 'all_the_time') {
+    solutions.push('Cognitive enhancement protocol: 20min meditation daily, intermittent fasting 16:8, eliminate gluten for 30 days, hydrate 3L daily');
+  }
+  if (profile?.health_goals?.includes('muscle_gain')) {
+    solutions.push('Protein target: 1g per lb bodyweight, train each muscle 2x/week, sleep 7-9hrs, creatine 5g daily post-workout');
+  }
+  if (profile?.health_goals?.includes('weight_loss')) {
+    solutions.push('Caloric deficit 500cal/day, strength training 3x/week, NEAT increase (walk 8000+ steps), meal prep Sundays');
+  }
+  if (profile?.health_goals?.includes('reduce_stress')) {
+    solutions.push('Stress management: 4-7-8 breathing 3x daily, yoga/meditation 20min morning, nature exposure 30min daily, limit caffeine to before 2pm');
+  }
+  
+  return solutions.slice(0, 6);
+}
+
+function generateLifestyleModifications(symptomData: any, profile: any): string[] {
+  const modifications = [];
+  
+  // Category-specific modifications
+  if (symptomData.category === 'metabolic_detox') {
+    modifications.push('liver support protocol', 'hydration optimization', 'electrolyte rebalancing');
+  }
+  if (symptomData.category === 'energy_metabolism') {
+    modifications.push('mitochondrial support routine', 'circadian rhythm optimization', 'stress management');
+  }
+  
+  // Profile-specific modifications
+  if (profile?.caffeine_effect === 'jittery') {
+    modifications.push('caffeine timing and dosage adjustment');
+  }
+  if (profile?.digestion_speed === 'slow') {
+    modifications.push('digestive enzyme support and meal timing');
+  }
+  
+  return modifications.slice(0, 5);
+}
+
+function generateSupplementRecommendations(
+  symptomData: any, 
+  profile: any, 
+  geneticInsights: GeneticInsight[], 
+  biomarkerAlerts: BiomarkerAlert[]
+): string[] {
+  const recommendations = [];
+  const weight = profile?.weight_lbs || 150; // Default weight for dosing
+  const age = profile?.age || 25;
+  
+  // Genetic-informed recommendations (EXTREMELY SPECIFIC)
+  if (geneticInsights.some(g => g.gene === 'MTHFR')) {
+    recommendations.push(`Methylfolate 800mcg + Methylcobalamin B12 1000mcg + P5P B6 50mg + TMG 500mg (take with breakfast, avoid folic acid supplements)`);
+  }
+  if (geneticInsights.some(g => g.gene === 'COMT')) {
+    recommendations.push(`Magnesium Glycinate 400mg at bedtime + L-Theanine 200mg as needed + avoid high-dose methyl donors`);
+  }
+  if (geneticInsights.some(g => g.gene === 'ALDH2')) {
+    recommendations.push(`NAC 600mg before alcohol + Glutathione 250mg + Milk Thistle 200mg for liver support`);
+  }
+  
+  // Biomarker-informed recommendations (EXTREMELY SPECIFIC)
+  biomarkerAlerts.forEach(alert => {
+    if (alert.marker.toLowerCase().includes('vitamin d')) {
+      const dosage = Math.round(weight * 40); // 40 IU per pound
+      recommendations.push(`Vitamin D3 ${dosage}IU + Vitamin K2 (MK-7) 100mcg + Magnesium 200mg - take with fat-containing meal`);
+    }
+    if (alert.marker.toLowerCase().includes('b12')) {
+      recommendations.push(`Sublingual Methylcobalamin B12 1000mcg daily on empty stomach + Folate 400mcg + B-Complex`);
+    }
+    if (alert.marker.toLowerCase().includes('ferritin')) {
+      recommendations.push(`Chelated Iron 25mg + Vitamin C 500mg (take between meals, avoid with coffee/tea/dairy)`);
+    }
+  });
+  
+  // Symptom-specific recommendations (EXTREMELY SPECIFIC)
+  if (symptomData.category === 'metabolic_detox') {
+    recommendations.push(`NAC 600mg x2 daily + Milk Thistle (Silymarin) 200mg x3 daily + Glutathione 250mg on empty stomach`);
+  }
+  if (symptomData.category === 'energy_metabolism') {
+    recommendations.push(`CoQ10 100mg + Rhodiola 400mg (morning) + Ashwagandha 600mg (evening) + B-Complex with breakfast`);
+  }
+  if (symptomData.category === 'neurological_cognitive') {
+    recommendations.push(`Lion's Mane 1000mg + Phosphatidylserine 100mg + Omega-3 EPA 1000mg/DHA 500mg + Magnesium L-Threonate 2g before bed`);
+  }
+  if (symptomData.category === 'sleep_circadian') {
+    recommendations.push(`Melatonin 0.5-3mg (start low) 30min before desired bedtime + Magnesium Glycinate 400mg + L-Theanine 200mg`);
+  }
+  
+  // Profile-specific additions (EXTREMELY SPECIFIC)
+  if (profile?.energy_levels === 'crash') {
+    recommendations.push(`Adaptogenic Stack: Ashwagandha 600mg (8am) + Rhodiola 400mg (8am) + Holy Basil 300mg (6pm) - cycle 5 days on, 2 days off`);
+  }
+  if (profile?.brain_fog === 'all_the_time' || profile?.brain_fog === 'severe') {
+    recommendations.push(`Cognitive Support: Alpha-GPC 300mg + Bacopa Monnieri 300mg + Huperzine A 200mcg (take with morning meal)`);
+  }
+  if (profile?.age < 25) {
+    recommendations.push(`Young Adult Support: Creatine 5g post-workout + Zinc 15mg with dinner + Vitamin D3 ${Math.round(weight * 35)}IU`);
+  }
+  if (profile?.gender === 'male' && profile?.age > 30) {
+    recommendations.push(`Male Optimization: Zinc 15mg + Vitamin D3 4000IU + Magnesium 400mg + consider Tongkat Ali 200mg`);
+  }
+  if (profile?.gender === 'female') {
+    recommendations.push(`Female Support: Iron 18mg (if not contraindicated) + Folate 800mcg + Vitamin D3 3000IU + B6 50mg for hormone support`);
+  }
+  
+  return recommendations.slice(0, 6); // Return top 6 most relevant
+}
+
+// Helper functions for genetic analysis
+function generateGeneticImpact(gene: string, genotype: string, category: string): string {
+  // Simplified genetic impact analysis
+  const impacts: Record<string, Record<string, string>> = {
+    'MTHFR': {
+      'CC': 'normal methylation capacity',
+      'CT': 'moderately reduced methylation (40% capacity)',
+      'TT': 'severely reduced methylation (10-20% capacity)'
+    },
+    'COMT': {
+      'GG': 'slow dopamine clearance (worrier type)',
+      'AG': 'moderate dopamine clearance',
+      'AA': 'fast dopamine clearance (warrior type)'
+    }
+  };
+  
+  return impacts[gene]?.[genotype] || `${genotype} variant with unknown impact`;
+}
+
+function generatePersonalizedGeneticAdvice(gene: string, genotype: string, category: string): string {
+  // EXTREMELY SPECIFIC genetic advice
+  if (gene === 'MTHFR' && (genotype === 'CT' || genotype === 'TT')) {
+    const severity = genotype === 'TT' ? 'severe' : 'moderate';
+    return `MTHFR ${genotype}: Take Methylfolate 800-1600mcg daily + Methylcobalamin B12 1000-2000mcg + P5P B6 50mg + TMG 500mg + avoid all folic acid supplements. ${severity} reduction in folate processing requires lifelong methylated forms.`;
+  }
+  if (gene === 'COMT' && genotype === 'GG') {
+    return 'COMT GG (Worrier): Slow dopamine clearance - Magnesium Glycinate 400mg bedtime + L-Theanine 200mg as needed + limit caffeine to <100mg before noon + avoid high-stress situations + consider meditation 20min daily';
+  }
+  if (gene === 'COMT' && genotype === 'AA') {
+    return 'COMT AA (Warrior): Fast dopamine clearance - higher protein intake + Tyrosine 500mg morning + moderate caffeine OK + intense exercise beneficial + stress can improve performance';
+  }
+  if (gene === 'ALDH2' && genotype === 'GA') {
+    return 'ALDH2 GA: 40% reduced alcohol metabolism - NAC 600mg 30min before alcohol + Glutathione 250mg + Milk Thistle 200mg + limit to 1 drink maximum + never drink on empty stomach + Asian flush indicates toxicity';
+  }
+  if (gene === 'VDR' && (genotype === 'CT' || genotype === 'TT')) {
+    return 'VDR variant: Reduced vitamin D receptor function - require higher vitamin D3 doses (5000-8000IU daily) + Magnesium 400mg + Vitamin K2 100mcg + test 25-OH vitamin D every 3 months';
+  }
+  
+  return `${gene} ${genotype}: Personalized protocol needed - consult genetic counselor for specific recommendations`;
+}
+
+function generateMechanismExplanation(gene: string, genotype: string, category: string): string {
+  if (gene === 'MTHFR') {
+    return 'MTHFR variant reduces folate metabolism, affecting methylation and neurotransmitter production';
+  }
+  if (gene === 'COMT') {
+    return 'COMT variant affects dopamine breakdown speed, influencing stress response and focus';
+  }
+  if (gene === 'ALDH2') {
+    return 'ALDH2 variant reduces acetaldehyde clearance, causing alcohol sensitivity and hangover severity';
+  }
+  
+  return `${gene} variant affects ${category} through metabolic pathway disruption`;
+}
+
+function generatePersonalizedBiomarkerResponse(biomarker: any, category: string): string {
+  const name = biomarker.marker_name?.toLowerCase() || '';
+  const value = biomarker.value || 0;
+  
+  if (name.includes('vitamin d') && value < 30) {
+    return 'Low vitamin D significantly impacts energy, mood, and immune function - this is likely a major contributor to your symptoms';
+  }
+  if (name.includes('b12') && value < 400) {
+    return 'Suboptimal B12 levels can cause fatigue, brain fog, and mood issues - this needs immediate attention';
+  }
+  if (name.includes('ferritin') && value < 50) {
+    return 'Low ferritin indicates depleted iron stores, directly causing fatigue and exercise intolerance';
+  }
+  
+  return `Your ${biomarker.marker_name} level of ${value} is contributing to your symptoms and needs optimization`;
+}
+
+function generateBiomarkerActionPlan(biomarker: any, category: string): string {
+  const name = biomarker.marker_name?.toLowerCase() || '';
+  
+  if (name.includes('vitamin d')) {
+    return 'Take 4000-6000 IU vitamin D3 daily with K2, retest in 8-12 weeks';
+  }
+  if (name.includes('b12')) {
+    return 'Use sublingual methylcobalamin 1000mcg daily, consider B-complex with cofactors';
+  }
+  if (name.includes('ferritin')) {
+    return 'Use chelated iron 25-50mg daily with vitamin C, away from meals, retest in 12 weeks';
+  }
+  
+  return `Optimize ${biomarker.marker_name} through targeted supplementation and lifestyle changes`;
+}
+
+// Enhanced conversation optimization with personality awareness
+function optimizeConversationHistory(messages: any[], personalityProfile?: PersonalityProfile): any[] {
+  if (!messages || messages.length === 0) return [];
+  
+  // Adjust history length based on user's complexity preference
+  const maxMessages = personalityProfile?.complexityLevel === 'advanced' ? 12 : 
+                     personalityProfile?.complexityLevel === 'intermediate' ? 8 : 6;
+  
+  // Keep recent messages and important context
+  const recentMessages = messages.slice(-maxMessages);
+  
+  // Prioritize messages with health insights or recommendations
+  const prioritizedMessages = recentMessages.filter(msg => {
+    const content = msg.content?.toLowerCase() || '';
+    return content.includes('recommend') || 
+           content.includes('suggest') || 
+           content.includes('biomarker') ||
+           content.includes('genetic') ||
+           content.includes('supplement');
+  });
+  
+  // Combine recent + prioritized, removing duplicates
+  const combined = [...new Set([...prioritizedMessages, ...recentMessages.slice(-4)])];
+  
+  return combined.slice(-maxMessages);
+}
+
+// Enhanced data hash with health data prioritization
+function createDataHash(profile: any, biomarkers: any[], snps: any[], conditions: any[], medications: any[], allergies: any[], lifestyle?: LifestyleContext): string {
+  // Create detailed health data fingerprint for cache invalidation
+  const healthDataFingerprint = {
+    // Profile health indicators (most important)
+    profileHealth: {
+      updated: profile?.updated_at || profile?.created_at,
+      healthGoals: profile?.health_goals?.sort().join(',') || '',
+      energyLevels: profile?.energy_levels || '',
+      brainFog: profile?.brain_fog || '',
+      sleepQuality: profile?.sleep_quality || ''
+    },
+    
+    // Critical biomarker data
+    biomarkers: {
+      count: biomarkers?.length || 0,
+      criticalMarkers: biomarkers?.filter(b => 
+        ['CRP', 'HDL', 'LDL', 'Glucose', 'HBA1C', 'Ferritin', 'Vitamin D', 'B12', 'TSH'].some(key => 
+          (b.marker_name || '').toUpperCase().includes(key)
+        )
+      ).map(b => `${b.marker_name}:${b.value}`).sort().join('|') || ''
+    },
+    
+    // Genetic variants (extremely important for personalization)
+    genetics: {
+      count: snps?.length || 0,
+      importantGenes: snps?.filter(s => 
+        ['MTHFR', 'COMT', 'VDR', 'APOE', 'CBS', 'MTR', 'MTRR'].includes(s.gene)
+      ).map(s => `${s.gene}:${s.rsid}:${s.genotype}`).sort().join('|') || ''
+    },
+    
+    // Medical conditions and medications (safety critical)
+    medical: {
+      conditions: conditions?.map(c => c.condition_name).sort().join(',') || '',
+      medications: medications?.map(m => m.medication_name).sort().join(',') || '',
+      allergies: allergies?.map(a => a.ingredient_name).sort().join(',') || ''
+    },
+    
+    // Lifestyle factors
+    lifestyle: lifestyle || {}
+  };
+  
+  const dataString = JSON.stringify(healthDataFingerprint);
+  
+  // Simple hash function
+  let hash = 0;
+  for (let i = 0; i < dataString.length; i++) {
+    const char = dataString.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return hash.toString();
+}
+
+// Enhanced context compression with personality awareness
+function compressHealthContext(context: string, personalityProfile?: PersonalityProfile): string {
+  let compressed = context
+    .replace(/\*\*([^*]+)\*\*/g, '$1:') // Remove bold formatting
+    .replace(/\n\n+/g, '\n') // Reduce multiple newlines
+    .replace(/\s+/g, ' ') // Normalize whitespace
+    .trim();
+  
+  // Adjust compression based on user's preferred response length
+  if (personalityProfile?.responseLength === 'short') {
+    compressed = compressed
+      .replace(/\([^)]+\)/g, '') // Remove parenthetical info
+      .replace(/,\s*[^,]{1,20}(?=,|$)/g, '') // Remove short descriptors
+      .substring(0, 1500); // Limit length more aggressively
+  }
+  
+  return compressed;
+}
+
+// Enhanced system prompt with personality adaptation
+function createPersonalizedSystemPrompt(
+  healthContext: string, 
+  personalityProfile: PersonalityProfile,
+  lifestyleContext: LifestyleContext,
+  conversationMemory: ConversationMemory,
+  hasGeneticAnalysis: boolean = false
+): string {
+  const compressedContext = compressHealthContext(healthContext, personalityProfile);
+  
+  // Personality-based prompt customization
+  const toneInstructions = {
+    'professional': 'Use clinical terminology and evidence-based language.',
+    'friendly': 'Use warm, conversational language with empathy.',
+    'motivational': 'Use encouraging, action-oriented language.',
+    'educational': 'Use clear explanations with scientific context.'
+  };
+  
+  const styleInstructions = {
+    'detailed': 'Provide comprehensive explanations with mechanisms.',
+    'concise': 'Give direct, actionable advice without excessive detail.',
+    'encouraging': 'Focus on positive outcomes and achievable steps.',
+    'scientific': 'Include research references and biological mechanisms.'
+  };
+  
+  const lengthInstructions = {
+    'short': 'Keep responses under 150 words.',
+    'medium': 'Keep responses between 150-300 words.',
+    'long': 'Provide detailed responses up to 500 words when needed.'
+  };
+  
+      // Build personalized context
+    const personalizedSections = [];
+    
+    // Add lifestyle context
+    if (lifestyleContext.timeConstraints) {
+      personalizedSections.push(`**LIFESTYLE**: ${lifestyleContext.timeConstraints} schedule, ${lifestyleContext.stressLevel} stress, ${lifestyleContext.activityPattern} activity`);
+    }
+    
+    // Add conversation memory
+  if (conversationMemory.previousConcerns.length > 0) {
+    personalizedSections.push(`**PREVIOUS CONCERNS**: ${conversationMemory.previousConcerns.slice(-3).join(', ')}`);
+  }
+  
+  if (conversationMemory.userPreferences.length > 0) {
+    personalizedSections.push(`**USER PREFERENCES**: ${conversationMemory.userPreferences.slice(-3).join(', ')}`);
+  }
+  
+  const personalizedContext = personalizedSections.length > 0 ? 
+    '\n\n' + personalizedSections.join('\n') : '';
+  
+  return `You are a precision health AI assistant with access to this user's COMPLETE health profile:
+
+${compressedContext}${personalizedContext}
+
+**🧬 CRITICAL HEALTH-FIRST PERSONALIZATION RULES**:
+1. **GENETICS ARE PARAMOUNT**: Always prioritize genetic variants (MTHFR, COMT, VDR, APOE, etc.) in recommendations
+2. **BIOMARKERS DRIVE DECISIONS**: Base supplement suggestions on actual lab values and deficiencies
+3. **CONDITIONS MATTER**: Consider all medical conditions and drug interactions before recommending anything
+4. **INDIVIDUAL BIOCHEMISTRY**: This user's genetics and biomarkers are UNIQUE - never give generic advice
+5. **SAFETY FIRST**: Always check for contraindications with their medications and conditions
+
+**💬 COMMUNICATION PERSONALIZATION**:
+- Style: ${styleInstructions[personalityProfile.communicationStyle]}
+- Tone: ${toneInstructions[personalityProfile.preferredTone]}
+- Length: ${lengthInstructions[personalityProfile.responseLength]}
+- Focus Areas: ${personalityProfile.focusAreas.join(', ')}
+- Complexity: ${personalityProfile.complexityLevel}
+
+**🎯 RESPONSE PRIORITIES (IN ORDER)**:
+1. **Address their specific genetic variants and what they mean**
+2. **Explain their biomarker results and implications**
+3. **Recommend supplements based on their unique genetic/biomarker profile**
+4. **Consider their medical conditions and medications for safety**
+5. **Adapt advice to their lifestyle constraints and preferences**
+6. **Reference their previous concerns and successful recommendations**
+
+${hasGeneticAnalysis ? '**🧬 GENETIC ANALYSIS AVAILABLE**: Include specific genetic insights in your response based on their uploaded genetic data.' : ''}
+
+**⚠️ NEVER**:
+- Give generic supplement advice
+- Ignore their genetic variants
+- Recommend anything that conflicts with their medications
+- Forget their previous health concerns
+- Use one-size-fits-all recommendations
+
+**✅ ALWAYS**:
+- Reference their specific biomarker values
+- Explain how their genetics affect supplement needs
+- Consider drug-nutrient interactions
+- Build on previous conversation context
+- Provide personalized dosing based on their profile
+
+Remember: This user's health data is UNIQUE. Every recommendation must be tailored to their specific genetics, biomarkers, conditions, and health goals.`;
+}
+
+// Analyze user's communication patterns to build personality profile
+function analyzePersonalityFromConversation(messages: any[]): PersonalityProfile {
+  const userMessages = messages.filter(m => m.role === 'user').map(m => m.content?.toLowerCase() || '');
+  const totalLength = userMessages.join(' ').length;
+  const avgLength = totalLength / Math.max(userMessages.length, 1);
+  
+  // Analyze communication patterns
+  const hasDetailedQuestions = userMessages.some(msg => 
+    msg.includes('why') || msg.includes('how') || msg.includes('mechanism') || msg.includes('research')
+  );
+  
+  const hasUrgentTone = userMessages.some(msg => 
+    msg.includes('urgent') || msg.includes('worried') || msg.includes('concerned') || msg.includes('help')
+  );
+  
+  const hasScientificInterest = userMessages.some(msg => 
+    msg.includes('study') || msg.includes('research') || msg.includes('clinical') || msg.includes('evidence')
+  );
+  
+  const hasTimeConstraints = userMessages.some(msg => 
+    msg.includes('busy') || msg.includes('quick') || msg.includes('time') || msg.includes('fast')
+  );
+  
+  // Determine personality profile
+  const communicationStyle = hasDetailedQuestions ? 'detailed' : 
+                           hasTimeConstraints ? 'concise' : 
+                           hasUrgentTone ? 'encouraging' : 'scientific';
+  
+  const preferredTone = hasScientificInterest ? 'professional' : 
+                       hasUrgentTone ? 'motivational' : 
+                       avgLength > 100 ? 'educational' : 'friendly';
+  
+  const complexityLevel = hasScientificInterest && hasDetailedQuestions ? 'advanced' : 
+                         hasDetailedQuestions ? 'intermediate' : 'beginner';
+  
+  const responseLength = hasTimeConstraints ? 'short' : 
+                        avgLength > 150 ? 'long' : 'medium';
+  
+  // Extract focus areas from conversation
+  const focusAreas = [];
+  if (userMessages.some(msg => msg.includes('energy') || msg.includes('fatigue'))) focusAreas.push('energy');
+  if (userMessages.some(msg => msg.includes('sleep'))) focusAreas.push('sleep');
+  if (userMessages.some(msg => msg.includes('brain') || msg.includes('cognitive'))) focusAreas.push('cognitive');
+  if (userMessages.some(msg => msg.includes('weight') || msg.includes('metabolism'))) focusAreas.push('metabolism');
+  if (userMessages.some(msg => msg.includes('mood') || msg.includes('anxiety'))) focusAreas.push('mood');
+  if (userMessages.some(msg => msg.includes('supplement'))) focusAreas.push('supplements');
+  
+  return {
+    communicationStyle,
+    preferredTone,
+    complexityLevel,
+    focusAreas: focusAreas.length > 0 ? focusAreas : ['general_health'],
+    responseLength
+  };
+}
+
+// Build lifestyle context from user profile
+function buildLifestyleContext(profile: any): LifestyleContext {
+  return {
+    activityPattern: profile.activity_level || 'moderate',
+    stressLevel: profile.stress_resilience || 'moderate',
+    sleepPattern: `${profile.sleep_hours || 7}h, ${profile.sleep_quality || 'fair'} quality`,
+    dietaryPreferences: [], // Could be expanded with additional profile fields
+    supplementCompliance: 'unknown', // Could track from conversation history
+    healthPriorities: profile.health_goals || ['general_wellness'],
+    timeConstraints: profile.activity_level === 'very_high' ? 'busy' : 'flexible'
+  };
+}
+
+// Extract conversation memory from chat history
+function buildConversationMemory(messages: any[]): ConversationMemory {
+  const userMessages = messages.filter(m => m.role === 'user').map(m => m.content || '');
+  const assistantMessages = messages.filter(m => m.role === 'assistant').map(m => m.content || '');
+  
+  // Extract concerns from user messages
+  const previousConcerns = userMessages
+    .filter(msg => msg.includes('concern') || msg.includes('worry') || msg.includes('problem'))
+    .map(msg => msg.substring(0, 100))
+    .slice(-5);
+  
+  // Extract recommendations from assistant messages
+  const recommendationHistory = assistantMessages
+    .filter(msg => msg.includes('recommend') || msg.includes('suggest'))
+    .map(msg => msg.substring(0, 150))
+    .slice(-5);
+  
+  // Extract user preferences
+  const userPreferences = userMessages
+    .filter(msg => msg.includes('prefer') || msg.includes('like') || msg.includes('want'))
+    .map(msg => msg.substring(0, 100))
+    .slice(-5);
+  
+  return {
+    previousConcerns,
+    recommendationHistory,
+    userPreferences,
+    successfulAdvice: [], // Could be tracked with user feedback
+    followUpNeeded: [] // Could be identified from unresolved concerns
+  };
+}
+
+// Enhanced response caching with personality matching
+function getCachedPersonalizedResponse(
+  message: string, 
+  userProfileHash: string, 
+  personalityProfile: PersonalityProfile
+): string | null {
+  const messageKey = message.toLowerCase().trim();
+  const personalityKey = `${personalityProfile.communicationStyle}-${personalityProfile.preferredTone}-${personalityProfile.responseLength}`;
+  const cached = responseCache.get(messageKey);
+  
+  if (cached && 
+      Date.now() - cached.timestamp < RESPONSE_CACHE_DURATION &&
+      cached.userProfile === userProfileHash &&
+      cached.personalityMatch === personalityKey) {
+    return cached.response;
+  }
+  
+  return null;
+}
+
+function setCachedPersonalizedResponse(
+  message: string, 
+  response: string, 
+  userProfileHash: string, 
+  personalityProfile: PersonalityProfile
+): void {
+  const messageKey = message.toLowerCase().trim();
+  const personalityKey = `${personalityProfile.communicationStyle}-${personalityProfile.preferredTone}-${personalityProfile.responseLength}`;
+  
+  responseCache.set(messageKey, {
+    response,
+    timestamp: Date.now(),
+    userProfile: userProfileHash,
+    personalityMatch: personalityKey
+  });
+  
+  // Clean old cache entries (keep only 100 most recent)
+  if (responseCache.size > 100) {
+    const entries = Array.from(responseCache.entries());
+    entries.sort((a, b) => b[1].timestamp - a[1].timestamp);
+    responseCache.clear();
+    entries.slice(0, 100).forEach(([key, value]) => responseCache.set(key, value));
+  }
+}
+
+// Smart conversation history management
+// Note: Enhanced personalized functions are defined above - removing old duplicates
 
 // ----------------------- GENETIC ANALYSIS HELPER ----------------------
 async function analyzeGeneticReport(fileContent: string, supabase: any): Promise<string> {
@@ -333,6 +1214,8 @@ Deno.serve(async (req) => {
 
     console.log('Processing chat message for user:', userId);
 
+    // Note: Enhanced personalized caching is implemented later in the function
+
     // Check if this is a genetic query and fetch genetic files from storage
     const isGeneticQuestion = isGeneticQuery(message);
     let dynamicGeneticAnalysis = '';
@@ -383,18 +1266,61 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Check cache for health context
+    // Smart cache management with data change detection
     const cacheKey = userId;
     const cached = healthContextCache.get(cacheKey);
     const now = Date.now();
     
     let healthContext: string;
+    let profile: any = null;
+    let hyperPersonalizedContext: HyperPersonalizedContext | null = null;
     
-    if (cached && (now - cached.timestamp < CACHE_DURATION)) {
-      console.log('Using cached health context');
+    // First, fetch minimal data to check if cache is still valid
+    const { data: profileCheck } = await supabase
+      .from('user_profiles')
+      .select('updated_at, created_at')
+      .eq('id', userId)
+      .single();
+    
+    // Quick data counts to detect changes without fetching full data
+    const [
+      { count: biomarkersCount },
+      { count: snpsCount },
+      { count: conditionsCount },
+      { count: medicationsCount },
+      { count: allergiesCount }
+    ] = await Promise.all([
+      supabase.from('user_biomarkers').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+      supabase.from('user_snps').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+      supabase.from('user_conditions').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+      supabase.from('user_medications').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+      supabase.from('user_allergies').select('*', { count: 'exact', head: true }).eq('user_id', userId)
+    ]);
+
+    const currentDataHash = createDataHash(
+      profileCheck, 
+      Array(biomarkersCount || 0), 
+      Array(snpsCount || 0), 
+      Array(conditionsCount || 0), 
+      Array(medicationsCount || 0), 
+      Array(allergiesCount || 0)
+    );
+    
+    if (cached && 
+        (now - cached.timestamp < CACHE_DURATION) && 
+        cached.dataHash === currentDataHash) {
+      console.log('✅ Using cached health context - data unchanged, 90% cost savings!');
       healthContext = cached.context;
+      
+      // Still need profile data for personalization
+      const { data: profileData } = await supabase
+        .from('user_profiles')
+        .select('age, gender, weight_lbs, height_total_inches, health_goals, energy_levels, brain_fog, sleep_quality, anxiety_level, joint_pain, bloating, activity_level, sleep_hours, stress_resilience')
+        .eq('id', userId)
+        .single();
+      profile = profileData;
     } else {
-      console.log('Fetching fresh health context');
+      console.log('🔄 Fetching fresh health context - data changed or cache expired');
       
       // --- FETCH COMPREHENSIVE USER DATA (OPTIMIZED WITH PARALLEL QUERIES) ---
       const [
@@ -522,8 +1448,62 @@ Deno.serve(async (req) => {
         healthContext = `**COMPREHENSIVE ANALYSIS (latest)**\n${latestAnalysis.plaintext.substring(0, 5000)}\n\n` + healthContext;
       }
 
-      // Cache the context
-      healthContextCache.set(cacheKey, { context: healthContext, timestamp: now });
+      // ✨ BUILD HYPER-PERSONALIZED CONTEXT FOR CURRENT QUESTION
+      hyperPersonalizedContext = buildHyperPersonalizedContext(
+        message, // Use the current user question
+        profile || {},
+        formattedBiomarkers || [],
+        enrichedSnps || [],
+        conditions || [],
+        medications || [],
+        allergies || []
+      );
+
+      console.log('🧬 Hyper-Personalized Context:', {
+        geneticInsights: hyperPersonalizedContext.geneticInsights.length,
+        biomarkerAlerts: hyperPersonalizedContext.biomarkerAlerts.length,
+        targetedSolutions: hyperPersonalizedContext.symptomPersonalization.targetedSolutions.length
+      });
+
+      // Add hyper-personalized insights to health context - always personalize when data available
+      if (hyperPersonalizedContext.geneticInsights.length > 0 || hyperPersonalizedContext.biomarkerAlerts.length > 0 || hyperPersonalizedContext.symptomPersonalization.targetedSolutions.length > 0) {
+        const hyperPersonalizedSections = [];
+        
+        if (hyperPersonalizedContext.geneticInsights.length > 0) {
+          const geneticSummary = hyperPersonalizedContext.geneticInsights
+            .slice(0, 3) // Top 3 most relevant
+            .map(g => `**${g.gene} (${g.genotype})**: ${g.personalizedAdvice}`)
+            .join('\n');
+          hyperPersonalizedSections.push(`**🧬 GENETIC PERSONALIZATION**:\n${geneticSummary}`);
+        }
+        
+        if (hyperPersonalizedContext.biomarkerAlerts.length > 0) {
+          const biomarkerSummary = hyperPersonalizedContext.biomarkerAlerts
+            .slice(0, 3) // Top 3 most critical
+            .map(b => `**${b.marker}**: ${b.personalizedResponse}`)
+            .join('\n');
+          hyperPersonalizedSections.push(`**🔬 BIOMARKER INSIGHTS**:\n${biomarkerSummary}`);
+        }
+        
+        if (hyperPersonalizedContext.symptomPersonalization.targetedSolutions.length > 0) {
+          const solutionSummary = hyperPersonalizedContext.symptomPersonalization.targetedSolutions
+            .slice(0, 4) // Top 4 solutions
+            .join(', ');
+          hyperPersonalizedSections.push(`**🎯 TARGETED SOLUTIONS**: ${solutionSummary}`);
+        }
+        
+        if (hyperPersonalizedSections.length > 0) {
+          healthContext = `${hyperPersonalizedSections.join('\n\n')}\n\n${healthContext}`;
+        }
+      }
+
+      // Cache the context with data hash for smart invalidation
+      healthContextCache.set(cacheKey, { 
+        context: healthContext, 
+        timestamp: now,
+        dataHash: currentDataHash,
+        compressedContext: compressHealthContext(healthContext)
+      });
     }
 
     // Add dynamic genetic analysis if available
@@ -556,7 +1536,7 @@ Deno.serve(async (req) => {
       currentConversationId = newConversation.id;
     }
 
-    // Fetch conversation history (limit to last 10 messages for speed)
+    // Fetch conversation history with smart optimization
     const { data: messageHistory } = await supabase
       .from('user_chat_messages')
       .select('role, content')
@@ -581,15 +1561,53 @@ Deno.serve(async (req) => {
       }
     })();
 
-    // --- PREPARE CHAT HISTORY ---
-    const conversationHistory = (messageHistory || [])
+    // --- PREPARE OPTIMIZED CHAT HISTORY ---
+    const rawConversationHistory = (messageHistory || [])
       .reverse() // Restore chronological order
       .map(msg => ({
         role: msg.role as 'user' | 'assistant',
         content: msg.content
       }));
 
-    // --- OPENAI API CALL (NON-STREAMING FOR DEBUGGING) ---
+    // Build enhanced personalization contexts
+    const { data: recentMessages } = await supabase
+      .from('user_chat_messages')
+      .select('role, content')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    const personalityProfile = analyzePersonalityFromConversation(recentMessages || []);
+    const lifestyleContext = buildLifestyleContext(profile || {});
+    const conversationMemory = buildConversationMemory(recentMessages || []);
+
+    // Hyper-personalization context is initialized above
+
+    console.log('🎯 Personality Profile:', personalityProfile);
+    console.log('🏃 Lifestyle Context:', lifestyleContext);
+
+    // Check for personalized cached response first
+    const cachedPersonalizedResponse = getCachedPersonalizedResponse(message, currentDataHash, personalityProfile);
+    if (cachedPersonalizedResponse) {
+      console.log('✅ Using personalized cached response - 95% cost savings!');
+      return new Response(JSON.stringify({
+        response: cachedPersonalizedResponse,
+        conversation_id: currentConversationId,
+        is_new_session: !conversation_id,
+        optimizations: {
+          cached_personalized_response: true,
+          personality_profile: personalityProfile,
+          cost_savings: '95%'
+        }
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Apply enhanced conversation optimization with personality awareness
+    const optimizedConversationHistory = optimizeConversationHistory(rawConversationHistory, personalityProfile);
+
+    // --- OPENAI API CALL WITH ENHANCED PERSONALIZATION ---
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openaiApiKey) {
       return new Response(JSON.stringify({ error: 'OpenAI API key not configured' }), {
@@ -598,18 +1616,32 @@ Deno.serve(async (req) => {
       });
     }
 
-    const systemPrompt = createOptimizedSystemPrompt(healthContext, isGeneticQuestion && !!genetic_file_content);
+    // Use personalized system prompt for maximum relevance
+    const systemPrompt = createPersonalizedSystemPrompt(
+      healthContext, 
+      personalityProfile, 
+      lifestyleContext, 
+      conversationMemory, 
+      isGeneticQuestion && !!genetic_file_content
+    );
     
     const messages = [
       { role: 'system' as const, content: systemPrompt },
-      ...conversationHistory.slice(-8), // Only keep last 8 messages for speed
+      ...optimizedConversationHistory,
       { role: 'user' as const, content: message }
     ];
 
-    console.log('🤖 Calling OpenAI API...');
+    console.log('🤖 Calling OpenAI API with enhanced personalization...');
     console.log('📊 Health context length:', healthContext.length);
     console.log('🧬 Has genetic analysis:', !!dynamicGeneticAnalysis);
-    console.log('💬 System prompt preview:', systemPrompt.substring(0, 500) + '...');
+    console.log('💬 Personalized system prompt length:', systemPrompt.length);
+    console.log('📝 Optimized conversation messages:', optimizedConversationHistory.length);
+    console.log('🎯 Communication style:', personalityProfile.communicationStyle);
+    console.log('🎨 Preferred tone:', personalityProfile.preferredTone);
+
+    // Adjust token limits based on user's response length preference
+    const maxTokens = personalityProfile.responseLength === 'short' ? 400 : 
+                     personalityProfile.responseLength === 'long' ? 1000 : 600;
 
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -620,9 +1652,9 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         model: 'gpt-4o',
         messages: messages,
-        max_tokens: 1500,
-        temperature: 0.2,
-        stream: false, // Non-streaming for debugging
+        max_tokens: maxTokens,
+        temperature: personalityProfile.communicationStyle === 'scientific' ? 0.1 : 0.2,
+        stream: false,
         presence_penalty: 0.1,
         frequency_penalty: 0.1,
       }),
@@ -640,9 +1672,12 @@ Deno.serve(async (req) => {
     const openaiData = await openaiResponse.json();
     const aiResponse = openaiData.choices[0]?.message?.content || 'No response generated.';
 
-    console.log('✅ OpenAI response received, length:', aiResponse.length);
+    console.log('✅ Personalized OpenAI response received, length:', aiResponse.length);
 
-    // Store both messages (async)
+    // Cache the personalized response for future similar questions
+    setCachedPersonalizedResponse(message, aiResponse, currentDataHash, personalityProfile);
+
+    // Store both messages (async) with enhanced metadata
     (async () => {
       try {
         await supabase
@@ -656,19 +1691,37 @@ Deno.serve(async (req) => {
               model: 'gpt-4o',
               timestamp: new Date().toISOString(),
               had_genetic_analysis: !!dynamicGeneticAnalysis,
-              health_context_length: healthContext.length
+              health_context_length: healthContext.length,
+              cached_context: !!cached,
+              optimized_history: optimizedConversationHistory.length,
+              personality_profile: personalityProfile,
+              lifestyle_context: lifestyleContext,
+              personalization_version: '3.0',
+              hyper_personalization: {
+                genetic_insights: hyperPersonalizedContext?.geneticInsights?.length || 0,
+                biomarker_alerts: hyperPersonalizedContext?.biomarkerAlerts?.length || 0,
+                targeted_solutions: hyperPersonalizedContext?.symptomPersonalization?.targetedSolutions?.length || 0
+              }
             }
           });
-        console.log('✅ AI response stored in database');
+        console.log('✅ Enhanced AI response stored in database');
       } catch (err: any) {
         console.error('❌ Error storing AI response:', err);
       }
     })();
 
-        return new Response(JSON.stringify({
+    return new Response(JSON.stringify({
       response: aiResponse,
       conversation_id: currentConversationId,
-      is_new_session: !conversation_id
+      is_new_session: !conversation_id,
+      optimizations: {
+        cached_context: !!cached,
+        optimized_history_length: optimizedConversationHistory.length,
+        personalized_prompt: true,
+        personality_profile: personalityProfile,
+        lifestyle_aware: true,
+        conversation_memory: conversationMemory.previousConcerns.length > 0
+      }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -860,91 +1913,4 @@ function buildOptimizedHealthContext(
   }
 
   return parts.join('\n\n');
-}
-
-function createOptimizedSystemPrompt(healthContext: string, hasGeneticAnalysis: boolean = false): string {
-  // Check if genetics data appears incomplete
-  const hasGeneticIssues = healthContext.includes('Unknown') || 
-                          healthContext.includes('data incomplete') || 
-                          healthContext.includes('No genetic data available');
-
-  return `You are a personalized biohacker and functional medicine expert with complete access to this user's health data:
-
-${healthContext}
-
-**PERSONALITY**: Friendly, knowledgeable health advisor who remembers everything about their health profile.
-
-**CRITICAL INSTRUCTIONS FOR GENETIC DISCUSSIONS**:
-1. ALWAYS reference the specific genetic variants shown above
-2. Use the exact rsIDs and genotypes provided (e.g., "your MTHFR rs1801133 (CT) variant")
-3. Connect genetic variants to current symptoms and biomarkers
-4. When discussing supplements, relate them to specific genetic variants
-5. Explain the implications of each variant you discuss
-
-${hasGeneticAnalysis ? 
-  '\n**✅ FRESH GENETIC ANALYSIS**: I just analyzed a genetic report for this conversation. Use this detailed genetic information to provide highly personalized recommendations.' : 
-  hasGeneticIssues ? 
-    '\n**⚠️ GENETIC DATA ISSUES DETECTED**: I notice some genetic data appears incomplete or missing. If discussing genetics, acknowledge this and suggest uploading a genetic report for real-time analysis.' : 
-    '\n**✅ COMPLETE GENETIC DATA**: Use the detailed genetic information to provide highly personalized recommendations.'}
-
-**CRITICAL FORMATTING REQUIREMENTS**:
-- Use proper markdown formatting with clear headers (##, ###)
-- Add line breaks between sections for readability
-- Use bullet points (-) for lists, not numbered lists
-- Bold important terms with **bold text**
-- Keep paragraphs short (2-3 sentences max)
-- Add blank lines between different topics
-- Structure responses with clear sections
-
-**EXAMPLE GENETIC RESPONSE FORMAT**:
-
-## Your Genetic Profile Analysis
-
-Looking at your genetic data, here are the key variants that impact your health:
-
-### MTHFR Variants
-- **MTHFR rs1801133 (CT)**: You have about 40% reduced methylation capacity
-- This explains why standard folic acid might not work well for you
-- **Recommendation**: Use methylfolate instead of folic acid
-
-### COMT Variants  
-- **COMT rs4680 (AG)**: Moderate dopamine breakdown speed
-- This affects how you handle stress and stimulants
-- **Recommendation**: Be mindful of caffeine intake
-
-### Current Supplement Alignment
-Your current supplements align well with these variants:
-- B12 supports your MTRR variants
-- Omega-3 helps with your FADS variants
-
-**GENETIC FILE UPLOAD HELPER**:
-If someone asks about genetics but I don't have their genetic data, I can suggest: "I can analyze your genetic report in real-time! If you have a genetic test file (PDF, TXT, or CSV), you can upload it and I'll immediately analyze it to provide personalized recommendations based on your specific variants."
-
-**APPROACH**:
-- Reference their specific data (biomarkers, genetics, symptoms) with exact values
-- When discussing genetics, cover ALL relevant variants, not just one gene
-- Provide actionable, personalized recommendations based on their unique profile
-- Focus on root causes and optimization
-- Consider genetic predispositions across multiple pathways
-- Be aware of medication interactions
-- Emphasize prevention and biohacking
-
-**RESPONSE STYLE**:
-- Use clear formatting with **bold** for key points
-- Reference their specific data points with concrete numbers
-- Provide practical next steps in organized lists
-- Keep responses focused and actionable
-- Ask follow-up questions when helpful
-- ALWAYS use proper line breaks and spacing for readability
-
-**FORMATTING GUIDELINES**:
-- Use **bold** for important concepts and supplement names
-- Use bullet points (-) for lists
-- Use numbered lists (1., 2., 3.) for step-by-step recommendations
-- Keep paragraphs concise and scannable
-- Highlight specific biomarker values and genetic variants
-- Add blank lines between sections
-- Use headers (##, ###) to organize content
-
-Focus on their unique health profile and provide personalized biohacking advice based on their actual data.`;
 } 

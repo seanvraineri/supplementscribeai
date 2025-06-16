@@ -445,17 +445,68 @@ SCORING MUST REFLECT ACTUAL COMPATIBILITY - BE HARSH ON MISMATCHES!`
         throw new Error('No response from AI');
       }
 
-      // Clean up AI response - remove markdown code blocks if present
-      aiResponse = aiResponse.replace(/```json\s*/, '').replace(/```\s*$/, '').trim();
-
       // Parse AI response
       let analysis;
       try {
+        // First try direct JSON parsing
         analysis = JSON.parse(aiResponse);
       } catch (parseError) {
-        console.error('AI response parsing error:', parseError);
+        console.error('Initial JSON parse failed, attempting to extract JSON from response...');
         console.error('Raw AI response:', aiResponse);
-        throw new Error('Failed to parse AI analysis');
+        
+        // Try to extract JSON from markdown code blocks or other formatting
+        const jsonMatch = aiResponse.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/);
+        if (jsonMatch) {
+          try {
+            analysis = JSON.parse(jsonMatch[1]);
+            console.log('Successfully extracted JSON from code block');
+          } catch (secondParseError) {
+            console.error('Failed to parse extracted JSON:', jsonMatch[1]);
+            // Create fallback response
+            analysis = {
+              productName: 'Unknown Product',
+              brand: 'Unknown Brand',
+              overallScore: 50,
+              summary: 'Analysis failed due to parsing error. Please try again.',
+              pros: ['Unable to analyze due to technical error'],
+              cons: ['Analysis parsing failed - please retry'],
+              warnings: ['This analysis is for educational purposes only and not medical advice. Consult healthcare providers before making supplement decisions.']
+            };
+          }
+        } else {
+          // Try to find JSON object in the response
+          const jsonObjectMatch = aiResponse.match(/\{[\s\S]*\}/);
+          if (jsonObjectMatch) {
+            try {
+              analysis = JSON.parse(jsonObjectMatch[0]);
+              console.log('Successfully extracted JSON object from response');
+            } catch (thirdParseError) {
+              console.error('Failed to parse extracted JSON object:', jsonObjectMatch[0]);
+              // Create fallback response
+              analysis = {
+                productName: 'Unknown Product',
+                brand: 'Unknown Brand',
+                overallScore: 50,
+                summary: 'Analysis failed due to parsing error. Please try again.',
+                pros: ['Unable to analyze due to technical error'],
+                cons: ['Analysis parsing failed - please retry'],
+                warnings: ['This analysis is for educational purposes only and not medical advice. Consult healthcare providers before making supplement decisions.']
+              };
+            }
+          } else {
+            // Create a fallback response if no JSON found
+            console.error('No JSON found in AI response, creating fallback');
+            analysis = {
+              productName: 'Unknown Product',
+              brand: 'Unknown Brand',
+              overallScore: 50,
+              summary: 'Analysis failed due to parsing error. Please try again.',
+              pros: ['Unable to analyze due to technical error'],
+              cons: ['Analysis parsing failed - please retry'],
+              warnings: ['This analysis is for educational purposes only and not medical advice. Consult healthcare providers before making supplement decisions.']
+            };
+          }
+        }
       }
 
       // Validate response structure

@@ -347,26 +347,22 @@ export default function DashboardPage() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
-      const response = await fetch('/api/generate-plan', {
-        method: 'POST',
+      const { data, error } = await supabase.functions.invoke('generate-plan', {
         headers: {
-          'Authorization': `Bearer ${session?.access_token}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.access_token}`,
         },
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      if (error) {
+        throw new Error(error.message || 'Failed to generate supplement plan');
       }
 
-      const result = await response.json();
-
-      if (result.success) {
-        setPlan(result.plan);
+      if (data.success) {
+        setPlan(data.plan);
         setActiveTab('supplement-plan'); // Switch to supplement plan tab
-  } else {
-        console.error('Failed to generate plan:', result.error);
-        alert(`Failed to generate supplement plan: ${result.error}`);
+      } else {
+        console.error('Failed to generate plan:', data.error);
+        alert(`Failed to generate supplement plan: ${data.error}`);
       }
     } catch (error: any) {
       console.error('Error generating plan:', error);
@@ -1235,7 +1231,7 @@ export default function DashboardPage() {
           type="url"
           value={productUrl}
           onChange={(e) => setProductUrl(e.target.value)}
-          placeholder="Paste product URL from Amazon, iHerb, etc."
+          placeholder="Paste Direct Product URL from Brand Website"
           className="flex-grow bg-dark-panel border border-dark-border rounded-md px-4 py-2 text-dark-primary placeholder-dark-secondary focus:ring-2 focus:ring-dark-accent focus:outline-none"
           disabled={isCheckingProduct}
         />
@@ -1428,61 +1424,98 @@ export default function DashboardPage() {
       {/* Latest Analysis */}
       {studyAnalysis && (
         <div className="bg-dark-panel border border-dark-border rounded-xl p-6">
-          <h2 className="text-xl font-semibold text-dark-primary mb-4">Latest Analysis</h2>
+          <div className="flex items-center gap-3 mb-6">
+            <BookOpen className="h-6 w-6 text-dark-accent" />
+            <h2 className="text-xl font-semibold text-dark-primary">Latest Analysis</h2>
+          </div>
+          
           <div className="space-y-6">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Star className="h-5 w-5 text-yellow-400" />
-                <span className="text-dark-secondary">Personal Relevance:</span>
-                <span className="text-2xl font-bold text-dark-accent">{studyAnalysis.relevanceScore}/10</span>
+            {/* Personal Relevance Score */}
+            <div className="bg-dark-background border border-dark-border rounded-lg p-4">
+              <div className="flex items-center gap-3">
+                <Star className="h-6 w-6 text-yellow-400" />
+                <div>
+                  <span className="text-dark-secondary text-sm">Personal Relevance:</span>
+                  <div className="text-3xl font-bold text-yellow-400">{studyAnalysis.relevanceScore}/10</div>
+                </div>
               </div>
             </div>
             
+            {/* Personalized Summary */}
             <div>
-              <h3 className="font-semibold text-dark-accent mb-2">Personalized Summary</h3>
-              <p className="text-dark-secondary">{studyAnalysis.personalizedSummary}</p>
+              <h3 className="text-lg font-semibold text-dark-primary mb-3 flex items-center gap-2">
+                <User className="h-5 w-5 text-dark-accent" />
+                Personalized Summary
+              </h3>
+              <div className="bg-dark-background border border-dark-border rounded-lg p-4">
+                <p className="text-dark-primary leading-relaxed">{studyAnalysis.personalizedSummary}</p>
+              </div>
             </div>
             
+            {/* Personal Explanation */}
             <div>
-              <h3 className="font-semibold text-dark-accent mb-2">Personal Explanation</h3>
-              <p className="text-dark-secondary">{studyAnalysis.personalizedExplanation}</p>
+              <h3 className="text-lg font-semibold text-dark-primary mb-3 flex items-center gap-2">
+                <Brain className="h-5 w-5 text-dark-accent" />
+                Personal Explanation
+              </h3>
+              <div className="bg-dark-background border border-dark-border rounded-lg p-4">
+                <p className="text-dark-primary leading-relaxed">{studyAnalysis.personalizedExplanation}</p>
+              </div>
             </div>
             
+            {/* Key Findings */}
             <div>
-              <h3 className="font-semibold text-dark-accent mb-2">Key Findings</h3>
-              <ul className="space-y-2">
-                {studyAnalysis.keyFindings?.map((finding: string, index: number) => (
-                  <li key={index} className="flex items-start gap-2">
-                    <span className="text-dark-accent mt-1">•</span>
-                    <span className="text-dark-secondary">{finding}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            
-            <div>
-              <h3 className="font-semibold text-dark-accent mb-2">Your Personalized Recommendations</h3>
-              <ul className="space-y-2">
-                {studyAnalysis.actionableRecommendations?.map((rec: string, index: number) => (
-                  <li key={index} className="flex items-start gap-2">
-                    <span className="text-green-400 mt-1">✓</span>
-                    <span className="text-dark-secondary">{rec}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {studyAnalysis.limitations && studyAnalysis.limitations.length > 0 && (
-              <div>
-                <h3 className="font-semibold text-dark-accent mb-2">Important Considerations</h3>
-                <ul className="space-y-2">
-                  {studyAnalysis.limitations.map((limitation: string, index: number) => (
-                    <li key={index} className="flex items-start gap-2">
-                      <span className="text-yellow-400 mt-1">⚠</span>
-                      <span className="text-dark-secondary">{limitation}</span>
+              <h3 className="text-lg font-semibold text-dark-primary mb-3 flex items-center gap-2">
+                <FileText className="h-5 w-5 text-dark-accent" />
+                Key Findings
+              </h3>
+              <div className="bg-dark-background border border-dark-border rounded-lg p-4">
+                <ul className="space-y-3">
+                  {studyAnalysis.keyFindings?.map((finding: string, index: number) => (
+                    <li key={index} className="flex items-start gap-3">
+                      <span className="text-dark-accent mt-1 text-lg">•</span>
+                      <span className="text-dark-primary leading-relaxed">{finding}</span>
                     </li>
                   ))}
                 </ul>
+              </div>
+            </div>
+            
+            {/* Your Personalized Recommendations */}
+            <div>
+              <h3 className="text-lg font-semibold text-dark-primary mb-3 flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-green-400" />
+                Your Personalized Recommendations
+              </h3>
+              <div className="bg-dark-background border border-dark-border rounded-lg p-4">
+                <ul className="space-y-3">
+                  {studyAnalysis.actionableRecommendations?.map((rec: string, index: number) => (
+                    <li key={index} className="flex items-start gap-3">
+                      <span className="text-green-400 mt-1 text-lg font-bold">✓</span>
+                      <span className="text-dark-primary leading-relaxed">{rec}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            {/* Important Considerations */}
+            {studyAnalysis.limitations && studyAnalysis.limitations.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold text-dark-primary mb-3 flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-yellow-400" />
+                  Important Considerations
+                </h3>
+                <div className="bg-dark-background border border-dark-border rounded-lg p-4">
+                  <ul className="space-y-3">
+                    {studyAnalysis.limitations.map((limitation: string, index: number) => (
+                      <li key={index} className="flex items-start gap-3">
+                        <span className="text-yellow-400 mt-1 text-lg">⚠</span>
+                        <span className="text-dark-primary leading-relaxed">{limitation}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             )}
           </div>
@@ -1572,64 +1605,98 @@ export default function DashboardPage() {
             </div>
             
             <div className="space-y-6">
+              {/* Study Header */}
               <div>
-                <h3 className="font-semibold text-dark-primary mb-2">{selectedStudy.study_title}</h3>
+                <h3 className="text-xl font-semibold text-dark-primary mb-2">{selectedStudy.study_title}</h3>
                 {selectedStudy.study_authors && (
                   <p className="text-dark-secondary text-sm mb-2">{selectedStudy.study_authors}</p>
                 )}
                 <div className="flex items-center gap-4 text-xs text-dark-secondary mb-4">
-                  <span>Personal Relevance: {selectedStudy.relevance_score}/10</span>
+                  <span className="flex items-center gap-1">
+                    <Star className="h-3 w-3 text-yellow-400" />
+                    Personal Relevance: {selectedStudy.relevance_score}/10
+                  </span>
                   <span>{new Date(selectedStudy.created_at).toLocaleDateString()}</span>
                   {selectedStudy.pmid && <span>PMID: {selectedStudy.pmid}</span>}
                   {selectedStudy.journal_name && <span>{selectedStudy.journal_name}</span>}
                 </div>
               </div>
               
+              {/* Personalized Summary */}
               <div>
-                <h4 className="font-semibold text-dark-accent mb-2">Personalized Summary</h4>
-                <p className="text-dark-secondary">{selectedStudy.personalized_summary}</p>
+                <h4 className="text-lg font-semibold text-dark-primary mb-3 flex items-center gap-2">
+                  <User className="h-5 w-5 text-dark-accent" />
+                  Personalized Summary
+                </h4>
+                <div className="bg-dark-background border border-dark-border rounded-lg p-4">
+                  <p className="text-dark-primary leading-relaxed">{selectedStudy.personalized_summary}</p>
+                </div>
               </div>
 
+              {/* Personal Explanation */}
               <div>
-                <h4 className="font-semibold text-dark-accent mb-2">Personal Explanation</h4>
-                <p className="text-dark-secondary">{selectedStudy.personalized_explanation}</p>
+                <h4 className="text-lg font-semibold text-dark-primary mb-3 flex items-center gap-2">
+                  <Brain className="h-5 w-5 text-dark-accent" />
+                  Personal Explanation
+                </h4>
+                <div className="bg-dark-background border border-dark-border rounded-lg p-4">
+                  <p className="text-dark-primary leading-relaxed">{selectedStudy.personalized_explanation}</p>
+                </div>
               </div>
               
+              {/* Key Findings */}
               <div>
-                <h4 className="font-semibold text-dark-accent mb-2">Your Recommendations</h4>
-                <ul className="space-y-2">
-                  {selectedStudy.actionable_recommendations?.map((rec: string, index: number) => (
-                    <li key={index} className="flex items-start gap-2">
-                      <span className="text-green-400 mt-1">✓</span>
-                      <span className="text-dark-secondary">{rec}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              
-              <div>
-                <h4 className="font-semibold text-dark-accent mb-2">Key Findings</h4>
-                <ul className="space-y-2">
-                  {selectedStudy.key_findings?.map((finding: string, index: number) => (
-                    <li key={index} className="flex items-start gap-2">
-                      <span className="text-dark-accent mt-1">•</span>
-                      <span className="text-dark-secondary">{finding}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {selectedStudy.limitations && selectedStudy.limitations.length > 0 && (
-                <div>
-                  <h4 className="font-semibold text-dark-accent mb-2">Important Considerations</h4>
-                  <ul className="space-y-2">
-                    {selectedStudy.limitations.map((limitation: string, index: number) => (
-                      <li key={index} className="flex items-start gap-2">
-                        <span className="text-yellow-400 mt-1">⚠</span>
-                        <span className="text-dark-secondary">{limitation}</span>
+                <h4 className="text-lg font-semibold text-dark-primary mb-3 flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-dark-accent" />
+                  Key Findings
+                </h4>
+                <div className="bg-dark-background border border-dark-border rounded-lg p-4">
+                  <ul className="space-y-3">
+                    {selectedStudy.key_findings?.map((finding: string, index: number) => (
+                      <li key={index} className="flex items-start gap-3">
+                        <span className="text-dark-accent mt-1 text-lg">•</span>
+                        <span className="text-dark-primary leading-relaxed">{finding}</span>
                       </li>
                     ))}
                   </ul>
+                </div>
+              </div>
+              
+              {/* Your Personalized Recommendations */}
+              <div>
+                <h4 className="text-lg font-semibold text-dark-primary mb-3 flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-green-400" />
+                  Your Personalized Recommendations
+                </h4>
+                <div className="bg-dark-background border border-dark-border rounded-lg p-4">
+                  <ul className="space-y-3">
+                    {selectedStudy.actionable_recommendations?.map((rec: string, index: number) => (
+                      <li key={index} className="flex items-start gap-3">
+                        <span className="text-green-400 mt-1 text-lg font-bold">✓</span>
+                        <span className="text-dark-primary leading-relaxed">{rec}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              {/* Important Considerations */}
+              {selectedStudy.limitations && selectedStudy.limitations.length > 0 && (
+                <div>
+                  <h4 className="text-lg font-semibold text-dark-primary mb-3 flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5 text-yellow-400" />
+                    Important Considerations
+                  </h4>
+                  <div className="bg-dark-background border border-dark-border rounded-lg p-4">
+                    <ul className="space-y-3">
+                      {selectedStudy.limitations.map((limitation: string, index: number) => (
+                        <li key={index} className="flex items-start gap-3">
+                          <span className="text-yellow-400 mt-1 text-lg">⚠</span>
+                          <span className="text-dark-primary leading-relaxed">{limitation}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
               )}
             </div>

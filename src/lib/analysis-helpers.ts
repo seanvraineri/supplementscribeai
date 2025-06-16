@@ -226,26 +226,28 @@ const SNP_DATABASE: Record<string, any> = {
 // AI ANALYSIS FUNCTIONS - These call the Supabase Edge Function
 const getAIBiomarkerAnalysis = async (markerName: string, value: string, unit: string, userConditions: any[] = [], userAllergies: any[] = []) => {
   try {
-    const response = await fetch('/api/ai-health-analysis', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+    // Import Supabase client dynamically to avoid SSR issues
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+    const { data: analysis, error } = await supabase.functions.invoke('ai-health-analysis', {
+      body: {
         type: 'biomarker',
         name: markerName,
         value,
         unit,
         userConditions,
         userAllergies,
-      }),
+      },
     });
 
-    if (!response.ok) {
+    if (error) {
       throw new Error('AI analysis failed');
     }
 
-    const analysis = await response.json();
     return analysis;
   } catch (error) {
     console.error('AI biomarker analysis failed:', error);
@@ -273,26 +275,28 @@ const getAIBiomarkerAnalysis = async (markerName: string, value: string, unit: s
 
 const getAISNPAnalysis = async (snpId: string, geneName: string, genotype: string, userConditions: any[] = [], userAllergies: any[] = []) => {
   try {
-    const response = await fetch('/api/ai-health-analysis', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+    // Import Supabase client dynamically to avoid SSR issues
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+    const { data: analysis, error } = await supabase.functions.invoke('ai-health-analysis', {
+      body: {
         type: 'snp',
         name: snpId,
         gene: geneName,
         genotype,
         userConditions,
         userAllergies,
-      }),
+      },
     });
 
-    if (!response.ok) {
+    if (error) {
       throw new Error('AI analysis failed');
     }
 
-    const analysis = await response.json();
     return analysis;
   } catch (error) {
     console.error('AI SNP analysis failed:', error);

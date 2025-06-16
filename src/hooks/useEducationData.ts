@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getBiomarkerEducation, getSNPEducation } from '@/lib/analysis-helpers';
+// import { getBiomarkerEducation, getSNPEducation } from '@/lib/analysis-helpers';
 
 interface EducationData {
   [key: string]: any;
@@ -16,6 +16,22 @@ export const useEducationData = (
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    // TEMPORARILY DISABLED - This was causing continuous expensive AI calls
+    // TODO: Implement batched or cached education loading
+    console.log('Education data loading temporarily disabled to prevent excessive AI calls');
+    console.log(`Would load education for ${biomarkers.length} biomarkers and ${snps.length} SNPs`);
+    
+    // Set loading to false immediately
+    setLoading(false);
+    
+    // Provide empty education data for now
+    setBiomarkerEducation({});
+    setSnpEducation({});
+    
+    return;
+
+    // ORIGINAL CODE (commented out):
+    /*
     const loadEducationData = async () => {
       if (biomarkers.length === 0 && snps.length === 0) return;
       
@@ -73,6 +89,7 @@ export const useEducationData = (
     };
 
     loadEducationData();
+    */
   }, [biomarkers, snps, userConditions, userAllergies]);
 
   return {
