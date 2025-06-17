@@ -15,17 +15,17 @@ export async function GET(request: NextRequest) {
     const date = searchParams.get('date');
 
     const { data, error } = await supabase
-      .from('user_supplement_tracking')
+      .from('user_supplement_adherence')
       .select('*')
       .eq('user_id', user.id)
-      .eq('date', date)
+      .eq('entry_date', date)
       .order('created_at', { ascending: false });
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json(data);
+    return NextResponse.json({ supplements: data || [] });
   } catch (error) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
@@ -42,14 +42,21 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { taken, date } = body;
+    const { supplement_name, dosage, taken, entry_date } = body;
 
+    // Upsert the supplement adherence record
     const { data, error } = await supabase
-      .from('user_supplement_tracking')
-      .insert({
+      .from('user_supplement_adherence')
+      .upsert({
         user_id: user.id,
+        supplement_name,
+        dosage,
         taken,
-        date,
+        taken_at: taken ? new Date().toISOString() : null,
+        entry_date,
+      }, {
+        onConflict: 'user_id,supplement_name,entry_date',
+        ignoreDuplicates: false
       })
       .select()
       .single();

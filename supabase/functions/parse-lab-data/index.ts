@@ -378,6 +378,346 @@ function getCanonicalSnp(name: string): string | null {
   return null;
 }
 
+// Enhanced CSV and 23andMe parsing functions
+interface CSVGeneticRow {
+  rsid: string;
+  chromosome?: string;
+  position?: string;
+  genotype: string;
+  gene?: string;
+}
+
+// Priority SNPs for supplement recommendations (matches generate-plan mapping)
+const PRIORITY_SNPS = [
+  // Tier 1: Direct supplement matches
+  'rs1801133', 'rs1801131', 'rs4680', 'rs4633', 'rs4818', 'rs769224',
+  'rs1544410', 'rs2228570', 'rs731236', 'rs429358', 'rs7412',
+  'rs1799945', 'rs1800562', 'rs174548', 'rs174537', 'rs1535',
+  'rs1801394', 'rs1805087', 'rs1801198', 'rs1643649', 'rs4880',
+  'rs1799983', 'rs4244593', 'rs7946', 'rs11645428', 'rs12934922',
+  'rs602662', 'rs492602', 'rs601338', 'rs5751876', 'rs1695',
+  'rs1138272', 'rs1050450', 'rs1141321', 'rs9369898', 'rs651933',
+  'rs1051266', 'rs1979277', 'rs7297662', 'rs773115', 'rs526934',
+  'rs1799895', 'rs2758331', 'rs4998557', 'rs2070424'
+];
+
+function parseCSVGeneticData(csvContent: string): CSVGeneticRow[] {
+  console.log('🧬 Parsing CSV genetic data...');
+  
+  const lines = csvContent.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+  const results: CSVGeneticRow[] = [];
+  
+  // Detect format by examining headers and first few data lines
+  let format: '23andme' | 'ancestry' | 'generic' = 'generic';
+  let headerLine = -1;
+  
+  // Look for header patterns
+  for (let i = 0; i < Math.min(20, lines.length); i++) {
+    const line = lines[i].toLowerCase();
+    if (line.includes('rsid') && (line.includes('chromosome') || line.includes('genotype'))) {
+      format = '23andme';
+      headerLine = i;
+      break;
+    } else if (line.includes('rsid') && line.includes('allele')) {
+      format = 'ancestry';
+      headerLine = i;
+      break;
+    }
+  }
+  
+  console.log(`🧬 Detected format: ${format}, header at line: ${headerLine}`);
+  
+  if (headerLine === -1) {
+    // Try to detect data format from first few lines
+    for (let i = 0; i < Math.min(10, lines.length); i++) {
+      const line = lines[i];
+      if (line.startsWith('rs') && (line.includes('\t') || line.includes(','))) {
+        headerLine = i - 1; // Assume previous line was header or no header
+        break;
+      }
+    }
+  }
+  
+  const dataStartLine = Math.max(0, headerLine + 1);
+  console.log(`🧬 Starting data parsing from line: ${dataStartLine}`);
+  
+  // Parse headers to determine column positions
+  let rsidCol = 0, chrCol = 1, posCol = 2, genotypeCol = 3;
+  
+  if (headerLine >= 0 && headerLine < lines.length) {
+    const headers = lines[headerLine].toLowerCase().split(/[,\t]/);
+    rsidCol = Math.max(0, headers.findIndex(h => h.includes('rsid') || h.includes('snp')));
+    chrCol = Math.max(0, headers.findIndex(h => h.includes('chr')));
+    posCol = Math.max(0, headers.findIndex(h => h.includes('pos')));
+    genotypeCol = Math.max(0, headers.findIndex(h => h.includes('genotype') || h.includes('allele')));
+  }
+  
+  console.log(`🧬 Column mapping: rsid=${rsidCol}, chr=${chrCol}, pos=${posCol}, genotype=${genotypeCol}`);
+  
+  // Create priority set for faster lookup
+  const prioritySet = new Set(PRIORITY_SNPS);
+  const priorityResults: CSVGeneticRow[] = [];
+  const otherResults: CSVGeneticRow[] = [];
+  
+  // Parse data lines
+  for (let i = dataStartLine; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.startsWith('#') || line.length < 5) continue; // Skip comments and short lines
+    
+    const columns = line.split(/[,\t]/);
+    if (columns.length < 2) continue;
+    
+    const rsid = columns[rsidCol]?.trim() || '';
+    const chromosome = columns[chrCol]?.trim() || '';
+    const position = columns[posCol]?.trim() || '';
+    const genotype = columns[genotypeCol]?.trim() || '';
+    
+    // Validate rsid format
+    if (!rsid.match(/^rs\d+$/)) continue;
+    
+    // Validate genotype (should be like AA, AT, TT, etc.)
+    if (!genotype.match(/^[ATCG-]{1,4}$/i) && !genotype.match(/^[ATCG]\/[ATCG]$/i)) continue;
+    
+    const row: CSVGeneticRow = {
+      rsid,
+      chromosome,
+      position,
+      genotype: genotype.replace('/', '').toUpperCase() // Normalize genotype
+    };
+    
+    // Prioritize actionable SNPs
+    if (prioritySet.has(rsid)) {
+      priorityResults.push(row);
+    } else {
+      otherResults.push(row);
+    }
+    
+    // Progress logging for large files
+    if (i % 50000 === 0 && i > 0) {
+      console.log(`🧬 Processed ${i} lines, found ${priorityResults.length} priority SNPs, ${otherResults.length} other SNPs`);
+    }
+  }
+  
+  // Combine results with priority SNPs first
+  const combinedResults = [...priorityResults, ...otherResults];
+  
+  console.log(`🧬 CSV parsing complete: ${combinedResults.length} total SNPs (${priorityResults.length} priority, ${otherResults.length} others)`);
+  
+  // PERFORMANCE OPTIMIZATION: For extremely large files, limit to most relevant SNPs
+  // while ensuring ALL priority SNPs are included
+  const MAX_SNPS_FOR_PROCESSING = 5000; // Reasonable limit for supplement recommendations
+  
+  if (combinedResults.length > MAX_SNPS_FOR_PROCESSING) {
+    const optimizedResults = [
+      ...priorityResults, // Always include ALL priority SNPs
+      ...otherResults.slice(0, MAX_SNPS_FOR_PROCESSING - priorityResults.length) // Fill remaining slots
+    ];
+    
+    console.log(`🧬 Large file optimization: Reduced from ${combinedResults.length} to ${optimizedResults.length} SNPs (${priorityResults.length} priority + ${optimizedResults.length - priorityResults.length} others)`);
+    
+    return optimizedResults;
+  }
+  
+  return combinedResults;
+}
+
+function isCSVGeneticFile(content: string): boolean {
+  // Look at more content for files with long headers (like 23andMe)
+  const firstPart = content.substring(0, 3000).toLowerCase();
+  
+  // Check for CSV genetic file indicators
+  const indicators = [
+    'rsid', 'chromosome', 'position', 'genotype',
+    'rs1801133', 'rs4680', 'rs429358', // Common SNPs
+    '23andme', 'ancestry', 'myheritage', 'nebula'
+  ];
+  
+  const hasRsids = /rs\d+/i.test(firstPart);
+  const hasDelimiters = firstPart.includes(',') || firstPart.includes('\t');
+  const hasIndicators = indicators.some(indicator => firstPart.includes(indicator));
+  
+  console.log(`🔍 CSV Detection: rsIDs=${hasRsids}, delimiters=${hasDelimiters}, indicators=${hasIndicators}`);
+  
+  return hasRsids && hasDelimiters && hasIndicators;
+}
+
+// NEW: Enhanced genetic file detection for both CSV and TXT formats
+function isGeneticFile(content: string): boolean {
+  // Look at more content for files with long headers (like 23andMe)
+  const firstPart = content.substring(0, 3000).toLowerCase();
+  
+  // Check for genetic file indicators
+  const indicators = [
+    'rsid', 'chromosome', 'position', 'genotype', 'allele',
+    'rs1801133', 'rs4680', 'rs429358', 'rs1801131', // Common SNPs
+    '23andme', 'ancestry', 'myheritage', 'nebula', 'dnaland',
+    'mthfr', 'comt', 'apoe', 'vdr', // Common genes
+    'c677t', 'a1298c', 'val158met' // Common variants
+  ];
+  
+  const hasRsids = /rs\d+/i.test(firstPart);
+  const hasGeneticPatterns = /[ATCG]{2,}/i.test(firstPart) || /[ATCG]\/[ATCG]/i.test(firstPart);
+  const hasIndicators = indicators.some(indicator => firstPart.includes(indicator));
+  
+  // Check for various delimiters (CSV, TSV, space-separated, etc.)
+  const hasDelimiters = firstPart.includes(',') || firstPart.includes('\t') || 
+                       /rs\d+\s+\w+\s+[ATCG]/i.test(firstPart);
+  
+  console.log(`🔍 Genetic File Detection: rsIDs=${hasRsids}, patterns=${hasGeneticPatterns}, delimiters=${hasDelimiters}, indicators=${hasIndicators}`);
+  
+  return hasRsids && hasGeneticPatterns && hasIndicators;
+}
+
+// NEW: Universal genetic data parser for CSV, TSV, and space-separated TXT files
+function parseGeneticData(content: string): CSVGeneticRow[] {
+  console.log('🧬 Parsing genetic data (CSV/TXT)...');
+  
+  const lines = content.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+  const results: CSVGeneticRow[] = [];
+  
+  // Detect format by examining headers and first few data lines
+  let format: '23andme' | 'ancestry' | 'vcf' | 'generic' = 'generic';
+  let headerLine = -1;
+  let delimiter = ','; // Default to comma
+  
+  // Auto-detect delimiter and format
+  for (let i = 0; i < Math.min(20, lines.length); i++) {
+    const line = lines[i].toLowerCase();
+    
+    // Detect delimiter
+    if (line.includes('\t')) {
+      delimiter = '\t';
+    } else if (line.includes(',')) {
+      delimiter = ',';
+    } else if (/rs\d+\s+\w+\s+[atcg]/i.test(line)) {
+      delimiter = ' '; // Space-separated
+    }
+    
+    // Detect format
+    if (line.includes('rsid') && (line.includes('chromosome') || line.includes('genotype'))) {
+      format = '23andme';
+      headerLine = i;
+      break;
+    } else if (line.includes('rsid') && line.includes('allele')) {
+      format = 'ancestry';
+      headerLine = i;
+      break;
+    } else if (line.startsWith('#chrom') || line.startsWith('##fileformat=vcf')) {
+      format = 'vcf';
+      headerLine = i;
+      break;
+    }
+  }
+  
+  console.log(`🧬 Detected format: ${format}, delimiter: '${delimiter}', header at line: ${headerLine}`);
+  
+  if (headerLine === -1) {
+    // Try to detect data format from first few lines
+    for (let i = 0; i < Math.min(10, lines.length); i++) {
+      const line = lines[i];
+      if (line.startsWith('rs') && (line.includes(delimiter) || /rs\d+\s+\w+\s+[ATCG]/i.test(line))) {
+        headerLine = i - 1; // Assume previous line was header or no header
+        break;
+      }
+    }
+  }
+  
+  const dataStartLine = Math.max(0, headerLine + 1);
+  console.log(`🧬 Starting data parsing from line: ${dataStartLine}, using delimiter: '${delimiter}'`);
+  
+  // Parse headers to determine column positions
+  let rsidCol = 0, chrCol = 1, posCol = 2, genotypeCol = 3;
+  
+  if (headerLine >= 0 && headerLine < lines.length) {
+    const headers = lines[headerLine].toLowerCase().split(delimiter === ' ' ? /\s+/ : delimiter);
+    rsidCol = Math.max(0, headers.findIndex(h => h.includes('rsid') || h.includes('snp')));
+    chrCol = Math.max(0, headers.findIndex(h => h.includes('chr')));
+    posCol = Math.max(0, headers.findIndex(h => h.includes('pos')));
+    genotypeCol = Math.max(0, headers.findIndex(h => h.includes('genotype') || h.includes('allele')));
+  }
+  
+  console.log(`🧬 Column mapping: rsid=${rsidCol}, chr=${chrCol}, pos=${posCol}, genotype=${genotypeCol}`);
+  
+  // Create priority set for faster lookup
+  const prioritySet = new Set(PRIORITY_SNPS);
+  const priorityResults: CSVGeneticRow[] = [];
+  const otherResults: CSVGeneticRow[] = [];
+  
+  // Parse data lines with enhanced parsing for different formats
+  for (let i = dataStartLine; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.startsWith('#') || line.length < 5) continue; // Skip comments and short lines
+    
+    // Split by detected delimiter
+    const columns = delimiter === ' ' ? line.split(/\s+/) : line.split(delimiter);
+    if (columns.length < 2) continue;
+    
+    const rsid = columns[rsidCol]?.trim() || '';
+    const chromosome = columns[chrCol]?.trim() || '';
+    const position = columns[posCol]?.trim() || '';
+    let genotype = columns[genotypeCol]?.trim() || '';
+    
+    // Validate rsid format
+    if (!rsid.match(/^rs\d+$/)) continue;
+    
+    // Enhanced genotype parsing for different formats
+    if (genotype.includes('/')) {
+      // Format: A/T -> AT
+      genotype = genotype.replace('/', '').toUpperCase();
+    } else if (genotype.includes('|')) {
+      // Format: A|T -> AT  
+      genotype = genotype.replace('|', '').toUpperCase();
+    } else if (genotype.length === 1) {
+      // Format: single allele -> duplicate (A -> AA)
+      genotype = genotype + genotype;
+    }
+    
+    // Validate genotype (should be like AA, AT, TT, etc.)
+    if (!genotype.match(/^[ATCG-]{1,4}$/i)) continue;
+    
+    const row: CSVGeneticRow = {
+      rsid,
+      chromosome,
+      position,
+      genotype: genotype.toUpperCase()
+    };
+    
+    // Prioritize actionable SNPs
+    if (prioritySet.has(rsid)) {
+      priorityResults.push(row);
+    } else {
+      otherResults.push(row);
+    }
+    
+    // Progress logging for large files
+    if (i % 50000 === 0 && i > 0) {
+      console.log(`🧬 Processed ${i} lines, found ${priorityResults.length} priority SNPs, ${otherResults.length} other SNPs`);
+    }
+  }
+  
+  // Combine results with priority SNPs first
+  const combinedResults = [...priorityResults, ...otherResults];
+  
+  console.log(`🧬 Genetic parsing complete: ${combinedResults.length} total SNPs (${priorityResults.length} priority, ${otherResults.length} others)`);
+  
+  // PERFORMANCE OPTIMIZATION: For extremely large files, limit to most relevant SNPs
+  // while ensuring ALL priority SNPs are included
+  const MAX_SNPS_FOR_PROCESSING = 5000; // Reasonable limit for supplement recommendations
+  
+  if (combinedResults.length > MAX_SNPS_FOR_PROCESSING) {
+    const optimizedResults = [
+      ...priorityResults, // Always include ALL priority SNPs
+      ...otherResults.slice(0, MAX_SNPS_FOR_PROCESSING - priorityResults.length) // Fill remaining slots
+    ];
+    
+    console.log(`🧬 Large file optimization: Reduced from ${combinedResults.length} to ${optimizedResults.length} SNPs (${priorityResults.length} priority + ${optimizedResults.length - priorityResults.length} others)`);
+    
+    return optimizedResults;
+  }
+  
+  return combinedResults;
+}
+
 Deno.serve(async (req) => {
   // This function is now a pure text parser.
   // It receives raw text, sends it to Gemini, and returns the structured JSON.
@@ -421,6 +761,59 @@ Deno.serve(async (req) => {
     } else {
       console.log('Non-PDF content detected - processing as text');
       console.log(`Text content preview: ${processedContent.substring(0, 500)}`);
+    }
+
+    // ENHANCED: Check for genetic data (CSV/TXT) and use optimized parser
+    if (reportType === 'genetic_report' && isGeneticFile(processedContent)) {
+      console.log('🧬 Genetic file detected (CSV/TXT) - using optimized parser');
+      
+      try {
+        // Try the new universal parser first
+        const geneticSnps = parseGeneticData(processedContent);
+        
+        if (geneticSnps.length > 0) {
+          console.log(`🧬 Successfully parsed ${geneticSnps.length} SNPs from genetic file`);
+          
+          // Convert to standard SNP format
+          const snpData = geneticSnps.map(snp => ({
+            snp_id: snp.rsid,
+            gene_name: snp.gene || '', // Will be enriched later
+            genotype: snp.genotype,
+            allele: snp.genotype // Alias for compatibility
+          }));
+          
+          return new Response(JSON.stringify({ snps: snpData }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+      } catch (geneticError: any) {
+        console.error('Genetic parsing failed, trying CSV fallback:', geneticError);
+        
+        // Fallback to original CSV parser
+        try {
+          if (isCSVGeneticFile(processedContent)) {
+            const csvSnps = parseCSVGeneticData(processedContent);
+            
+            if (csvSnps.length > 0) {
+              console.log(`🧬 CSV fallback successful: ${csvSnps.length} SNPs`);
+              
+              const snpData = csvSnps.map(snp => ({
+                snp_id: snp.rsid,
+                gene_name: snp.gene || '',
+                genotype: snp.genotype,
+                allele: snp.genotype
+              }));
+              
+              return new Response(JSON.stringify({ snps: snpData }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              });
+            }
+          }
+        } catch (csvError: any) {
+          console.error('CSV fallback also failed, falling back to AI:', csvError);
+        }
+        // Continue to AI parsing as final fallback
+      }
     }
 
     // Add test sample option for debugging

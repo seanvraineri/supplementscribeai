@@ -13,7 +13,6 @@ interface SupplementRecommendation {
   confidence_score: number;
   interactions?: string[];
   notes?: string;
-  citations: string[];
   product?: {
     id: string;
     brand: string;
@@ -242,7 +241,7 @@ Deno.serve(async (req) => {
     const interactionCheck = validateNoInteractions(planDetails.recommendations);
     if (!interactionCheck.valid) {
       console.log('Interaction detected, applying resolution...');
-      planDetails.recommendations = resolveInteractions(planDetails.recommendations, availableProducts);
+      planDetails.recommendations = resolveInteractions(planDetails.recommendations, availableProducts, userProfile);
       console.log('✅ Interactions resolved');
     }
 
@@ -420,6 +419,14 @@ PERSONALIZATION TIER: ${tier}
   if (profile.weight_lbs) prompt += `Weight: ${profile.weight_lbs} lbs\n`;
   if (profile.activity_level) prompt += `Activity: ${profile.activity_level}\n`;
 
+
+  // 🔥 PRIMARY HEALTH CONCERN - MOST IMPORTANT SECTION
+  if (profile.primary_health_concern) {
+    prompt += `\n🚨 PRIMARY HEALTH CONCERN (ABSOLUTE TOP PRIORITY):\n`;
+    prompt += `"${profile.primary_health_concern}"\n`;
+    prompt += `\n⚠️ CRITICAL: This is their MAIN concern. Your supplement plan MUST address this above all else.\n`;
+  }
+
   // Health goals and symptoms
   if (profile.health_goals && profile.health_goals.length > 0) {
     prompt += `\n🎯 Health Goals: ${profile.health_goals.join(', ')}\n`;
@@ -441,6 +448,29 @@ PERSONALIZATION TIER: ${tier}
   // Health history
   if (healthHistory.conditions.length > 0) {
     prompt += `\n🏥 Conditions: ${healthHistory.conditions.join(', ')}\n`;
+    
+    // 🚨 ENHANCED MEDICAL CONDITION ANALYSIS
+    prompt += `\n=== 🏥 CRITICAL MEDICAL CONDITIONS ANALYSIS ===\n`;
+    
+    const conditionAnalysis = analyzeMedicalConditions(healthHistory.conditions);
+    if (conditionAnalysis.critical.length > 0) {
+      prompt += `🔴 HIGH PRIORITY MEDICAL CONDITIONS (Must Drive Supplement Selection):\n`;
+      conditionAnalysis.critical.forEach(condition => {
+        prompt += `• ${condition.condition}: ${condition.supplement_guidance}\n`;
+        prompt += `  Priority Score: ${condition.priority_score} | Category: ${condition.category}\n`;
+      });
+    }
+    
+    if (conditionAnalysis.moderate.length > 0) {
+      prompt += `\n🟡 MODERATE PRIORITY CONDITIONS:\n`;
+      conditionAnalysis.moderate.forEach(condition => {
+        prompt += `• ${condition.condition}: ${condition.supplement_guidance}\n`;
+      });
+    }
+    
+    if (conditionAnalysis.multi_condition_guidance) {
+      prompt += `\n🔗 MULTI-CONDITION SYNERGIES:\n${conditionAnalysis.multi_condition_guidance}\n`;
+    }
   }
   if (healthHistory.medications.length > 0) {
     prompt += `💊 Medications: ${healthHistory.medications.join(', ')}\n`;
@@ -499,20 +529,28 @@ PERSONALIZATION TIER: ${tier}
     }
   }
 
-  // Genetic data (if available)
+  // Genetic data (if available) - ENHANCED WITH SMART PRIORITIZATION
   if (geneticData.length > 0) {
-    prompt += `\n=== GENETIC PROFILE (${geneticData.length} variants) ===\n`;
+    // Use smart prioritization instead of random slice
+    const prioritizedSNPs = prioritizeActionableSNPs(geneticData, products);
     
-    // Show key genetic variants
-    const keyVariants = geneticData.slice(0, 12);
-    keyVariants.forEach((snp: any) => {
-      if (snp.supported_snps?.rsid && snp.supported_snps?.gene) {
-        prompt += `• ${snp.supported_snps.rsid} (${snp.supported_snps.gene}): ${snp.genotype}\n`;
+    prompt += `\n=== 🧬 KEY GENETIC VARIANTS (${geneticData.length} total, showing ${prioritizedSNPs.length} most actionable) ===\n`;
+    
+    prioritizedSNPs.forEach((snp: any) => {
+      if (snp.rsid && snp.gene) {
+        prompt += `• ${snp.rsid} (${snp.gene}): ${snp.genotype}`;
+        if (snp.available_supplements && snp.available_supplements.length > 0) {
+          prompt += ` → Matches: ${snp.available_supplements.join(', ')}`;
+        }
+        if (snp.impact_description) {
+          prompt += ` | ${snp.impact_description}`;
+        }
+        prompt += '\n';
       }
     });
     
-    if (geneticData.length > 12) {
-      prompt += `... and ${geneticData.length - 12} additional variants\n`;
+    if (geneticData.length > prioritizedSNPs.length) {
+      prompt += `... and ${geneticData.length - prioritizedSNPs.length} additional variants (less directly actionable with current catalog)\n`;
     }
   }
 
@@ -527,13 +565,15 @@ PERSONALIZATION TIER: ${tier}
 5. **YOUR CATALOG ONLY** - Use only the supplements listed above
 
 🎯 PRIORITIZATION HIERARCHY (MANDATORY ORDER):
-1. DEFICIENT BIOMARKERS (🔴) - Address these FIRST and FOREMOST
-2. GENETIC VARIANTS - Support genetic predispositions  
-3. SEVERE SYMPTOMS - Target reported health issues
-4. HEALTH GOALS - Support stated objectives
-5. FOUNDATIONAL WELLNESS - Fill remaining slots
+1. 🚨 PRIMARY HEALTH CONCERN - Address their stated main concern FIRST
+2. DEFICIENT BIOMARKERS (🔴) - Address critical deficiencies
+3. GENETIC VARIANTS - Support genetic predispositions  
+4. 🏥 CRITICAL MEDICAL CONDITIONS - Target serious medical conditions with priority
+5. SEVERE SYMPTOMS - Target reported health issues
+6. HEALTH GOALS - Support stated objectives
+7. FOUNDATIONAL WELLNESS - Fill remaining slots
 
-CRITICAL: If someone has deficient biomarkers, those supplements MUST be included before anything else.
+CRITICAL: The PRIMARY HEALTH CONCERN is their most important issue. At least 2-3 supplements should directly address this concern.
 
 PERSONALIZATION STRATEGY FOR ${tier}:`;
 
@@ -578,16 +618,19 @@ PERSONALIZATION STRATEGY FOR ${tier}:`;
 - Each "reason" field MUST be deeply personal, empathetic, and healing-focused
 - Write as if you're a caring health coach who truly understands their struggle
 - Connect their specific data to how they FEEL and what they're experiencing
+- 🚨 ALWAYS reference their PRIMARY HEALTH CONCERN in your reasoning when relevant
 - Explain HOW this supplement will specifically help THEM feel better
 - Use warm, supportive language that shows you care about their wellbeing
 - Make them feel seen, understood, and hopeful about their health journey
 
 REASONING EXAMPLES:
-- Biomarkers: "Your Vitamin D level of 18 ng/mL explains so much about what you've been experiencing. This severe deficiency is likely contributing to your brain fog, low energy, and difficulty with weight management. By bringing your Vitamin D to optimal levels (30-50 ng/mL), you should start feeling more mentally clear, energetic, and motivated to reach your health goals. This isn't just a number - it's the key to unlocking the vibrant energy you deserve."
+- Primary Concern: "You mentioned that your main concern is '${profile.primary_health_concern || '[their specific concern]'}' - this is exactly why I'm recommending this supplement. It directly addresses your primary worry by [specific mechanism]. You shouldn't have to live with this concern any longer."
 
-- Genetics: "Your MTHFR A1298C variant means your body has been working extra hard to process folate, which explains why you might feel mentally foggy or fatigued. This methylated B-complex bypasses your genetic limitation, giving your brain and nervous system the exact form of B vitamins they can actually use. Think of it as giving your body the right key for the lock - suddenly everything works better."
+- Biomarkers: "Your Vitamin D level of 18 ng/mL explains so much about what you've been experiencing, especially regarding your primary concern about [their concern]. This severe deficiency is likely contributing to your brain fog, low energy, and difficulty with weight management. By bringing your Vitamin D to optimal levels (30-50 ng/mL), you should start feeling more mentally clear, energetic, and motivated to reach your health goals."
 
-- Symptoms: "Your severe brain fog and poor sleep quality are deeply connected. This magnesium will help calm your nervous system, allowing for deeper, more restorative sleep. When you sleep better, your brain fog lifts, your energy returns, and you'll feel like yourself again. You deserve to wake up feeling refreshed and mentally sharp."
+- Genetics: "Your MTHFR A1298C variant means your body has been working extra hard to process folate, which could be connected to your primary concern about [their concern]. This methylated B-complex bypasses your genetic limitation, giving your brain and nervous system the exact form of B vitamins they can actually use."
+
+- Symptoms: "Your severe brain fog and poor sleep quality are deeply connected. This magnesium will help calm your nervous system, allowing for deeper, more restorative sleep. When you sleep better, your brain fog lifts, your energy returns, and you'll feel like yourself again."
 
 🚨 ANTI-HALLUCINATION REQUIREMENTS:
 - ONLY use biomarker values that are explicitly listed above
@@ -605,11 +648,10 @@ Provide EXACTLY 6 recommendations in this JSON format:
     {
       "supplement": "Exact name from your catalog",
       "dosage": "SPECIFIC DOSAGE with units (e.g., '5000 IU daily', '400 mg daily', '2 capsules daily', '1000 mg daily')",
-      "timing": "Optimal timing for this person's lifestyle/symptoms",
+      "timing": "Take your complete daily pack with breakfast",
       "reason": "DEEPLY PERSONAL, empathetic explanation that connects their specific data to how they FEEL and how this supplement will help them feel better. Write as a caring health coach who truly understands their struggle and wants to help them heal and thrive. Make them feel seen, understood, and hopeful.",
       "confidence_score": 90,
-      "notes": "Caring, supportive guidance specific to this individual's journey",
-      "citations": ["Relevant scientific citation"]
+      "notes": "Caring, supportive guidance specific to this individual's journey"
     }
   ],
   "general_notes": "Warm, encouraging message about how this personalized pack will help them feel better and achieve their health goals",
@@ -627,6 +669,153 @@ Provide EXACTLY 6 recommendations in this JSON format:
 CRITICAL: Provide ONLY the JSON response. Count your recommendations - must be exactly 6. Make every explanation uniquely personal to THIS individual.`;
 
   return prompt;
+}
+
+// Smart SNP prioritization function - maps genetic variants to OK Capsule supplements
+function prioritizeActionableSNPs(geneticData: any[], availableProducts: any[]): any[] {
+  // Define SNP-to-supplement mapping based on your OK Capsule catalog
+  const ACTIONABLE_SNP_MAP: Record<string, {
+    priority: number;
+    supplements: string[];
+    impact_description: string;
+  }> = {
+    // TIER 1: Direct supplement matches (highest priority)
+    'rs1801133': { // MTHFR C677T
+      priority: 1,
+      supplements: ['Methyl B-Complex', 'Vitamin B12'],
+      impact_description: 'Requires methylated B vitamins - you have Methyl B-Complex and B12!'
+    },
+    'rs1801131': { // MTHFR A1298C  
+      priority: 1,
+      supplements: ['Methyl B-Complex', 'Vitamin B12'],
+      impact_description: 'Needs methylated forms - perfect match with your catalog'
+    },
+    'rs4680': { // COMT Val158Met
+      priority: 1, 
+      supplements: ['Magnesium', 'Theanine'],
+      impact_description: 'Benefits from magnesium and theanine for neurotransmitter support'
+    },
+    
+    // TIER 2: Vitamin/mineral needs
+    'rs2228570': { // VDR
+      priority: 2,
+      supplements: ['Vitamin D', 'D Complex'],
+      impact_description: 'May need higher vitamin D doses - you have both options'
+    },
+    'rs1544410': { // VDR BsmI
+      priority: 2,
+      supplements: ['Vitamin D', 'D Complex', 'Magnesium'],
+      impact_description: 'Affects vitamin D metabolism and magnesium needs'
+    },
+    'rs1799945': { // HFE H63D
+      priority: 2,
+      supplements: ['Easy Iron'],
+      impact_description: 'Iron metabolism variant - Easy Iron is perfect form'
+    },
+    'rs1800562': { // HFE C282Y
+      priority: 2,
+      supplements: ['Easy Iron', 'Vitamin C'],
+      impact_description: 'Iron processing variant - needs careful iron management'
+    },
+    'rs1801198': { // TCN2 B12 transport
+      priority: 2,
+      supplements: ['Vitamin B12', 'Methyl B-Complex'],
+      impact_description: 'B12 transport variant - methylcobalamin form preferred'
+    },
+    
+    // TIER 3: Antioxidant/metabolic support
+    'rs4880': { // SOD2
+      priority: 3,
+      supplements: ['CoQ10', 'Alpha Lipoic Acid', 'NAC'],
+      impact_description: 'Antioxidant enzyme variant - multiple antioxidant options available'
+    },
+    'rs1801282': { // PPARG
+      priority: 3,
+      supplements: ['Berberine', 'Chromium'],
+      impact_description: 'Metabolic variant - berberine and chromium support available'
+    },
+    'rs7903146': { // TCF7L2
+      priority: 3,
+      supplements: ['Berberine', 'Chromium', 'Alpha Lipoic Acid'],
+      impact_description: 'Glucose metabolism - excellent metabolic support options'
+    },
+    'rs11645428': { // BCMO1
+      priority: 3,
+      supplements: ['Multivitamin'],
+      impact_description: 'Beta-carotene conversion variant - may need pre-formed vitamin A'
+    },
+    'rs12934922': { // BCMO1
+      priority: 3,
+      supplements: ['Multivitamin'],
+      impact_description: 'Beta-carotene conversion variant - pre-formed vitamin A recommended'
+    },
+    
+    // TIER 4: Specialized support
+    'rs1050450': { // GPX1
+      priority: 4,
+      supplements: ['NAC', 'Alpha Lipoic Acid'],
+      impact_description: 'Glutathione pathway - NAC provides precursor support'
+    },
+    'rs1695': { // GSTP1
+      priority: 4,
+      supplements: ['NAC', 'Milk Thistle'],
+      impact_description: 'Detoxification variant - NAC and milk thistle support'
+    },
+    'rs1643649': { // DHFR
+      priority: 4,
+      supplements: ['Methyl B-Complex'],
+      impact_description: 'Folate metabolism variant - avoid folic acid, use methylated forms'
+    },
+    'rs602662': { // FUT2
+      priority: 4,
+      supplements: ['Complete Probiotic', 'Vitamin B12'],
+      impact_description: 'Gut microbiome variant - affects B12 absorption'
+    },
+    'rs601338': { // FUT2
+      priority: 4,
+      supplements: ['Complete Probiotic', 'Vitamin B12'],
+      impact_description: 'Non-secretor variant - impacts gut health and B12 status'
+    }
+  };
+
+  // Score and sort SNPs by actionability
+  const scoredSNPs = geneticData.map(snp => {
+    const rsid = snp.supported_snps?.rsid || snp.snp_id || snp.rsid;
+    const gene = snp.supported_snps?.gene || snp.gene_name || snp.gene;
+    
+    const mapping = ACTIONABLE_SNP_MAP[rsid];
+    if (mapping) {
+      // Check if we actually have the relevant supplements
+      const availableSupplements = mapping.supplements.filter(suppName =>
+        availableProducts.some(product => 
+          product.supplement_name.toLowerCase().includes(suppName.toLowerCase())
+        )
+      );
+      
+      return {
+        ...snp,
+        actionability_score: mapping.priority + (availableSupplements.length * 2),
+        available_supplements: availableSupplements,
+        impact_description: mapping.impact_description,
+        rsid,
+        gene
+      };
+    }
+    
+    return {
+      ...snp,
+      actionability_score: 10, // Low priority for unmapped SNPs
+      available_supplements: [],
+      impact_description: 'General genetic variant',
+      rsid,
+      gene
+    };
+  });
+
+  // Sort by actionability (lower score = higher priority)
+  return scoredSNPs
+    .sort((a, b) => a.actionability_score - b.actionability_score)
+    .slice(0, 8); // Return top 8 most actionable
 }
 
 function parseAIRecommendations(aiResponse: string, products: any[]): any {
@@ -675,10 +864,7 @@ function parseAIRecommendations(aiResponse: string, products: any[]): any {
           };
         }
         
-        // Ensure required fields
-        if (!rec.citations || !Array.isArray(rec.citations)) {
-          rec.citations = ["Personalized recommendation based on health profile"];
-        }
+        // Ensure required fields are present
         
         // Ensure proper dosage format
         if (!rec.dosage || rec.dosage === "As directed" || rec.dosage === "as directed") {
@@ -700,10 +886,10 @@ function parseAIRecommendations(aiResponse: string, products: any[]): any {
       recommendations: fallbackSupplements.map((product: any) => ({
         supplement: product.supplement_name,
         dosage: getStandardDosage(product.supplement_name),
-        timing: "with meals",
+        timing: "Take your complete daily pack with breakfast",
         reason: "Foundational wellness support - AI parsing failed",
         confidence_score: 60,
-        citations: ["Fallback recommendation - consult healthcare provider"],
+
         product: {
           id: product.id,
           brand: product.brand,
@@ -752,10 +938,10 @@ function ensureExactlySixSupplements(recommendations: any[], products: any[], pr
         return {
           supplement: matchingProduct.supplement_name,
           dosage: getStandardDosage(matchingProduct.supplement_name),
-          timing: "with meals",
+          timing: "Take your complete daily pack with breakfast",
           reason: "Foundational wellness support",
           confidence_score: 70,
-          citations: ["General wellness recommendation"],
+
           product: {
             id: matchingProduct.id,
             brand: matchingProduct.brand,
@@ -781,10 +967,9 @@ function ensureExactlySixSupplements(recommendations: any[], products: any[], pr
       recommendations.push({
         supplement: product.supplement_name,
         dosage: getStandardDosage(product.supplement_name),
-        timing: "with meals",
+        timing: "Take your complete daily pack with breakfast",
         reason: "Additional wellness support to complete your 6-supplement pack",
         confidence_score: 65,
-        citations: ["Complementary wellness support"],
         product: {
           id: product.id,
           brand: product.brand,
@@ -822,36 +1007,82 @@ function validateNoInteractions(recommendations: any[]): { valid: boolean; confl
   return { valid: conflicts.length === 0, conflicts };
 }
 
-function resolveInteractions(recommendations: any[], products: any[]): any[] {
+function resolveInteractions(recommendations: any[], products: any[], userProfile: any): any[] {
   const resolved = [...recommendations];
   const interactionCheck = validateNoInteractions(resolved);
   
   if (!interactionCheck.valid) {
-    // Remove conflicting supplements and replace with alternatives
-    const conflictingSupps = new Set<string>();
+    console.log('Interactions detected, applying priority-based resolution...');
+    
+    // Create priority map based on primary health concern
+    const priorityMap = new Map<string, number>();
+    
+    if (userProfile.primary_health_concern) {
+      const concern = userProfile.primary_health_concern.toLowerCase();
+      console.log(`Analyzing primary concern for priorities: "${concern}"`);
+      
+      // Higher priority number = higher importance (PRIMARY CONCERN = 100)
+      if (concern.includes('iron') || concern.includes('anemia') || concern.includes('ferritin') || concern.includes('hemoglobin')) {
+        priorityMap.set('Easy Iron', 100);
+        console.log('🔥 PRIORITY: Easy Iron set to 100 (primary concern match)');
+      }
+      if (concern.includes('magnesium')) {
+        priorityMap.set('Magnesium', 100);
+        console.log('🔥 PRIORITY: Magnesium set to 100 (primary concern match)');
+      }
+      if (concern.includes('zinc')) {
+        priorityMap.set('Zinc', 100);
+        console.log('🔥 PRIORITY: Zinc set to 100 (primary concern match)');
+      }
+      if (concern.includes('calcium') || concern.includes('bone')) {
+        priorityMap.set('Calcium Citrate', 100);
+        console.log('🔥 PRIORITY: Calcium Citrate set to 100 (primary concern match)');
+      }
+    }
+    
+    // Remove conflicting supplements based on priority
+    const toRemove: string[] = [];
     
     interactionCheck.conflicts.forEach(conflict => {
       const [supp1, supp2] = conflict.split(' conflicts with ');
-      conflictingSupps.add(supp1);
-      conflictingSupps.add(supp2);
-    });
-    
-    // Remove one supplement from each conflict (keep higher confidence)
-    const toRemove: number[] = [];
-    conflictingSupps.forEach(conflictSupp => {
-      const index = resolved.findIndex(r => r.supplement === conflictSupp);
-      if (index !== -1 && !toRemove.includes(index)) {
-        toRemove.push(index);
+      console.log(`Resolving conflict: ${supp1} vs ${supp2}`);
+      
+      // Determine which supplement to keep based on priority
+      const priority1 = priorityMap.get(supp1) || 0;
+      const priority2 = priorityMap.get(supp2) || 0;
+      
+      console.log(`Priorities: ${supp1}=${priority1}, ${supp2}=${priority2}`);
+      
+      if (priority1 > priority2) {
+        toRemove.push(supp2); // Remove supp2, keep supp1
+        console.log(`✅ Keeping ${supp1} (higher priority), removing ${supp2}`);
+      } else if (priority2 > priority1) {
+        toRemove.push(supp1); // Remove supp1, keep supp2
+        console.log(`✅ Keeping ${supp2} (higher priority), removing ${supp1}`);
+      } else {
+        // If equal priority, keep higher confidence score
+        const rec1 = resolved.find(r => r.supplement === supp1);
+        const rec2 = resolved.find(r => r.supplement === supp2);
+        
+        if ((rec1?.confidence_score || 0) >= (rec2?.confidence_score || 0)) {
+          toRemove.push(supp2);
+          console.log(`✅ Keeping ${supp1} (higher confidence), removing ${supp2}`);
+        } else {
+          toRemove.push(supp1);
+          console.log(`✅ Keeping ${supp2} (higher confidence), removing ${supp1}`);
+        }
       }
     });
     
-    // Remove conflicting supplements (keep only first one found)
-    if (toRemove.length > 0) {
-      toRemove.sort((a, b) => b - a); // Remove from end to avoid index issues
-      toRemove.slice(1).forEach(index => { // Keep first, remove others
+    // Remove the supplements marked for removal
+    const uniqueToRemove = [...new Set(toRemove)];
+    uniqueToRemove.forEach(suppName => {
+      const index = resolved.findIndex(r => r.supplement === suppName);
+      if (index !== -1) {
+        console.log(`Removing ${suppName} due to interaction`);
         resolved.splice(index, 1);
-      });
-    }
+      }
+    });
     
     // Fill back to 6 with non-conflicting alternatives
     const currentSupps = resolved.map(r => r.supplement.toLowerCase());
@@ -864,13 +1095,13 @@ function resolveInteractions(recommendations: any[], products: any[]): any[] {
     const alternatives = availableAlternatives.slice(0, needed);
     
     alternatives.forEach(alt => {
+      console.log(`Adding alternative: ${alt.supplement_name}`);
       resolved.push({
         supplement: alt.supplement_name,
         dosage: getStandardDosage(alt.supplement_name),
-        timing: "with meals",
-        reason: "Alternative selection to avoid supplement interactions",
+        timing: "Take your complete daily pack with breakfast",
+        reason: "Alternative selection to avoid supplement interactions while maintaining your personalized plan",
         confidence_score: 60,
-        citations: ["Interaction-free alternative"],
         product: {
           id: alt.id,
           brand: alt.brand,
@@ -892,4 +1123,234 @@ function hasInteractionWithCurrent(supplementName: string, currentRecommendation
     (SUPPLEMENT_INTERACTIONS[supplementName] && SUPPLEMENT_INTERACTIONS[supplementName].includes(currentSupp)) ||
     (SUPPLEMENT_INTERACTIONS[currentSupp] && SUPPLEMENT_INTERACTIONS[currentSupp].includes(supplementName))
   );
+}
+
+// 🚨 MEDICAL CONDITION PRIORITIZATION SYSTEM
+function analyzeMedicalConditions(conditions: string[]): {
+  critical: Array<{
+    condition: string;
+    priority_score: number;
+    category: string;
+    supplement_guidance: string;
+  }>;
+  moderate: Array<{
+    condition: string;
+    priority_score: number;
+    category: string;
+    supplement_guidance: string;
+  }>;
+  multi_condition_guidance: string;
+} {
+  const critical: any[] = [];
+  const moderate: any[] = [];
+  
+  conditions.forEach(condition => {
+    const guidance = getMedicalConditionGuidance(condition.toLowerCase());
+    if (guidance.priority === 'critical') {
+      critical.push({
+        condition: condition,
+        priority_score: guidance.priority_score,
+        category: guidance.category,
+        supplement_guidance: guidance.supplement_guidance
+      });
+    } else {
+      moderate.push({
+        condition: condition,
+        priority_score: guidance.priority_score,
+        category: guidance.category,
+        supplement_guidance: guidance.supplement_guidance
+      });
+    }
+  });
+  
+  // Multi-condition analysis
+  const multi_condition_guidance = analyzeConditionInteractions(conditions);
+  
+  return { critical, moderate, multi_condition_guidance };
+}
+
+// Medical condition guidance mapping (using only 56 available supplements)
+function getMedicalConditionGuidance(condition: string): {
+  priority: 'critical' | 'moderate';
+  priority_score: number;
+  category: string;
+  supplement_guidance: string;
+} {
+  
+  // 🔴 CRITICAL PRIORITY CONDITIONS (90-95 points)
+  if (condition.includes('endometriosis')) {
+    return {
+      priority: 'critical', priority_score: 95, category: "Women's Health",
+      supplement_guidance: "Omega 3 (inflammation), Magnesium (pain), Easy Iron (blood loss), DIM (hormone balance)"
+    };
+  }
+  
+  if (condition.includes('pcos') || condition.includes('polycystic')) {
+    return {
+      priority: 'critical', priority_score: 94, category: "Women's Health",
+      supplement_guidance: "DIM (hormone balance), Berberine (insulin), Omega 3 (inflammation), Magnesium (stress)"
+    };
+  }
+  
+  if (condition.includes('hashimoto') || condition.includes('hypothyroid')) {
+    return {
+      priority: 'critical', priority_score: 93, category: "Thyroid",
+      supplement_guidance: "Trace Minerals (iodine/selenium), Tyrosine (thyroid support), Ashwagandha (stress), Vitamin D"
+    };
+  }
+  
+  if (condition.includes('ibs') || condition.includes('irritable')) {
+    return {
+      priority: 'critical', priority_score: 92, category: "Digestive",
+      supplement_guidance: "Complete Probiotic (gut health), Soothing Fiber (digestive), Magnesium (muscle relaxation), Glutamine (gut lining)"
+    };
+  }
+  
+  if (condition.includes('diabetes') || condition.includes('diabetic')) {
+    return {
+      priority: 'critical', priority_score: 94, category: "Metabolic",
+      supplement_guidance: "Berberine (blood sugar), Chromium (insulin), Alpha Lipoic Acid (glucose metabolism), Magnesium (insulin sensitivity)"
+    };
+  }
+  
+  if (condition.includes('depression') || condition.includes('depressive')) {
+    return {
+      priority: 'critical', priority_score: 91, category: "Mental Health",
+      supplement_guidance: "Methyl B-Complex (neurotransmitters), Omega 3 (brain health), Magnesium (mood), Vitamin D (seasonal depression)"
+    };
+  }
+  
+  if (condition.includes('anxiety') || condition.includes('panic')) {
+    return {
+      priority: 'critical', priority_score: 90, category: "Mental Health",
+      supplement_guidance: "Magnesium (calm nervous system), Theanine (relaxation), Ashwagandha (stress response), GABA support"
+    };
+  }
+  
+  if (condition.includes('fibromyalgia')) {
+    return {
+      priority: 'critical', priority_score: 93, category: "Pain/Inflammation",
+      supplement_guidance: "Magnesium (muscle pain), CoQ10 (energy), Omega 3 (inflammation), Methyl B-Complex (nerve function)"
+    };
+  }
+  
+  if (condition.includes('arthritis') || condition.includes('rheumatoid')) {
+    return {
+      priority: 'critical', priority_score: 92, category: "Pain/Inflammation", 
+      supplement_guidance: "Omega 3 (inflammation), Turmeric (pain), Boron (joint health), Vitamin D (immune modulation)"
+    };
+  }
+  
+  if (condition.includes('crohn') || condition.includes('colitis') || condition.includes('inflammatory bowel')) {
+    return {
+      priority: 'critical', priority_score: 94, category: "Digestive",
+      supplement_guidance: "Omega 3 (inflammation), Glutamine (gut repair), Complete Probiotic (microbiome), Vitamin D (immune)"
+    };
+  }
+  
+  // 🟡 MODERATE PRIORITY CONDITIONS (70-85 points)
+  if (condition.includes('migraines') || condition.includes('headaches')) {
+    return {
+      priority: 'moderate', priority_score: 85, category: "Neurological",
+      supplement_guidance: "Magnesium (prevention), CoQ10 (mitochondrial), Methyl B-Complex (B2 for migraines)"
+    };
+  }
+  
+  if (condition.includes('insomnia') || condition.includes('sleep')) {
+    return {
+      priority: 'moderate', priority_score: 82, category: "Sleep",
+      supplement_guidance: "Magnesium (sleep quality), Melatonin (sleep regulation), Theanine (relaxation)"
+    };
+  }
+  
+  if (condition.includes('high blood pressure') || condition.includes('hypertension')) {
+    return {
+      priority: 'moderate', priority_score: 88, category: "Cardiovascular",
+      supplement_guidance: "Magnesium (blood pressure), CoQ10 (heart health), Omega 3 (cardiovascular)"
+    };
+  }
+  
+  if (condition.includes('osteoporosis') || condition.includes('bone')) {
+    return {
+      priority: 'moderate', priority_score: 84, category: "Bone Health",
+      supplement_guidance: "Calcium Citrate (bone structure), Vitamin D (calcium absorption), Boron (bone metabolism)"
+    };
+  }
+  
+  if (condition.includes('gerd') || condition.includes('acid reflux')) {
+    return {
+      priority: 'moderate', priority_score: 80, category: "Digestive",
+      supplement_guidance: "Complete Probiotic (gut balance), Glutamine (stomach lining), avoid acidic supplements)"
+    };
+  }
+  
+  // 🔍 SMART FALLBACK SYSTEM for unknown conditions
+  if (condition.includes('auto') || condition.includes('immune')) {
+    return {
+      priority: 'moderate', priority_score: 86, category: "Autoimmune",
+      supplement_guidance: "Vitamin D (immune modulation), Omega 3 (inflammation), Complete Probiotic (gut-immune axis)"
+    };
+  }
+  
+  if (condition.includes('chronic fatigue') || condition.includes('tired')) {
+    return {
+      priority: 'moderate', priority_score: 87, category: "Energy",
+      supplement_guidance: "CoQ10 (cellular energy), Methyl B-Complex (energy metabolism), Magnesium (muscle energy)"
+    };
+  }
+  
+  if (condition.includes('hormone') || condition.includes('menopause')) {
+    return {
+      priority: 'moderate', priority_score: 83, category: "Hormonal",
+      supplement_guidance: "DIM (hormone balance), Magnesium (hormone synthesis), Omega 3 (hormone production)"
+    };
+  }
+  
+  // Default fallback
+  return {
+    priority: 'moderate', priority_score: 70, category: "General Health",
+    supplement_guidance: "Focus on foundational nutrients based on symptoms and biomarkers"
+  };
+}
+
+// Multi-condition interaction analysis
+function analyzeConditionInteractions(conditions: string[]): string {
+  const conditionSet = new Set(conditions.map(c => c.toLowerCase()));
+  let guidance = "";
+  
+  // Inflammation pathway (common thread)
+  const inflammatoryConditions = ['endometriosis', 'pcos', 'ibs', 'arthritis', 'fibromyalgia', 'crohn', 'colitis'];
+  const hasInflammatory = inflammatoryConditions.some(condition => 
+    Array.from(conditionSet).some(userCondition => userCondition.includes(condition))
+  );
+  
+  if (hasInflammatory) {
+    guidance += "Multiple inflammatory conditions detected → Prioritize Omega 3 + Turmeric + Magnesium for systemic inflammation control. ";
+  }
+  
+  // Hormone-related conditions
+  const hormoneConditions = ['endometriosis', 'pcos', 'menopause', 'hormone'];
+  const hasHormonal = hormoneConditions.some(condition => 
+    Array.from(conditionSet).some(userCondition => userCondition.includes(condition))
+  );
+  
+  if (hasHormonal) {
+    guidance += "Hormonal conditions detected → DIM essential for hormone metabolism. ";
+  }
+  
+  // Mental health + physical conditions
+  const mentalConditions = ['depression', 'anxiety', 'panic'];
+  const physicalPain = ['fibromyalgia', 'arthritis', 'migraines'];
+  const hasMental = mentalConditions.some(condition => 
+    Array.from(conditionSet).some(userCondition => userCondition.includes(condition))
+  );
+  const hasPain = physicalPain.some(condition => 
+    Array.from(conditionSet).some(userCondition => userCondition.includes(condition))
+  );
+  
+  if (hasMental && hasPain) {
+    guidance += "Mind-body connection → Magnesium addresses both mental stress and physical pain. ";
+  }
+  
+  return guidance || "Consider foundational nutrients that support multiple systems.";
 } 

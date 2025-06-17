@@ -36,15 +36,14 @@ export default function SignUpPage() {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`
-        }
       })
 
       if (error) {
         setMessage(error.message)
       } else {
-        setMessage('Check your email for a confirmation link!')
+        setMessage('Account created successfully! Redirecting to onboarding...')
+        // Redirect to onboarding immediately
+        window.location.href = '/onboarding'
       }
     } catch (error) {
       setMessage('An unexpected error occurred')

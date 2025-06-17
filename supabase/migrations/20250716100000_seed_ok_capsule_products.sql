@@ -1,7 +1,7 @@
 -- =============================================================================
 -- SEED OK CAPSULE PRODUCTS
 -- =============================================================================
--- This migration seeds the database with the 57 products from the OK Capsule catalog.
+-- This migration seeds the database with the 56 products from the OK Capsule catalog.
 
 INSERT INTO public.products (supplement_name, brand, product_name, product_url, price) VALUES
 ('Glutamine', 'OK Capsule', 'OK Capsule L-Glutamine', 'https://ok-capsule.com/products/l-glutamine', 22.00),
@@ -57,7 +57,6 @@ INSERT INTO public.products (supplement_name, brand, product_name, product_url, 
 ('Vitamin D', 'OK Capsule', 'OK Capsule Vitamin D3 5000IU', 'https://ok-capsule.com/products/vitamin-d', 16.00),
 ('D Complex', 'OK Capsule', 'OK Capsule Vitamin D3+K2 Complex', 'https://ok-capsule.com/products/d-complex', 24.00),
 ('Vitamin B12', 'OK Capsule', 'OK Capsule Vitamin B12 (Methylcobalamin)', 'https://ok-capsule.com/products/vitamin-b12', 19.00),
-('Multivitamin', 'OK Capsule', 'OK Capsule Daily Multivitamin', 'https://ok-capsule.com/products/multivitamin', 35.00),
 ('Vitamin C', 'OK Capsule', 'OK Capsule Vitamin C with Bioflavonoids', 'https://ok-capsule.com/products/vitamin-c', 20.00),
 ('Biotin', 'OK Capsule', 'OK Capsule Biotin 10,000mcg', 'https://ok-capsule.com/products/biotin', 17.00),
 ('Methyl B-Complex', 'OK Capsule', 'OK Capsule Methyl B-Complex', 'https://ok-capsule.com/products/methyl-b-complex', 30.00)

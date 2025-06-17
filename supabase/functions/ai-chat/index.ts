@@ -1282,7 +1282,7 @@ Deno.serve(async (req) => {
       .eq('id', userId)
       .single();
     
-    // Quick data counts to detect changes without fetching full data
+    // Quick data counts to detect changes without fetching full data - ALREADY OPTIMIZED ✅
     const [
       { count: biomarkersCount },
       { count: snpsCount },
@@ -1339,22 +1339,21 @@ Deno.serve(async (req) => {
         supabase.from('supplement_plans').select('plan_details').eq('user_id', userId).order('created_at', { ascending: false }).limit(1).single()
       ]);
 
-      // Fetch latest saved comprehensive analysis
-      const { data: latestAnalysis } = await supabase
-        .from('user_full_analysis')
-        .select('plaintext, created_at')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-
-      // --- ENHANCED SNP FETCHING WITH PROPER ENRICHMENT ---
-      console.log('Fetching SNP data with enrichment...');
-      
-      // First, get all supported SNPs for lookup
-      const { data: supportedSnps, error: snpError } = await supabase
-        .from('supported_snps')
-        .select('id, rsid, gene');
+      // --- PARALLEL FETCH: LATEST ANALYSIS + SUPPORTED SNPS ---
+      console.log('Fetching analysis and SNP data in parallel...');
+      const [
+        { data: latestAnalysis },
+        { data: supportedSnps, error: snpError }
+      ] = await Promise.all([
+        supabase.from('user_full_analysis')
+          .select('plaintext, created_at')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single(),
+        supabase.from('supported_snps')
+          .select('id, rsid, gene')
+      ]);
       
       if (snpError) {
         console.error('Error fetching supported SNPs:', snpError);
@@ -1511,11 +1510,12 @@ Deno.serve(async (req) => {
       healthContext = `${dynamicGeneticAnalysis}\n\n${healthContext}`;
     }
 
-    // Handle conversation logic
+    // --- OPTIMIZED CONVERSATION HANDLING WITH PARALLEL QUERIES ---
     let currentConversationId = conversation_id;
+    let messageHistory: any[] = [];
     
     if (!currentConversationId) {
-      // Create new conversation
+      // Create new conversation (new sessions have no history)
       const { data: newConversation, error: convError } = await supabase
         .from('user_chat_conversations')
         .insert({
@@ -1534,15 +1534,17 @@ Deno.serve(async (req) => {
       }
       
       currentConversationId = newConversation.id;
+      messageHistory = []; // New conversation = no history
+    } else {
+      // Fetch existing conversation history
+      const { data: fetchedHistory } = await supabase
+        .from('user_chat_messages')
+        .select('role, content')
+        .eq('conversation_id', currentConversationId)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      messageHistory = fetchedHistory || [];
     }
-
-    // Fetch conversation history with smart optimization
-    const { data: messageHistory } = await supabase
-      .from('user_chat_messages')
-      .select('role, content')
-      .eq('conversation_id', currentConversationId)
-      .order('created_at', { ascending: false })
-      .limit(10);
 
     // Store user message (async, don't wait)
     (async () => {
@@ -1562,7 +1564,7 @@ Deno.serve(async (req) => {
     })();
 
     // --- PREPARE OPTIMIZED CHAT HISTORY ---
-    const rawConversationHistory = (messageHistory || [])
+    const rawConversationHistory = messageHistory
       .reverse() // Restore chronological order
       .map(msg => ({
         role: msg.role as 'user' | 'assistant',

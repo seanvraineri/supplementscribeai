@@ -5,7 +5,6 @@ import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { onboardingSchema, type OnboardingData } from '@/lib/schemas';
 import { DemographicsStep } from '@/components/onboarding/DemographicsStep';
-import { PrimaryHealthConcernStep } from '@/components/onboarding/PrimaryHealthConcernStep';
 import { AllergiesStep } from '@/components/onboarding/AllergiesStep';
 import { HealthGoalsStep } from '@/components/onboarding/HealthGoalsStep';
 import { LifestyleStep } from '@/components/onboarding/LifestyleStep';
@@ -32,7 +31,6 @@ export default function OnboardingPage() {
       height_ft: '' as any,
       height_in: '' as any,
       weight_lbs: '' as any,
-      primary_health_concern: '',
       healthGoals: [],
       customHealthGoals: [],
       allergies: [],
@@ -62,17 +60,16 @@ export default function OnboardingPage() {
   
   const steps = [
     { id: 1, component: DemographicsStep, fields: ['fullName', 'age', 'gender', 'height_ft', 'height_in', 'weight_lbs'] },
-    { id: 2, component: PrimaryHealthConcernStep, fields: ['primary_health_concern'] },
-    { id: 3, component: AllergiesStep, fields: ['allergies', 'conditions', 'medications'] },
-    { id: 4, component: HealthGoalsStep, fields: ['healthGoals', 'customHealthGoals'] },
-    { id: 5, component: LifestyleStep, fields: ['activity_level', 'sleep_hours', 'alcohol_intake'] },
-    { id: 6, component: LifestyleQuestionnaireStep, fields: [
+    { id: 2, component: AllergiesStep, fields: ['allergies', 'conditions', 'medications'] },
+    { id: 3, component: HealthGoalsStep, fields: ['healthGoals', 'customHealthGoals'] },
+    { id: 4, component: LifestyleStep, fields: ['activity_level', 'sleep_hours', 'alcohol_intake'] },
+    { id: 5, component: LifestyleQuestionnaireStep, fields: [
       'energy_levels', 'effort_fatigue', 'caffeine_effect', 
       'brain_fog', 'anxiety_level', 'stress_resilience', 'sleep_quality', 'sleep_aids', 'bloating', 
       'anemia_history', 'digestion_speed', 'low_nutrients', 'bruising_bleeding', 'belly_fat', 'joint_pain'
     ]},
-    { id: 7, component: DataUploadStep, fields: [] },
-    { id: 8, component: ReviewStep, fields: [] },
+    { id: 6, component: DataUploadStep, fields: [] },
+    { id: 7, component: ReviewStep, fields: [] },
   ];
 
   const totalSteps = steps.length;
@@ -86,7 +83,7 @@ export default function OnboardingPage() {
     
     const currentStepConfig = steps[step - 1];
     
-    if (currentStepConfig.id === 7) {
+    if (currentStepConfig.id === 6) {
        setStep(s => Math.min(s + 1, totalSteps));
        return;
     }
@@ -157,7 +154,7 @@ export default function OnboardingPage() {
             </div>
 
             {/* Skip optional link */}
-            {validStep === 6 && (
+            {validStep === 5 && (
               <div className="text-right mt-6">
                 <button type="button" className="text-sm text-dark-secondary hover:text-dark-primary underline transition-colors" onClick={() => setStep(Math.min(step + 1, totalSteps))}>
                   Skip this step

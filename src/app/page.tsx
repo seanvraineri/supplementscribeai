@@ -6,6 +6,7 @@ import { Disclosure } from '@headlessui/react';
 import Link from 'next/link';
 import { SVGProps } from 'react';
 import BackgroundAnimation from '@/components/BackgroundAnimation';
+import SupplementComparisonSection from '@/components/SupplementComparisonSection';
 
 // Re-using the dark, animated gradient from the dashboard for a consistent theme
 const DashboardGradient = () => (
@@ -180,6 +181,9 @@ export default function HomePage() {
           </motion.div>
         </motion.div>
       </section>
+
+      {/* Supplement Comparison Marketing Section */}
+      <SupplementComparisonSection />
 
       {/* Learn More Navigation */}
       <section className="py-16 bg-dark-panel/30 border-t border-dark-border">

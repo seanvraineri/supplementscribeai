@@ -498,23 +498,50 @@ export default function DashboardPage() {
       const symptomsResponse = await fetch(`/api/tracking/symptoms?date=${selectedDate}`, {
         credentials: 'include'
       });
+      
       if (symptomsResponse.ok) {
-        const { symptoms } = await symptomsResponse.json();
+        const symptomsData = await symptomsResponse.json();
+        console.log('Symptoms API response:', symptomsData);
+        
+        const { symptoms } = symptomsData;
         const ratingsMap: {[key: string]: number} = {};
+        
+        if (symptoms && Array.isArray(symptoms)) {
         symptoms.forEach((symptom: any) => {
+            if (symptom.symptom_name && symptom.value) {
           ratingsMap[symptom.symptom_name] = symptom.value;
+            }
         });
+        } else {
+          console.warn('Symptoms data is not an array:', symptoms);
+        }
+        
         setSymptomRatings(ratingsMap);
+      } else {
+        console.error('Failed to load symptoms:', symptomsResponse.status, symptomsResponse.statusText);
       }
 
       // Load supplements for the selected date
       const supplementsResponse = await fetch(`/api/tracking/supplements?date=${selectedDate}`, {
         credentials: 'include'
       });
+      
       if (supplementsResponse.ok) {
-        const { supplements } = await supplementsResponse.json();
+        const supplementsData = await supplementsResponse.json();
+        console.log('Supplements API response:', supplementsData);
+        
+        const { supplements } = supplementsData;
+        
+        if (supplements && Array.isArray(supplements)) {
         const allTaken = supplements.length > 0 && supplements.every((s: any) => s.taken);
         setDailySupplementsTaken(allTaken);
+        } else {
+          console.warn('Supplements data is not an array:', supplements);
+          setDailySupplementsTaken(false);
+        }
+      } else {
+        console.error('Failed to load supplements:', supplementsResponse.status, supplementsResponse.statusText);
+        setDailySupplementsTaken(false);
       }
 
       if (selectedDate === new Date().toISOString().split('T')[0]) {
@@ -522,6 +549,9 @@ export default function DashboardPage() {
       }
     } catch (error) {
       console.error('Error loading tracking data:', error);
+      // Reset states on error
+      setSymptomRatings({});
+      setDailySupplementsTaken(false);
     } finally {
       setIsTrackingLoading(false);
     }
@@ -714,73 +744,7 @@ export default function DashboardPage() {
     return productName;
   };
 
-  // Function to generate clickable links for scientific citations
-  const generateCitationLink = (citation: string): string | null => {
-    // Extract DOI if present
-    const doiMatch = citation.match(/doi:\s*([^\s]+)/i) || citation.match(/10\.\d{4,}\/[^\s]+/);
-    if (doiMatch) {
-      const doi = doiMatch[1] || doiMatch[0];
-      return `https://doi.org/${doi}`;
-    }
 
-    // Extract PMID if present
-    const pmidMatch = citation.match(/PMID:\s*(\d+)/i) || citation.match(/PubMed ID:\s*(\d+)/i);
-    if (pmidMatch) {
-      return `https://pubmed.ncbi.nlm.nih.gov/${pmidMatch[1]}/`;
-    }
-
-    // Try to extract journal and create PubMed search
-    const journalPatterns = [
-      /N Engl J Med/i,
-      /Nature/i,
-      /Science/i,
-      /Cell/i,
-      /Lancet/i,
-      /JAMA/i,
-      /BMJ/i,
-      /Cochrane/i,
-      /Am J Clin Nutr/i,
-      /J Nutr/i,
-      /Nutrients/i,
-      /Mol Nutr Food Res/i,
-      /Eur J Nutr/i,
-      /Br J Nutr/i,
-      /Food Funct/i,
-      /Antioxidants/i
-    ];
-
-    for (const pattern of journalPatterns) {
-      if (pattern.test(citation)) {
-        // Extract year if present
-        const yearMatch = citation.match(/\b(19|20)\d{2}\b/);
-        const year = yearMatch ? yearMatch[0] : '';
-        
-        // Create a search query
-        const searchTerms = citation
-          .replace(/[^\w\s]/g, ' ')
-          .split(' ')
-          .filter(word => word.length > 3 && !['the', 'and', 'for', 'with', 'from'].includes(word.toLowerCase()))
-          .slice(0, 5)
-          .join(' ');
-        
-        return `https://pubmed.ncbi.nlm.nih.gov/?term=${encodeURIComponent(searchTerms + (year ? ' ' + year : ''))}`;
-      }
-    }
-
-    // If no specific pattern found, create a general PubMed search
-    const searchTerms = citation
-      .replace(/[^\w\s]/g, ' ')
-      .split(' ')
-      .filter(word => word.length > 3 && !['the', 'and', 'for', 'with', 'from'].includes(word.toLowerCase()))
-      .slice(0, 5)
-      .join(' ');
-    
-    if (searchTerms.length > 10) {
-      return `https://pubmed.ncbi.nlm.nih.gov/?term=${encodeURIComponent(searchTerms)}`;
-    }
-
-    return null;
-  };
 
   const sidebarItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
@@ -802,6 +766,36 @@ export default function DashboardPage() {
           A summary of your personalized health data.
         </p>
       </div>
+
+      {/* Onboarding Banner - Show if profile is incomplete */}
+      {!profile && (
+        <motion.div 
+          className="bg-gradient-to-r from-dark-accent/20 to-blue-900/20 border border-dark-accent/50 rounded-xl p-6"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-dark-accent/20 rounded-lg">
+              <AlertCircle className="h-6 w-6 text-dark-accent" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-dark-primary mb-1">
+                Complete Your Health Profile
+              </h3>
+              <p className="text-dark-secondary text-sm">
+                Unlock personalized AI recommendations by completing your health onboarding. 
+                This takes just 5-10 minutes and enables precise supplement planning.
+              </p>
+            </div>
+            <Button 
+              onClick={() => router.push('/onboarding')}
+              className="bg-dark-accent text-white hover:bg-dark-accent/80 transition-all duration-300 px-6"
+            >
+              Complete Setup
+            </Button>
+          </div>
+        </motion.div>
+      )}
 
       {/* Quick Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 font-mono">
@@ -987,34 +981,7 @@ export default function DashboardPage() {
                     </div>
                   )}
                 </div>
-                {rec.citations && rec.citations.length > 0 && (
-                  <div className="mt-4 pt-4 border-t border-dark-border">
-                    <h4 className="font-semibold text-dark-accent mb-2">Scientific Citations</h4>
-                    <ul className="space-y-2 text-dark-secondary text-sm font-mono">
-                      {rec.citations.map((citation: string, i: number) => {
-                        const citationLink = generateCitationLink(citation);
-                        return (
-                          <li key={i} className="flex items-start gap-2">
-                            <span className="text-dark-accent mt-1">•</span>
-                            {citationLink ? (
-                              <a 
-                                href={citationLink} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer transition-colors duration-200"
-                                title="Click to view research paper"
-                              >
-                                {citation}
-                              </a>
-                            ) : (
-                              <span>{citation}</span>
-                            )}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                )}
+
               </div>
             </motion.div>
           ))}

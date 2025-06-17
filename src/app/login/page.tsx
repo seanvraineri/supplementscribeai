@@ -29,7 +29,7 @@ export default function LoginPage() {
         setMessage(error.message)
       } else {
         setMessage('Login successful! Redirecting...')
-        // Redirect will happen automatically via middleware
+        // Always redirect to dashboard after login
         window.location.href = '/dashboard'
       }
     } catch (error) {

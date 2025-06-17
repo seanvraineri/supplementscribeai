@@ -7,6 +7,12 @@ export const onboardingSchema = z.object({
   height_ft: z.coerce.number().int().positive({ message: "Please enter a valid height." }),
   height_in: z.coerce.number().int().min(0).max(11, { message: "Inches must be between 0 and 11." }),
   weight_lbs: z.coerce.number().int().positive({ message: "Please enter a valid weight." }),
+  
+  // NEW: Primary Health Concern - MANDATORY
+  primary_health_concern: z.string()
+    .min(10, { message: "Please describe your main health concern in at least 10 characters." })
+    .max(500, { message: "Please keep your concern under 500 characters." }),
+  
   healthGoals: z.array(z.string()).optional(),
   customHealthGoals: z.array(z.object({ value: z.string().min(1, "Please enter a goal or remove this field.") })).optional(),
   allergies: z.array(z.object({ value: z.string().min(1, "Please enter an allergy or remove this field.") })).optional(),

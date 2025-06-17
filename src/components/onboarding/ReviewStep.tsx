@@ -3,6 +3,7 @@
 import { useFormContext } from "react-hook-form";
 import { OnboardingData } from "@/lib/schemas";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AlertTriangle } from 'lucide-react';
 
 const DataPoint: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
   <div className="flex justify-between py-2 border-b">
@@ -58,6 +59,25 @@ export function ReviewStep() {
             <DataPoint label="Height" value={`${data.height_ft} ft ${data.height_in} in`} />
             <DataPoint label="Weight" value={`${data.weight_lbs} lbs`} />
           </dl>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-orange-500" />
+            Primary Health Concern
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="p-4 bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-lg">
+            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+              {data.primary_health_concern || "Not provided"}
+            </p>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            This is your most important health priority and will guide your supplement recommendations.
+          </p>
         </CardContent>
       </Card>
       
