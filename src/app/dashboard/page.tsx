@@ -29,7 +29,19 @@ import {
   ExternalLink,
   BookOpen,
   Star,
-  TrendingUp
+  TrendingUp,
+  MessageCircle,
+  Zap,
+  Moon,
+  Heart,
+  Leaf,
+  AlertOctagon,
+  Bone,
+  CloudLightning,
+  Edit3,
+  Check,
+  Target,
+  Shield
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { SVGProps } from 'react';
@@ -37,12 +49,17 @@ import SymptomModal from '@/components/SymptomModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   cleanBiomarkerName,
+  formatBiomarkerName,
   cleanSnpName,
   getBiomarkerReferenceRange,
   interpretBiomarker,
   interpretSNP,
 } from '@/lib/analysis-helpers';
-import { useEducationData } from '@/hooks/useEducationData';
+  // import { useEducationData } from '@/hooks/useEducationData';
+import { useComprehensiveAnalysis } from '@/hooks/useComprehensiveAnalysis';
+import { useEnhancedAnalysis } from '@/hooks/useEnhancedAnalysis';
+import BiomarkerCard from '@/components/BiomarkerCard';
+import SnpCard from '@/components/SnpCard';
 
 
 const supabase = createClient();
@@ -136,7 +153,7 @@ export default function DashboardPage() {
   const [isLoadingStudies, setIsLoadingStudies] = useState(false);
   
   // Tracking state
-  const [activeTrackingTab, setActiveTrackingTab] = useState<'symptoms' | 'supplements'>('symptoms');
+  const [activeTrackingTab, setActiveTrackingTab] = useState<'symptoms' | 'supplements' | 'custom'>('symptoms');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [isTrackingLoading, setIsTrackingLoading] = useState(false);
   const [symptomEntries, setSymptomEntries] = useState<any[]>([]);
@@ -146,6 +163,9 @@ export default function DashboardPage() {
     weeklyAverage: 0,
     currentStreak: 0
   });
+  const [customSymptoms, setCustomSymptoms] = useState<string[]>([]);
+  const [newCustomSymptom, setNewCustomSymptom] = useState('');
+  const [individualSupplementStatus, setIndividualSupplementStatus] = useState<{[key: string]: boolean}>({});
   
   // Symptom modal state
   const [isSymptomModalOpen, setIsSymptomModalOpen] = useState(false);
@@ -160,13 +180,107 @@ export default function DashboardPage() {
 
   const router = useRouter();
 
-  // Load education data for biomarkers and SNPs
-  const { biomarkerEducation, snpEducation, loading: educationLoading } = useEducationData(
+  // Load comprehensive analysis for biomarkers and SNPs
+  const { biomarkerAnalysis, snpAnalysis, loading: analysisLoading, computing: analysisComputing, triggerRecomputation } = useComprehensiveAnalysis(
     biomarkersData,
-    snpsData,
-    userConditions,
-    userAllergies
+    snpsData
   );
+
+  // Enhanced analysis system
+  const { 
+    results: enhancedResults, 
+    resultsByCategory, 
+    priorityItems, 
+    categoryStats, 
+    userContext, 
+    summary, 
+    loading: enhancedLoading, 
+    error: enhancedError,
+    refetch: refetchEnhanced
+  } = useEnhancedAnalysis();
+
+  // Add search and filter states
+  const [biomarkerSearch, setBiomarkerSearch] = useState('');
+  const [snpSearch, setSnpSearch] = useState('');
+  const [biomarkerFilter, setBiomarkerFilter] = useState<'all' | 'normal' | 'attention' | 'analyzed'>('all');
+  const [snpFilter, setSnpFilter] = useState<'all' | 'low' | 'moderate' | 'high' | 'analyzed'>('all');
+  const [biomarkerPage, setBiomarkerPage] = useState(1);
+  const [snpPage, setSnpPage] = useState(1);
+  const [biomarkersPerPage] = useState(10);
+  const [snpsPerPage] = useState(15);
+
+  // Filter and search functions
+  const filteredBiomarkers = biomarkersData.filter(biomarker => {
+    const analysis = biomarkerAnalysis[biomarker.marker_name?.toLowerCase()?.replace(/\s+/g, '_')] || {};
+    const cleanName = biomarker.marker_name?.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) || 'Unknown Marker';
+    
+    // Search filter
+    const matchesSearch = cleanName.toLowerCase().includes(biomarkerSearch.toLowerCase()) ||
+                         (biomarker.value && biomarker.value.toString().toLowerCase().includes(biomarkerSearch.toLowerCase()));
+    
+    // Status filter
+    const matchesFilter = biomarkerFilter === 'all' || 
+                         (biomarkerFilter === 'normal' && (analysis.statusColor === 'green' || !analysis.statusColor)) ||
+                         (biomarkerFilter === 'attention' && (analysis.statusColor === 'yellow' || analysis.statusColor === 'red')) ||
+                         (biomarkerFilter === 'analyzed' && analysis.interpretation);
+    
+    return matchesSearch && matchesFilter;
+  });
+
+  const filteredSnps = snpsData.filter(snp => {
+    const gene = snp.supported_snps?.gene || snp.gene_name || 'Unknown';
+    const rsid = snp.supported_snps?.rsid || snp.snp_id || 'Unknown';
+    const analysis = snpAnalysis[`${gene} (${rsid})`] || {};
+    
+    // Search filter
+    const matchesSearch = gene.toLowerCase().includes(snpSearch.toLowerCase()) ||
+                         rsid.toLowerCase().includes(snpSearch.toLowerCase()) ||
+                         (snp.genotype && snp.genotype.toLowerCase().includes(snpSearch.toLowerCase()));
+    
+    // Risk filter
+    const matchesFilter = snpFilter === 'all' ||
+                         (snpFilter === 'low' && (analysis.riskColor === 'green' || !analysis.riskColor)) ||
+                         (snpFilter === 'moderate' && analysis.riskColor === 'orange') ||
+                         (snpFilter === 'high' && analysis.riskColor === 'red') ||
+                         (snpFilter === 'analyzed' && analysis.variantEffect);
+    
+    return matchesSearch && matchesFilter;
+  });
+
+  // Pagination
+  const paginatedBiomarkers = filteredBiomarkers.slice(
+    (biomarkerPage - 1) * biomarkersPerPage,
+    biomarkerPage * biomarkersPerPage
+  );
+
+  const paginatedSnps = filteredSnps.slice(
+    (snpPage - 1) * snpsPerPage,
+    snpPage * snpsPerPage
+  );
+
+  const totalBiomarkerPages = Math.ceil(filteredBiomarkers.length / biomarkersPerPage);
+  const totalSnpPages = Math.ceil(filteredSnps.length / snpsPerPage);
+
+  // Toggle functions for expanded cards
+  const toggleBiomarkerExpanded = (index: number) => {
+    const newExpanded = new Set(expandedBiomarkers);
+    if (newExpanded.has(index)) {
+      newExpanded.delete(index);
+    } else {
+      newExpanded.add(index);
+    }
+    setExpandedBiomarkers(newExpanded);
+  };
+
+  const toggleSnpExpanded = (index: number) => {
+    const newExpanded = new Set(expandedSnps);
+    if (newExpanded.has(index)) {
+      newExpanded.delete(index);
+    } else {
+      newExpanded.add(index);
+    }
+    setExpandedSnps(newExpanded);
+  };
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -472,6 +586,52 @@ export default function DashboardPage() {
     }
   };
 
+  const toggleIndividualSupplement = async (supplementName: string, taken: boolean) => {
+    // Update UI immediately
+    setIndividualSupplementStatus(prev => ({
+      ...prev,
+      [supplementName]: taken
+    }));
+
+    // Save to database in background
+    try {
+      await fetch('/api/tracking/supplements', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          supplement_name: supplementName,
+          taken,
+          entry_date: selectedDate
+        })
+      });
+    } catch (error) {
+      console.error('Error saving individual supplement:', error);
+      // Revert on error
+      setIndividualSupplementStatus(prev => ({
+        ...prev,
+        [supplementName]: !taken
+      }));
+    }
+  };
+
+  const addCustomSymptom = () => {
+    if (newCustomSymptom.trim() && !customSymptoms.includes(newCustomSymptom.trim())) {
+      setCustomSymptoms(prev => [...prev, newCustomSymptom.trim()]);
+      setNewCustomSymptom('');
+    }
+  };
+
+  const removeCustomSymptom = (symptomToRemove: string) => {
+    setCustomSymptoms(prev => prev.filter(s => s !== symptomToRemove));
+    // Also remove from ratings
+    setSymptomRatings(prev => {
+      const newRatings = { ...prev };
+      delete newRatings[symptomToRemove];
+      return newRatings;
+    });
+  };
+
   // Load tracking data when tracking tab becomes active
   useEffect(() => {
     if (activeTab === 'tracking') {
@@ -539,14 +699,88 @@ export default function DashboardPage() {
     }
   };
 
-
-
   // Load studies when Study Buddy tab becomes active
   useEffect(() => {
     if (activeTab === 'study-buddy') {
       loadUserStudies();
     }
   }, [activeTab]);
+
+  const cleanProductName = (productName: string) => {
+    // Remove "OK Capsule" prefix if present
+    if (productName.startsWith('OK Capsule ')) {
+      return productName.replace('OK Capsule ', '');
+    }
+    return productName;
+  };
+
+  // Function to generate clickable links for scientific citations
+  const generateCitationLink = (citation: string): string | null => {
+    // Extract DOI if present
+    const doiMatch = citation.match(/doi:\s*([^\s]+)/i) || citation.match(/10\.\d{4,}\/[^\s]+/);
+    if (doiMatch) {
+      const doi = doiMatch[1] || doiMatch[0];
+      return `https://doi.org/${doi}`;
+    }
+
+    // Extract PMID if present
+    const pmidMatch = citation.match(/PMID:\s*(\d+)/i) || citation.match(/PubMed ID:\s*(\d+)/i);
+    if (pmidMatch) {
+      return `https://pubmed.ncbi.nlm.nih.gov/${pmidMatch[1]}/`;
+    }
+
+    // Try to extract journal and create PubMed search
+    const journalPatterns = [
+      /N Engl J Med/i,
+      /Nature/i,
+      /Science/i,
+      /Cell/i,
+      /Lancet/i,
+      /JAMA/i,
+      /BMJ/i,
+      /Cochrane/i,
+      /Am J Clin Nutr/i,
+      /J Nutr/i,
+      /Nutrients/i,
+      /Mol Nutr Food Res/i,
+      /Eur J Nutr/i,
+      /Br J Nutr/i,
+      /Food Funct/i,
+      /Antioxidants/i
+    ];
+
+    for (const pattern of journalPatterns) {
+      if (pattern.test(citation)) {
+        // Extract year if present
+        const yearMatch = citation.match(/\b(19|20)\d{2}\b/);
+        const year = yearMatch ? yearMatch[0] : '';
+        
+        // Create a search query
+        const searchTerms = citation
+          .replace(/[^\w\s]/g, ' ')
+          .split(' ')
+          .filter(word => word.length > 3 && !['the', 'and', 'for', 'with', 'from'].includes(word.toLowerCase()))
+          .slice(0, 5)
+          .join(' ');
+        
+        return `https://pubmed.ncbi.nlm.nih.gov/?term=${encodeURIComponent(searchTerms + (year ? ' ' + year : ''))}`;
+      }
+    }
+
+    // If no specific pattern found, create a general PubMed search
+    const searchTerms = citation
+      .replace(/[^\w\s]/g, ' ')
+      .split(' ')
+      .filter(word => word.length > 3 && !['the', 'and', 'for', 'with', 'from'].includes(word.toLowerCase()))
+      .slice(0, 5)
+      .join(' ');
+    
+    if (searchTerms.length > 10) {
+      return `https://pubmed.ncbi.nlm.nih.gov/?term=${encodeURIComponent(searchTerms)}`;
+    }
+
+    return null;
+  };
 
   const sidebarItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
@@ -712,6 +946,17 @@ export default function DashboardPage() {
 
       {plan ? (
         <div className="space-y-4">
+          {/* General Notes Section */}
+          {plan.general_notes && (
+            <div className="bg-gradient-to-r from-dark-accent/10 to-blue-900/10 rounded-xl p-6 border border-dark-accent/30">
+              <h3 className="text-lg font-semibold text-dark-accent mb-3 flex items-center gap-2">
+                <span className="text-xl">💙</span>
+                Your Personalized Health Journey
+              </h3>
+              <p className="text-dark-primary leading-relaxed">{plan.general_notes}</p>
+            </div>
+          )}
+          
           {plan.recommendations?.map((rec: any, index: number) => (
             <motion.div 
               key={index} 
@@ -724,7 +969,7 @@ export default function DashboardPage() {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <h3 className="text-2xl font-bold text-dark-primary">{rec.supplement}</h3>
-                    <p className="text-dark-secondary font-mono">{rec.product?.brand} - {rec.product?.product_name}</p>
+                    <p className="text-dark-secondary font-mono">{cleanProductName(rec.product?.product_name)}</p>
                   </div>
                   <div className="text-right">
                     <p className="font-bold text-dark-primary text-lg">{rec.dosage}</p>
@@ -732,19 +977,41 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <div className="mt-4 pt-4 border-t border-dark-border space-y-2">
-                  <h4 className="font-semibold text-dark-accent">Reasoning</h4>
-                  <p className="text-dark-secondary">{rec.reason}</p>
+                  <h4 className="font-semibold text-dark-accent">Why This Is Perfect For You</h4>
+                  <div className="bg-dark-background/50 rounded-lg p-4 border-l-4 border-dark-accent">
+                    <p className="text-dark-primary leading-relaxed">{rec.reason}</p>
+                  </div>
+                  {rec.notes && (
+                    <div className="mt-3 p-3 bg-blue-900/20 rounded-lg border border-blue-700/30">
+                      <p className="text-blue-200 text-sm leading-relaxed">{rec.notes}</p>
+                    </div>
+                  )}
                 </div>
                 {rec.citations && rec.citations.length > 0 && (
                   <div className="mt-4 pt-4 border-t border-dark-border">
                     <h4 className="font-semibold text-dark-accent mb-2">Scientific Citations</h4>
                     <ul className="space-y-2 text-dark-secondary text-sm font-mono">
-                      {rec.citations.map((citation: string, i: number) => (
-                        <li key={i} className="flex items-start gap-2">
-                          <span className="text-dark-accent mt-1">•</span>
-                          <span>{citation}</span>
-                        </li>
-                      ))}
+                      {rec.citations.map((citation: string, i: number) => {
+                        const citationLink = generateCitationLink(citation);
+                        return (
+                          <li key={i} className="flex items-start gap-2">
+                            <span className="text-dark-accent mt-1">•</span>
+                            {citationLink ? (
+                              <a 
+                                href={citationLink} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer transition-colors duration-200"
+                                title="Click to view research paper"
+                              >
+                                {citation}
+                              </a>
+                            ) : (
+                              <span>{citation}</span>
+                            )}
+                          </li>
+                        );
+                      })}
                     </ul>
                   </div>
                 )}
@@ -767,213 +1034,894 @@ export default function DashboardPage() {
     </div>
   );
 
-  const renderAnalysis = () => (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-4xl font-bold text-dark-primary">Comprehensive Analysis</h1>
-        <p className="text-lg text-dark-secondary mt-1">
-          Deep dive into your biomarker and genetic data with personalized insights and recommendations.
-        </p>
-      </div>
+  const renderEnhancedAnalysis = () => {
+    // Category display names
+    const categoryDisplayNames: Record<string, string> = {
+      'cardiovascular': 'Cardiovascular Health',
+      'inflammation': 'Inflammation & Immune',
+      'metabolic': 'Metabolic Health',
+      'hormonal': 'Hormonal Balance',
+      'cognitive-stress': 'Cognitive & Stress',
+      'detoxification': 'Detoxification',
+      'gut-microbiome': 'Gut & Microbiome',
+      'nutrient-processing': 'Nutrient Processing'
+    };
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Biomarkers Section */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <Activity className="h-6 w-6 text-dark-accent" />
-            <h2 className="text-2xl font-bold text-dark-primary">Biomarkers ({biomarkersData.length})</h2>
+    // Category icons
+    const categoryIcons: Record<string, any> = {
+      'cardiovascular': Heart,
+      'inflammation': Zap,
+      'metabolic': TrendingUp,
+      'hormonal': Activity,
+      'cognitive-stress': Brain,
+      'detoxification': Shield,
+      'gut-microbiome': Pill,
+      'nutrient-processing': Sparkles
+    };
+
+    // Status colors
+    const getStatusColor = (status: string) => {
+      switch (status) {
+        case 'optimal': return 'text-green-400';
+        case 'borderline': return 'text-yellow-400';
+        case 'concerning': return 'text-red-400';
+        default: return 'text-gray-400';
+      }
+    };
+
+    const getStatusBg = (status: string) => {
+      switch (status) {
+        case 'optimal': return 'bg-green-500/10 border-green-500/20';
+        case 'borderline': return 'bg-yellow-500/10 border-yellow-500/20';
+        case 'concerning': return 'bg-red-500/10 border-red-500/20';
+        default: return 'bg-gray-500/10 border-gray-500/20';
+      }
+    };
+
+    if (enhancedLoading) {
+      return (
+        <div className="space-y-8">
+          <div className="text-center py-20">
+            <div className="w-16 h-16 border-4 border-dark-border border-t-dark-accent rounded-full animate-spin mx-auto mb-4"></div>
+            <h2 className="text-xl font-semibold text-dark-primary mb-2">Analyzing Your Health Data...</h2>
+            <p className="text-dark-secondary">Processing biomarkers and genetic variants</p>
           </div>
-          {biomarkersData.length > 0 ? biomarkersData.map((marker, index) => {
-            const interpretation = interpretBiomarker(marker);
-            const education = biomarkerEducation[index] || { 
-              name: marker.marker_name, 
-              description: 'Loading analysis...', 
-              recommendations: ['Analysis in progress...'],
-              symptoms: ['Loading...'],
-              referenceRange: 'Loading...'
-            };
-            const isExpanded = expandedBiomarkers.has(index);
+        </div>
+      );
+    }
+
+    if (enhancedError) {
+      return (
+        <div className="space-y-8">
+          <div className="text-center py-20">
+            <AlertTriangle className="h-16 w-16 text-red-400 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-dark-primary mb-2">Analysis Error</h2>
+            <p className="text-dark-secondary mb-4">{enhancedError}</p>
+            <Button onClick={refetchEnhanced} className="bg-dark-accent text-white hover:bg-dark-accent/80">
+              Try Again
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
+    // No data state - educational content
+    if (summary.totalAnalyzed === 0) {
+      return (
+        <div className="space-y-8">
+          {/* Hero Section */}
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-cyan-500/5 rounded-2xl"></div>
+            <div className="relative p-8 text-center">
+              <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent mb-4">
+                Comprehensive Analysis
+              </h1>
+              <p className="text-xl text-dark-secondary max-w-3xl mx-auto leading-relaxed">
+                Get personalized insights from your biomarker and genetic data
+              </p>
+            </div>
+          </div>
+
+          {/* Educational Content */}
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Blood Testing */}
+            <div className="bg-dark-panel border border-dark-border rounded-xl p-8">
+              <div className="flex items-center mb-6">
+                <div className="p-3 bg-red-500/10 rounded-xl mr-4">
+                  <Activity className="h-8 w-8 text-red-400" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-dark-primary">Blood Biomarkers</h3>
+                  <p className="text-dark-secondary">Essential health indicators</p>
+                </div>
+              </div>
+              
+              <div className="space-y-4 mb-6">
+                <div className="flex items-start space-x-3">
+                  <CheckCircle className="h-5 w-5 text-green-400 mt-0.5" />
+                  <div>
+                    <p className="text-dark-primary font-medium">Cardiovascular Risk Assessment</p>
+                    <p className="text-dark-secondary text-sm">Cholesterol, triglycerides, inflammation markers</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <CheckCircle className="h-5 w-5 text-green-400 mt-0.5" />
+                  <div>
+                    <p className="text-dark-primary font-medium">Metabolic Health Analysis</p>
+                    <p className="text-dark-secondary text-sm">Blood sugar, insulin sensitivity, metabolic markers</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <CheckCircle className="h-5 w-5 text-green-400 mt-0.5" />
+                  <div>
+                    <p className="text-dark-primary font-medium">Nutrient Status Evaluation</p>
+                    <p className="text-dark-secondary text-sm">Vitamins, minerals, deficiency detection</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-dark-background border border-dark-border rounded-lg p-4 mb-6">
+                <h4 className="font-semibold text-dark-primary mb-2">Recommended Tests:</h4>
+                <ul className="text-sm text-dark-secondary space-y-1">
+                  <li>• Complete Blood Count (CBC)</li>
+                  <li>• Comprehensive Metabolic Panel (CMP)</li>
+                  <li>• Lipid Panel</li>
+                  <li>• Thyroid Function (TSH, T3, T4)</li>
+                  <li>• Vitamin D, B12, Folate</li>
+                </ul>
+              </div>
+
+              <Button 
+                onClick={() => router.push('/onboarding')} 
+                className="w-full bg-red-500 hover:bg-red-600 text-white"
+              >
+                Upload Lab Results
+              </Button>
+            </div>
+
+            {/* Genetic Testing */}
+            <div className="bg-dark-panel border border-dark-border rounded-xl p-8">
+              <div className="flex items-center mb-6">
+                <div className="p-3 bg-purple-500/10 rounded-xl mr-4">
+                  <Dna className="h-8 w-8 text-purple-400" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-dark-primary">Genetic Analysis</h3>
+                  <p className="text-dark-secondary">Personalized genetic insights</p>
+                </div>
+              </div>
+              
+              <div className="space-y-4 mb-6">
+                <div className="flex items-start space-x-3">
+                  <CheckCircle className="h-5 w-5 text-green-400 mt-0.5" />
+                  <div>
+                    <p className="text-dark-primary font-medium">Nutrient Processing Variants</p>
+                    <p className="text-dark-secondary text-sm">MTHFR, COMT, VDR - methylation & absorption</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <CheckCircle className="h-5 w-5 text-green-400 mt-0.5" />
+                  <div>
+                    <p className="text-dark-primary font-medium">Disease Risk Assessment</p>
+                    <p className="text-dark-secondary text-sm">APOE, BRCA, cardiovascular risk variants</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <CheckCircle className="h-5 w-5 text-green-400 mt-0.5" />
+                  <div>
+                    <p className="text-dark-primary font-medium">Medication Interactions</p>
+                    <p className="text-dark-secondary text-sm">CYP enzymes, drug metabolism variants</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-dark-background border border-dark-border rounded-lg p-4 mb-6">
+                <h4 className="font-semibold text-dark-primary mb-2">Compatible Tests:</h4>
+                <ul className="text-sm text-dark-secondary space-y-1">
+                  <li>• 23andMe Health + Ancestry</li>
+                  <li>• AncestryDNA + Health</li>
+                  <li>• MyHeritage DNA Health</li>
+                  <li>• Nebula Genomics</li>
+                  <li>• Raw genetic data files</li>
+                </ul>
+              </div>
+
+              <Button 
+                onClick={() => router.push('/onboarding')} 
+                className="w-full bg-purple-500 hover:bg-purple-600 text-white"
+              >
+                Upload Genetic Data
+              </Button>
+            </div>
+          </div>
+
+          {/* Why This Matters */}
+          <div className="bg-gradient-to-r from-dark-accent/5 to-blue-500/5 border border-dark-accent/20 rounded-xl p-8">
+            <h3 className="text-2xl font-bold text-dark-primary mb-4 text-center">Why Comprehensive Analysis Matters</h3>
+            <div className="grid md:grid-cols-3 gap-6">
+              <div className="text-center">
+                <div className="p-4 bg-dark-accent/10 rounded-xl w-fit mx-auto mb-4">
+                  <Target className="h-8 w-8 text-dark-accent" />
+                </div>
+                <h4 className="font-semibold text-dark-primary mb-2">Personalized Insights</h4>
+                <p className="text-dark-secondary text-sm">Get recommendations tailored to your unique genetic makeup and biomarker profile</p>
+              </div>
+              <div className="text-center">
+                <div className="p-4 bg-dark-accent/10 rounded-xl w-fit mx-auto mb-4">
+                  <TrendingUp className="h-8 w-8 text-dark-accent" />
+                </div>
+                <h4 className="font-semibold text-dark-primary mb-2">Early Detection</h4>
+                <p className="text-dark-secondary text-sm">Identify potential health issues before they become serious problems</p>
+              </div>
+              <div className="text-center">
+                <div className="p-4 bg-dark-accent/10 rounded-xl w-fit mx-auto mb-4">
+                  <Zap className="h-8 w-8 text-dark-accent" />
+                </div>
+                <h4 className="font-semibold text-dark-primary mb-2">Optimize Performance</h4>
+                <p className="text-dark-secondary text-sm">Fine-tune your nutrition and lifestyle for peak health and longevity</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-8">
+        {/* Hero Section */}
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-cyan-500/5 rounded-2xl"></div>
+          <div className="relative p-8 text-center">
+            <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent mb-4">
+              Comprehensive Analysis
+            </h1>
+            <p className="text-xl text-dark-secondary max-w-3xl mx-auto leading-relaxed">
+              AI-powered insights from your {summary.totalAnalyzed} health markers across {summary.categoriesAnalyzed} categories
+            </p>
+          </div>
+        </div>
+
+        {/* Summary Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-dark-panel border border-dark-border rounded-xl p-6 text-center">
+            <div className="text-3xl font-bold text-dark-accent mb-2">{summary.totalAnalyzed}</div>
+            <div className="text-sm text-dark-secondary">Total Analyzed</div>
+          </div>
+          <div className="bg-dark-panel border border-dark-border rounded-xl p-6 text-center">
+            <div className="text-3xl font-bold text-red-400 mb-2">{summary.concerningCount}</div>
+            <div className="text-sm text-dark-secondary">Need Attention</div>
+          </div>
+          <div className="bg-dark-panel border border-dark-border rounded-xl p-6 text-center">
+            <div className="text-3xl font-bold text-green-400 mb-2">{userContext.totalBiomarkers}</div>
+            <div className="text-sm text-dark-secondary">Biomarkers</div>
+          </div>
+          <div className="bg-dark-panel border border-dark-border rounded-xl p-6 text-center">
+            <div className="text-3xl font-bold text-purple-400 mb-2">{userContext.totalSNPs}</div>
+            <div className="text-sm text-dark-secondary">Genetic Variants</div>
+          </div>
+        </div>
+
+        {/* Priority Items */}
+        {priorityItems.length > 0 && (
+          <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-6">
+            <h2 className="text-2xl font-bold text-dark-primary mb-4 flex items-center">
+              <AlertTriangle className="h-6 w-6 text-red-400 mr-3" />
+              Priority Items ({priorityItems.length})
+            </h2>
+            <div className="grid gap-4">
+              {priorityItems.slice(0, 3).map((item, index) => (
+                <div key={index} className="bg-dark-panel border border-red-500/20 rounded-lg p-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <h3 className="font-semibold text-dark-primary">{item.displayName}</h3>
+                    <span className="text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded-full">
+                      {item.status.toUpperCase()}
+                    </span>
+                  </div>
+                  <p className="text-dark-secondary text-sm mb-3">{item.whyItMatters}</p>
+                  <div className="space-y-2">
+                    <div>
+                      <span className="text-xs font-medium text-dark-accent">Lifestyle:</span>
+                      <p className="text-xs text-dark-secondary">{item.recommendations.lifestyle}</p>
+                    </div>
+                    <div>
+                      <span className="text-xs font-medium text-dark-accent">Supplements:</span>
+                      <p className="text-xs text-dark-secondary">{item.recommendations.supplement}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Categories */}
+        <div className="space-y-6">
+          {Object.entries(resultsByCategory).map(([category, items]) => {
+            const IconComponent = categoryIcons[category] || Activity;
+            const stats = categoryStats.find(s => s.category === category);
             
             return (
-              <div key={index} className="bg-dark-panel border border-dark-border rounded-lg">
-                <div className="p-4 cursor-pointer" onClick={() => toggleBiomarker(index)}>
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-semibold text-lg text-dark-primary">{cleanBiomarkerName(marker.marker_name)}</h4>
-                    <span className="font-mono text-dark-accent">{marker.value} {marker.unit}</span>
+              <div key={category} className="bg-dark-panel border border-dark-border rounded-xl p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center space-x-4">
+                    <div className="p-3 bg-dark-accent/10 rounded-xl">
+                      <IconComponent className="h-6 w-6 text-dark-accent" />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-bold text-dark-primary">
+                        {categoryDisplayNames[category] || category}
+                      </h2>
+                      <p className="text-dark-secondary">{items.length} markers analyzed</p>
+                    </div>
                   </div>
-                  <p className={`text-sm ${interpretation.color === 'red' ? 'text-red-400' : interpretation.color === 'yellow' ? 'text-yellow-400' : 'text-green-400'}`}>
-                    {interpretation.status}
-                  </p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <span className="text-xs text-dark-secondary">Click to learn more</span>
-                    {isExpanded ? <ChevronUp className="h-4 w-4 text-dark-secondary" /> : <ChevronDown className="h-4 w-4 text-dark-secondary" />}
-                  </div>
+                  {stats && (
+                    <div className="flex space-x-2">
+                      {stats.concerning > 0 && (
+                        <span className="bg-red-500/20 text-red-400 px-3 py-1 rounded-full text-sm">
+                          {stats.concerning} concerning
+                        </span>
+                      )}
+                      {stats.borderline > 0 && (
+                        <span className="bg-yellow-500/20 text-yellow-400 px-3 py-1 rounded-full text-sm">
+                          {stats.borderline} borderline
+                        </span>
+                      )}
+                      {stats.optimal > 0 && (
+                        <span className="bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-sm">
+                          {stats.optimal} optimal
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
-                {isExpanded && (
-                  <div className="border-t border-dark-border p-4 space-y-4">
-                    <div>
-                      <h5 className="font-semibold text-dark-accent mb-2 flex items-center gap-2">
-                        <Info className="h-4 w-4" />
-                        What is {cleanBiomarkerName(marker.marker_name)}?
-                      </h5>
-                      <p className="text-dark-primary text-sm leading-relaxed">{education.description}</p>
-                    </div>
-                    
-                    <div>
-                      <h5 className="font-semibold text-dark-accent mb-2">Reference Range</h5>
-                      <p className="font-mono text-dark-primary bg-dark-background p-2 rounded text-sm">{education.referenceRange}</p>
-                    </div>
-                    
-                    <div>
-                      <h5 className="font-semibold text-dark-accent mb-2">Your Result Analysis</h5>
-                      <p className="text-dark-primary text-sm leading-relaxed">{education.interpretation}</p>
-                    </div>
-                    
-                    {education.symptoms && (
-                      <div>
-                        <h5 className="font-semibold text-yellow-400 mb-2 flex items-center gap-2">
-                          <AlertTriangle className="h-4 w-4" />
-                          Potential Symptoms
-                        </h5>
-                        <p className="text-dark-primary text-sm leading-relaxed">{education.symptoms}</p>
+
+                <div className="grid gap-4">
+                  {items.map((item, index) => (
+                    <div key={index} className={`border rounded-lg p-4 ${getStatusBg(item.status)}`}>
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <h3 className="font-semibold text-dark-primary">{item.displayName}</h3>
+                          <div className="flex items-center space-x-4 mt-1">
+                            <span className="text-sm text-dark-secondary">
+                              {item.markerType === 'biomarker' ? 'Value:' : 'Genotype:'} {item.userValue}
+                            </span>
+                            {item.referenceRange && (
+                              <span className="text-xs text-dark-secondary">
+                                Ref: {item.referenceRange}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <span className={`text-sm font-medium ${getStatusColor(item.status)}`}>
+                          {item.status.toUpperCase()}
+                        </span>
                       </div>
-                    )}
-                    
-                    <div>
-                      <h5 className="font-semibold text-green-400 mb-2 flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4" />
-                        Personalized Recommendations
-                      </h5>
-                      <ul className="space-y-1 text-sm">
-                        {education.recommendations.map((rec: string, i: number) => (
-                          <li key={i} className="flex items-start gap-2">
-                            <span className="text-green-400 mt-1">•</span>
-                            <span className="text-dark-primary">{rec}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    
-                    {education.interactions && (
-                      <div className="bg-red-900/20 border border-red-700/50 rounded-lg p-3">
-                        <h5 className="font-semibold text-red-400 mb-2 flex items-center gap-2">
-                          <AlertCircle className="h-4 w-4" />
-                          Important Considerations
-                        </h5>
-                        <p className="text-red-300 text-sm leading-relaxed">{education.interactions}</p>
+                      
+                      <p className="text-dark-secondary text-sm mb-3">{item.whyItMatters}</p>
+                      
+                      {item.personalizedRisk && (
+                        <p className="text-dark-secondary text-sm mb-3 italic">{item.personalizedRisk}</p>
+                      )}
+                      
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                          <span className="text-xs font-medium text-dark-accent">Lifestyle Optimization:</span>
+                          <p className="text-xs text-dark-secondary mt-1">{item.recommendations.lifestyle}</p>
+                        </div>
+                        <div>
+                          <span className="text-xs font-medium text-dark-accent">Supplement Support:</span>
+                          <p className="text-xs text-dark-secondary mt-1">{item.recommendations.supplement}</p>
+                        </div>
                       </div>
-                    )}
-                  </div>
-                )}
+                      
+                      <div className="flex items-center justify-between mt-3 pt-3 border-t border-dark-border/50">
+                        <span className="text-xs text-dark-secondary">
+                          Evidence: {item.evidenceLevel}
+                        </span>
+                        <span className="text-xs text-dark-secondary">
+                          {item.markerType === 'biomarker' ? '🩸 Blood' : '🧬 Genetic'}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            )
-          }) : (
-            <div className="text-center py-12 bg-dark-panel border border-dark-border rounded-lg">
-              <Activity className="h-12 w-12 text-dark-secondary mx-auto mb-4" />
-              <p className="text-dark-secondary">No biomarker data available.</p>
-              <p className="text-dark-secondary text-sm">Upload lab reports to see detailed analysis.</p>
-            </div>
-          )}
+            );
+          })}
         </div>
 
-        {/* SNPs Section */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <Dna className="h-6 w-6 text-dark-accent" />
-            <h2 className="text-2xl font-bold text-dark-primary">Genetic Variants ({snpsData.length})</h2>
+        {/* Refresh Button */}
+        <div className="text-center">
+          <Button 
+            onClick={refetchEnhanced}
+            disabled={enhancedLoading}
+            className="bg-dark-accent text-white hover:bg-dark-accent/80 px-8 py-3"
+          >
+            <Sparkles className="h-5 w-5 mr-2" />
+            {enhancedLoading ? 'Analyzing...' : 'Refresh Analysis'}
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  const renderAnalysis = () => (
+    <div className="space-y-8">
+      {/* Hero Section */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-cyan-500/5 rounded-2xl"></div>
+        <div className="relative p-8 text-center">
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent mb-4">
+            Comprehensive Analysis
+          </h1>
+          <p className="text-xl text-dark-secondary max-w-3xl mx-auto leading-relaxed">
+            Deep dive into your biomarker and genetic data with AI-powered insights and personalized recommendations
+          </p>
+        </div>
+      </div>
+
+      {/* Computing State */}
+      {analysisComputing && (
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-cyan-500/10 border border-blue-500/20 rounded-2xl p-8"
+        >
+          <div className="flex items-center justify-center space-x-4">
+            <div className="relative">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500/20"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent absolute inset-0"></div>
+            </div>
+            <div className="text-center">
+              <h3 className="text-2xl font-semibold text-dark-primary mb-2">AI Analysis in Progress</h3>
+              <p className="text-dark-secondary">Our advanced algorithms are processing your health data to generate personalized insights</p>
+            </div>
           </div>
-          {snpsData.length > 0 ? snpsData.map((snp, index) => {
-            const interpretation = interpretSNP(snp);
-            const education = snpEducation[index] || {
-              name: `${snp.gene_name} ${snp.snp_id}`,
-              description: 'Loading analysis...',
-              recommendations: ['Analysis in progress...'],
-              variantEffect: 'Loading...',
-              functionalImpact: 'Loading...'
-            };
-            const isExpanded = expandedSnps.has(index);
+        </motion.div>
+      )}
 
-            return (
-              <div key={index} className="bg-dark-panel border border-dark-border rounded-lg">
-                <div className="p-4 cursor-pointer" onClick={() => toggleSnp(index)}>
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-semibold text-lg text-dark-primary">{cleanSnpName(snp.snp_id, snp.gene_name)}</h4>
-                    <span className="font-mono text-dark-accent">{snp.genotype || snp.allele}</span>
+      {/* Main Content */}
+      <div className="space-y-12">
+        {/* Lab Results Section */}
+        {biomarkersData.length > 0 ? (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="relative"
+          >
+            {/* Background Gradient */}
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-blue-500/5 to-purple-500/5 rounded-3xl"></div>
+            
+            {/* Content */}
+            <div className="relative bg-dark-panel/80 backdrop-blur-sm border border-dark-border/50 rounded-3xl p-8 shadow-2xl">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center space-x-4">
+                  <div className="p-3 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-2xl shadow-lg">
+                    <Activity className="h-8 w-8 text-white" />
                   </div>
-                  <p className={`text-sm ${interpretation.color === 'red' ? 'text-red-400' : interpretation.color === 'orange' ? 'text-yellow-400' : 'text-green-400'}`}>
-                    {interpretation.severity}
-                  </p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <span className="text-xs text-dark-secondary">Click to learn more</span>
-                    {isExpanded ? <ChevronUp className="h-4 w-4 text-dark-secondary" /> : <ChevronDown className="h-4 w-4 text-dark-secondary" />}
+                  <div>
+                    <h2 className="text-3xl font-bold text-dark-primary">Lab Results Analysis</h2>
+                    <p className="text-dark-secondary">Comprehensive biomarker insights</p>
                   </div>
                 </div>
-                {isExpanded && (
-                  <div className="border-t border-dark-border p-4 space-y-4">
-                    <div>
-                      <h5 className="font-semibold text-dark-accent mb-2 flex items-center gap-2">
-                        <Dna className="h-4 w-4" />
-                        What is {cleanSnpName(snp.snp_id, snp.gene_name)}?
-                      </h5>
-                      <p className="text-dark-primary text-sm leading-relaxed">{education.description}</p>
-                    </div>
-                    
-                    <div>
-                      <h5 className="font-semibold text-dark-accent mb-2">Your Variant Analysis</h5>
-                      <p className="text-dark-primary text-sm leading-relaxed">{education.variantEffect}</p>
-                    </div>
-                    
-                    <div>
-                      <h5 className="font-semibold text-dark-accent mb-2">Functional Impact</h5>
-                      <p className="text-dark-primary text-sm leading-relaxed">{education.functionalImpact}</p>
-                    </div>
-                    
-                    {education.symptoms && (
-                      <div>
-                        <h5 className="font-semibold text-yellow-400 mb-2 flex items-center gap-2">
-                          <AlertTriangle className="h-4 w-4" />
-                          Potential Effects
-                        </h5>
-                        <p className="text-dark-primary text-sm leading-relaxed">{education.symptoms}</p>
-                      </div>
-                    )}
-                    
-                    <div>
-                      <h5 className="font-semibold text-green-400 mb-2 flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4" />
-                        Personalized Strategies
-                      </h5>
-                      <ul className="space-y-1 text-sm">
-                        {education.recommendations.map((rec: string, i: number) => (
-                          <li key={i} className="flex items-start gap-2">
-                            <span className="text-green-400 mt-1">•</span>
-                            <span className="text-dark-primary">{rec}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    
-                    {education.interactions && (
-                      <div className="bg-red-900/20 border border-red-700/50 rounded-lg p-3">
-                        <h5 className="font-semibold text-red-400 mb-2 flex items-center gap-2">
-                          <AlertCircle className="h-4 w-4" />
-                          Important Considerations
-                        </h5>
-                        <p className="text-red-300 text-sm leading-relaxed">{education.interactions}</p>
-                      </div>
-                    )}
+                <div className="text-right">
+                  <div className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-blue-400 bg-clip-text text-transparent">
+                    {biomarkersData.length}
                   </div>
-                )}
+                  <div className="text-sm text-dark-secondary font-medium">Biomarkers</div>
+                </div>
               </div>
-            )
-          }) : (
-            <div className="text-center py-12 bg-dark-panel border border-dark-border rounded-lg">
-              <Dna className="h-12 w-12 text-dark-secondary mx-auto mb-4" />
-              <p className="text-dark-secondary">No genetic data available.</p>
-              <p className="text-dark-secondary text-sm">Upload genetic reports to see detailed analysis.</p>
+              
+              {/* Search and Filter Controls */}
+              <div className="mb-8 space-y-4">
+                {/* Search Bar */}
+                <div className="relative">
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-dark-secondary" />
+                  <input
+                    type="text"
+                    placeholder="Search biomarkers by name or value..."
+                    value={biomarkerSearch}
+                    onChange={(e) => setBiomarkerSearch(e.target.value)}
+                    className="w-full pl-12 pr-4 py-3 bg-dark-background/60 border border-dark-border/50 rounded-xl text-dark-primary placeholder-dark-secondary focus:outline-none focus:border-dark-accent/50 focus:ring-2 focus:ring-dark-accent/20 transition-all"
+                  />
+                </div>
+                
+                {/* Filter Buttons */}
+                <div className="flex flex-wrap gap-3">
+                  {[
+                    { key: 'all', label: 'All Results', count: biomarkersData.length },
+                    { key: 'normal', label: 'Normal', count: biomarkersData.filter(b => {
+                      const analysis = biomarkerAnalysis[b.marker_name?.toLowerCase()?.replace(/\s+/g, '_')] || {};
+                      return analysis.statusColor === 'green' || !analysis.statusColor;
+                    }).length },
+                    { key: 'attention', label: 'Needs Attention', count: biomarkersData.filter(b => {
+                      const analysis = biomarkerAnalysis[b.marker_name?.toLowerCase()?.replace(/\s+/g, '_')] || {};
+                      return analysis.statusColor === 'yellow' || analysis.statusColor === 'red';
+                    }).length },
+                    { key: 'analyzed', label: 'AI Analyzed', count: biomarkersData.filter(b => {
+                      const analysis = biomarkerAnalysis[b.marker_name?.toLowerCase()?.replace(/\s+/g, '_')] || {};
+                      return analysis.interpretation;
+                    }).length }
+                  ].map(filter => (
+                    <button
+                      key={filter.key}
+                      onClick={() => {
+                        setBiomarkerFilter(filter.key as any);
+                        setBiomarkerPage(1);
+                      }}
+                      className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                        biomarkerFilter === filter.key
+                          ? 'bg-dark-accent text-white shadow-lg'
+                          : 'bg-dark-background/60 text-dark-secondary hover:bg-dark-background/80 hover:text-dark-primary border border-dark-border/50'
+                      }`}
+                    >
+                      {filter.label} ({filter.count})
+                    </button>
+                  ))}
+                </div>
+                
+                {/* Results Summary */}
+                <div className="flex items-center justify-between text-sm text-dark-secondary">
+                  <span>
+                    Showing {paginatedBiomarkers.length} of {filteredBiomarkers.length} biomarkers
+                    {biomarkerSearch && ` matching "${biomarkerSearch}"`}
+                  </span>
+                  {filteredBiomarkers.length !== biomarkersData.length && (
+                    <button
+                      onClick={() => {
+                        setBiomarkerSearch('');
+                        setBiomarkerFilter('all');
+                        setBiomarkerPage(1);
+                      }}
+                      className="text-dark-accent hover:text-dark-accent/80 font-medium"
+                    >
+                      Clear filters
+                    </button>
+                  )}
+                </div>
+              </div>
+              
+              {/* Biomarkers Grid */}
+              <div className="grid gap-6">
+                {paginatedBiomarkers.map((biomarker, index) => {
+                  const analysis = biomarkerAnalysis[biomarker.marker_name?.toLowerCase()?.replace(/\s+/g, '_')] || {};
+                  const cleanName = biomarker.marker_name?.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) || 'Unknown Marker';
+                  
+                  return (
+                    <BiomarkerCard 
+                      key={`${biomarker.marker_name}-${index}`}
+                      biomarker={biomarker}
+                      analysis={analysis}
+                      cleanName={cleanName}
+                      index={index}
+                    />
+                  );
+                })}
+              </div>
+              
+              {/* Biomarker Pagination */}
+              {totalBiomarkerPages > 1 && (
+                <div className="mt-8 flex items-center justify-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setBiomarkerPage(Math.max(1, biomarkerPage - 1))}
+                    disabled={biomarkerPage === 1}
+                    className="border-dark-border text-dark-secondary hover:bg-dark-background/80 hover:text-dark-primary disabled:opacity-50"
+                  >
+                    Previous
+                  </Button>
+                  
+                  <div className="flex space-x-1">
+                    {Array.from({ length: Math.min(5, totalBiomarkerPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalBiomarkerPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (biomarkerPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (biomarkerPage >= totalBiomarkerPages - 2) {
+                        pageNum = totalBiomarkerPages - 4 + i;
+                      } else {
+                        pageNum = biomarkerPage - 2 + i;
+                      }
+                      
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={biomarkerPage === pageNum ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setBiomarkerPage(pageNum)}
+                          className={biomarkerPage === pageNum 
+                            ? "bg-dark-accent text-white" 
+                            : "border-dark-border text-dark-secondary hover:bg-dark-background/80 hover:text-dark-primary"
+                          }
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setBiomarkerPage(Math.min(totalBiomarkerPages, biomarkerPage + 1))}
+                    disabled={biomarkerPage === totalBiomarkerPages}
+                    className="border-dark-border text-dark-secondary hover:bg-dark-background/80 hover:text-dark-primary disabled:opacity-50"
+                  >
+                    Next
+                  </Button>
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </motion.div>
+        ) : (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="relative"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-gray-500/5 to-blue-500/5 rounded-3xl"></div>
+            <div className="relative bg-dark-panel/80 backdrop-blur-sm border border-dark-border/50 rounded-3xl p-12 text-center shadow-2xl">
+              <div className="p-6 bg-gradient-to-br from-gray-500/10 to-blue-500/10 rounded-3xl w-fit mx-auto mb-6">
+                <Activity className="h-16 w-16 text-dark-secondary mx-auto" />
+              </div>
+              <h3 className="text-2xl font-bold text-dark-primary mb-4">No Lab Results Yet</h3>
+              <p className="text-dark-secondary mb-8 max-w-md mx-auto leading-relaxed">
+                Upload your lab reports to unlock personalized biomarker analysis and health insights
+              </p>
+              <Button 
+                onClick={() => router.push('/onboarding')} 
+                className="bg-gradient-to-r from-dark-accent to-blue-500 hover:from-dark-accent/80 hover:to-blue-500/80 text-white px-8 py-4 text-lg font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                Upload Lab Results
+              </Button>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Genetic Analysis Section */}
+        {snpsData.length > 0 ? (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="relative"
+          >
+            {/* Background Gradient */}
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-pink-500/5 to-blue-500/5 rounded-3xl"></div>
+            
+            {/* Content */}
+            <div className="relative bg-dark-panel/80 backdrop-blur-sm border border-dark-border/50 rounded-3xl p-8 shadow-2xl">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center space-x-4">
+                  <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl shadow-lg">
+                    <Dna className="h-8 w-8 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-3xl font-bold text-dark-primary">Genetic Analysis</h2>
+                    <p className="text-dark-secondary">Personalized genetic insights</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                    {snpsData.length.toLocaleString()}
+                  </div>
+                  <div className="text-sm text-dark-secondary font-medium">Genetic Variants</div>
+                </div>
+              </div>
+              
+              {/* Search and Filter Controls */}
+              <div className="mb-8 space-y-4">
+                {/* Search Bar */}
+                <div className="relative">
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-dark-secondary" />
+                  <input
+                    type="text"
+                    placeholder="Search by gene name, rsID, or genotype..."
+                    value={snpSearch}
+                    onChange={(e) => setSnpSearch(e.target.value)}
+                    className="w-full pl-12 pr-4 py-3 bg-dark-background/60 border border-dark-border/50 rounded-xl text-dark-primary placeholder-dark-secondary focus:outline-none focus:border-dark-accent/50 focus:ring-2 focus:ring-dark-accent/20 transition-all"
+                  />
+                </div>
+                
+                {/* Filter Buttons */}
+                <div className="flex flex-wrap gap-3">
+                  {[
+                    { key: 'all', label: 'All Variants', count: snpsData.length },
+                    { key: 'low', label: 'Low Risk', count: snpsData.filter(s => {
+                      const gene = s.supported_snps?.gene || s.gene_name || 'Unknown';
+                      const rsid = s.supported_snps?.rsid || s.snp_id || 'Unknown';
+                      const analysis = snpAnalysis[`${gene} (${rsid})`] || {};
+                      return analysis.riskColor === 'green' || !analysis.riskColor;
+                    }).length },
+                    { key: 'moderate', label: 'Moderate Risk', count: snpsData.filter(s => {
+                      const gene = s.supported_snps?.gene || s.gene_name || 'Unknown';
+                      const rsid = s.supported_snps?.rsid || s.snp_id || 'Unknown';
+                      const analysis = snpAnalysis[`${gene} (${rsid})`] || {};
+                      return analysis.riskColor === 'orange';
+                    }).length },
+                    { key: 'high', label: 'High Risk', count: snpsData.filter(s => {
+                      const gene = s.supported_snps?.gene || s.gene_name || 'Unknown';
+                      const rsid = s.supported_snps?.rsid || s.snp_id || 'Unknown';
+                      const analysis = snpAnalysis[`${gene} (${rsid})`] || {};
+                      return analysis.riskColor === 'red';
+                    }).length },
+                    { key: 'analyzed', label: 'AI Analyzed', count: snpsData.filter(s => {
+                      const gene = s.supported_snps?.gene || s.gene_name || 'Unknown';
+                      const rsid = s.supported_snps?.rsid || s.snp_id || 'Unknown';
+                      const analysis = snpAnalysis[`${gene} (${rsid})`] || {};
+                      return analysis.variantEffect;
+                    }).length }
+                  ].map(filter => (
+                    <button
+                      key={filter.key}
+                      onClick={() => {
+                        setSnpFilter(filter.key as any);
+                        setSnpPage(1);
+                      }}
+                      className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                        snpFilter === filter.key
+                          ? 'bg-dark-accent text-white shadow-lg'
+                          : 'bg-dark-background/60 text-dark-secondary hover:bg-dark-background/80 hover:text-dark-primary border border-dark-border/50'
+                      }`}
+                    >
+                      {filter.label} ({filter.count})
+                    </button>
+                  ))}
+                </div>
+                
+                {/* Results Summary */}
+                <div className="flex items-center justify-between text-sm text-dark-secondary">
+                  <span>
+                    Showing {paginatedSnps.length} of {filteredSnps.length} genetic variants
+                    {snpSearch && ` matching "${snpSearch}"`}
+                  </span>
+                  {filteredSnps.length !== snpsData.length && (
+                    <button
+                      onClick={() => {
+                        setSnpSearch('');
+                        setSnpFilter('all');
+                        setSnpPage(1);
+                      }}
+                      className="text-dark-accent hover:text-dark-accent/80 font-medium"
+                    >
+                      Clear filters
+                    </button>
+                  )}
+                </div>
+              </div>
+              
+              {/* SNPs Grid */}
+              <div className="space-y-4">
+                {paginatedSnps.map((snp, index) => {
+                  const gene = snp.supported_snps?.gene || snp.gene_name || 'Unknown';
+                  const rsid = snp.supported_snps?.rsid || snp.snp_id || 'Unknown';
+                  const analysis = snpAnalysis[`${gene} (${rsid})`] || {};
+                  
+                  return (
+                    <SnpCard 
+                      key={`${gene}-${rsid}-${index}`}
+                      snp={snp}
+                      analysis={analysis}
+                      gene={gene}
+                      rsid={rsid}
+                      index={index}
+                    />
+                  );
+                })}
+              </div>
+              
+              {/* SNP Pagination */}
+              {totalSnpPages > 1 && (
+                <div className="mt-8 flex items-center justify-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSnpPage(Math.max(1, snpPage - 1))}
+                    disabled={snpPage === 1}
+                    className="border-dark-border text-dark-secondary hover:bg-dark-background/80 hover:text-dark-primary disabled:opacity-50"
+                  >
+                    Previous
+                  </Button>
+                  
+                  <div className="flex space-x-1">
+                    {Array.from({ length: Math.min(5, totalSnpPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalSnpPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (snpPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (snpPage >= totalSnpPages - 2) {
+                        pageNum = totalSnpPages - 4 + i;
+                      } else {
+                        pageNum = snpPage - 2 + i;
+                      }
+                      
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={snpPage === pageNum ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setSnpPage(pageNum)}
+                          className={snpPage === pageNum 
+                            ? "bg-dark-accent text-white" 
+                            : "border-dark-border text-dark-secondary hover:bg-dark-background/80 hover:text-dark-primary"
+                          }
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSnpPage(Math.min(totalSnpPages, snpPage + 1))}
+                    disabled={snpPage === totalSnpPages}
+                    className="border-dark-border text-dark-secondary hover:bg-dark-background/80 hover:text-dark-primary disabled:opacity-50"
+                  >
+                    Next
+                  </Button>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="relative"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-pink-500/5 rounded-3xl"></div>
+            <div className="relative bg-dark-panel/80 backdrop-blur-sm border border-dark-border/50 rounded-3xl p-12 text-center shadow-2xl">
+              <div className="p-6 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-3xl w-fit mx-auto mb-6">
+                <Dna className="h-16 w-16 text-dark-secondary mx-auto" />
+              </div>
+              <h3 className="text-2xl font-bold text-dark-primary mb-4">No Genetic Data Yet</h3>
+              <p className="text-dark-secondary mb-8 max-w-md mx-auto leading-relaxed">
+                Upload your genetic test results (23andMe, AncestryDNA, etc.) to unlock personalized genetic insights
+              </p>
+              <Button 
+                onClick={() => router.push('/onboarding')} 
+                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-500/80 hover:to-pink-500/80 text-white px-8 py-4 text-lg font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                Upload Genetic Data
+              </Button>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Action Center */}
+        {(biomarkersData.length > 0 || snpsData.length > 0) && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="relative"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-dark-accent/5 to-blue-500/5 rounded-3xl"></div>
+            <div className="relative bg-dark-panel/80 backdrop-blur-sm border border-dark-border/50 rounded-3xl p-8 text-center shadow-2xl">
+              <h3 className="text-2xl font-bold text-dark-primary mb-4">Keep Your Analysis Fresh</h3>
+              <p className="text-dark-secondary mb-6 max-w-md mx-auto">
+                Refresh your analysis to get the latest insights as our AI models improve
+              </p>
+              <Button 
+                onClick={triggerRecomputation}
+                disabled={analysisComputing}
+                className="bg-gradient-to-r from-dark-accent to-blue-500 hover:from-dark-accent/80 hover:to-blue-500/80 text-white px-8 py-4 text-lg font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50"
+              >
+                <Sparkles className="h-5 w-5 mr-3" />
+                {analysisComputing ? 'Computing...' : 'Refresh Analysis'}
+              </Button>
+            </div>
+          </motion.div>
+        )}
       </div>
     </div>
   );
@@ -981,53 +1929,203 @@ export default function DashboardPage() {
   const renderTracking = () => (
     <div className="space-y-8">
       <div>
-        <h1 className="text-4xl font-bold text-dark-primary">Daily Tracking</h1>
+        <h1 className="text-4xl font-bold text-dark-primary">Health Tracking</h1>
         <p className="text-lg text-dark-secondary mt-1">
-          Log your daily supplement intake and symptoms.
+          Track your symptoms, supplement intake, and health metrics over time.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-6">
-          <h2 className="text-2xl font-bold text-dark-primary">Symptom Log</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[
-              { name: 'Energy Level', icon: '⚡' }, { name: 'Sleep Quality', icon: '😴' },
-              { name: 'Brain Fog', icon: '🧠' }, { name: 'Mood', icon: '😊' },
-              { name: 'Joint Pain', icon: '🦴' }, { name: 'Digestive Health', icon: '🫃' },
-              { name: 'Stress Level', icon: '😰' }, { name: 'Focus', icon: '🎯' },
-            ].map(symptom => (
-              <div key={symptom.name} className="bg-dark-panel border border-dark-border rounded-lg p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-semibold text-dark-primary">{symptom.icon} {symptom.name}</h3>
-                  {symptomRatings[symptom.name] && <span className="font-mono text-dark-accent">{symptomRatings[symptom.name]}/10</span>}
+      {/* Date Selector */}
+      <div className="flex items-center justify-between bg-dark-panel border border-dark-border rounded-xl p-6">
+        <div>
+          <h3 className="text-lg font-semibold text-dark-primary mb-1">Tracking Date</h3>
+          <p className="text-sm text-dark-secondary">Select the date you want to track</p>
+        </div>
+        <input 
+          type="date" 
+          value={selectedDate}
+          onChange={(e) => setSelectedDate(e.target.value)}
+          className="bg-dark-background border border-dark-border rounded-lg px-4 py-2 text-dark-primary"
+          max={new Date().toISOString().split('T')[0]}
+        />
+      </div>
+
+      {/* Supplements Tracking - Top Section */}
+      <div className="bg-dark-panel border border-dark-border rounded-xl p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <Pill className="w-6 h-6 text-dark-accent" />
+          <h3 className="text-xl font-semibold text-dark-primary">Daily Supplements</h3>
+        </div>
+        
+        {plan?.recommendations?.length > 0 ? (
+          <div className="flex items-center justify-between">
+            <p className="text-dark-secondary">Did you take all your supplements today?</p>
+            <button
+              onClick={() => toggleSupplements(!dailySupplementsTaken)}
+              className={`px-8 py-3 rounded-lg font-medium transition-all flex items-center gap-2 ${
+                dailySupplementsTaken
+                  ? 'bg-green-500 text-white'
+                  : 'bg-dark-border text-dark-secondary hover:bg-dark-accent hover:text-white'
+              }`}
+            >
+              <CheckCircle className="w-5 h-5" />
+              {dailySupplementsTaken ? 'All Taken ✓' : 'Mark as Taken'}
+            </button>
+          </div>
+        ) : (
+          <div className="text-center py-4">
+            <p className="text-dark-secondary mb-4">Generate your supplement plan first to track adherence.</p>
+            <Button 
+              onClick={() => setActiveTab('supplement-plan')}
+              className="bg-dark-accent hover:bg-dark-accent/80 text-white"
+            >
+              Generate Plan
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* Main Symptoms Tracking */}
+      <div className="bg-dark-panel border border-dark-border rounded-xl p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <Activity className="w-6 h-6 text-dark-accent" />
+          <h3 className="text-xl font-semibold text-dark-primary">Track Your Symptoms</h3>
+        </div>
+        <p className="text-dark-secondary mb-6">Rate how you're feeling today on a scale of 1-10 (1 = worst, 10 = best)</p>
+        
+        <div className="grid md:grid-cols-2 gap-6">
+          {[
+            { name: 'Energy Level', icon: Zap, color: 'text-emerald-400' },
+            { name: 'Sleep Quality', icon: Moon, color: 'text-blue-400' },
+            { name: 'Mental Clarity', icon: Brain, color: 'text-purple-400' },
+            { name: 'Mood', icon: Heart, color: 'text-pink-400' },
+            { name: 'Digestive Health', icon: Leaf, color: 'text-green-400' },
+            { name: 'Anxiety Level', icon: AlertOctagon, color: 'text-red-400', reverse: true },
+            { name: 'Joint Pain', icon: Bone, color: 'text-orange-400', reverse: true },
+            { name: 'Stress Level', icon: CloudLightning, color: 'text-yellow-400', reverse: true }
+          ].map((symptom) => {
+            const IconComponent = symptom.icon;
+            return (
+              <div key={symptom.name} className="bg-dark-background border border-dark-border rounded-lg p-4 hover:bg-dark-border/50 transition-all">
+                <div className="flex items-center mb-3">
+                  <IconComponent className={`w-6 h-6 mr-3 ${symptom.color}`} />
+                  <h4 className="font-semibold text-dark-primary">{symptom.name}</h4>
                 </div>
-                <div className="grid grid-cols-10 gap-1">
-                  {[...Array(10)].map((_, i) => (
+              
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-dark-secondary">{symptom.reverse ? 'High' : 'Low'}</span>
+                <div className="flex-1 flex space-x-1">
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => (
                     <button
-                      key={i}
-                      onClick={() => logSymptom(symptom.name, i + 1)}
-                      className={`h-11 rounded text-xs font-mono transition-colors active:scale-95 transition-transform duration-150 ${symptomRatings[symptom.name] === i + 1 ? 'bg-dark-accent text-white' : 'bg-dark-border hover:bg-dark-accent/50'}`}
+                      key={value}
+                      onClick={() => logSymptom(symptom.name, value)}
+                      className={`flex-1 h-8 rounded transition-all ${
+                        symptomRatings[symptom.name] === value
+                          ? 'bg-dark-accent text-white'
+                          : 'bg-dark-border hover:bg-dark-accent/30 text-dark-secondary hover:text-white'
+                      }`}
                     >
-                      {i + 1}
+                      {value}
                     </button>
                   ))}
                 </div>
+                <span className="text-sm text-dark-secondary">{symptom.reverse ? 'Low' : 'High'}</span>
+              </div>
+              
+              {symptomRatings[symptom.name] && (
+                <div className="mt-2 text-sm text-dark-accent">
+                  Rated: {symptomRatings[symptom.name]}/10
+                </div>
+              )}
+            </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Custom Symptoms - Bottom Section */}
+      <div className="bg-dark-panel border border-dark-border rounded-xl p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <Star className="w-6 h-6 text-dark-accent" />
+          <h3 className="text-xl font-semibold text-dark-primary">Add Custom Symptom</h3>
+        </div>
+        
+        <div className="flex gap-3 mb-6">
+          <input
+            type="text"
+            value={newCustomSymptom}
+            onChange={(e) => setNewCustomSymptom(e.target.value)}
+            placeholder="Type a custom symptom (e.g., Headache, Back Pain, Nausea...)"
+            className="flex-1 bg-dark-background border border-dark-border rounded-lg px-4 py-3 text-dark-primary placeholder-dark-secondary focus:outline-none focus:border-dark-accent"
+            onKeyPress={(e) => e.key === 'Enter' && addCustomSymptom()}
+          />
+          <Button
+            onClick={addCustomSymptom}
+            disabled={!newCustomSymptom.trim()}
+            className="px-6 py-3 bg-dark-accent hover:bg-dark-accent/80 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Add
+          </Button>
+        </div>
+        
+        {/* Custom Symptoms List */}
+        {customSymptoms.length > 0 && (
+          <div className="grid md:grid-cols-2 gap-4">
+            {customSymptoms.map((symptom) => (
+              <div key={symptom} className="bg-dark-background border border-dark-border rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center">
+                    <Edit3 className="w-5 h-5 mr-3 text-dark-accent" />
+                    <h4 className="font-semibold text-dark-primary">{symptom}</h4>
+                  </div>
+                  <button
+                    onClick={() => removeCustomSymptom(symptom)}
+                    className="text-red-400 hover:text-red-300 transition-colors"
+                  >
+                    <span className="text-sm">✕</span>
+                  </button>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-dark-secondary">Low</span>
+                  <div className="flex-1 flex space-x-1">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => (
+                      <button
+                        key={value}
+                        onClick={() => logSymptom(symptom, value)}
+                        className={`flex-1 h-8 rounded transition-all ${
+                          symptomRatings[symptom] === value
+                            ? 'bg-dark-accent text-white'
+                            : 'bg-dark-border hover:bg-dark-accent/30 text-dark-secondary hover:text-white'
+                        }`}
+                      >
+                        {value}
+                      </button>
+                    ))}
+                  </div>
+                  <span className="text-sm text-dark-secondary">High</span>
+                </div>
+                
+                {symptomRatings[symptom] && (
+                  <div className="mt-2 text-sm text-dark-accent">
+                    Rated: {symptomRatings[symptom]}/10
+                  </div>
+                )}
               </div>
             ))}
           </div>
-        </div>
-        <div className="space-y-6">
-          <h2 className="text-2xl font-bold text-dark-primary">Supplement Adherence</h2>
-          <div className="bg-dark-panel border border-dark-border rounded-lg p-6 text-center">
-            <h3 className="font-semibold text-dark-primary mb-4">Did you take your supplements today?</h3>
-            <div className="flex gap-4">
-              <Button onClick={() => toggleSupplements(true)} className={`flex-1 ${dailySupplementsTaken ? 'bg-dark-accent text-white' : 'bg-dark-border text-dark-secondary'}`}>Yes</Button>
-              <Button onClick={() => toggleSupplements(false)} className={`flex-1 ${!dailySupplementsTaken ? 'bg-red-500 text-white' : 'bg-dark-border text-dark-secondary'}`}>No</Button>
-            </div>
+        )}
+      </div>
+
+      {/* Loading State */}
+      {isTrackingLoading && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-dark-panel border border-dark-border rounded-xl p-8 text-center">
+            <div className="animate-spin w-8 h-8 border-2 border-dark-accent border-t-transparent rounded-full mx-auto mb-4"></div>
+            <p className="text-dark-primary">Loading tracking data...</p>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 
@@ -1141,75 +2239,6 @@ export default function DashboardPage() {
     </div>
   );
 
-  const renderSettings = () => (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Settings</h1>
-      
-      <div className="grid gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Account Settings</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-gray-700">Email</label>
-              <p className="text-gray-600">{user?.email}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700">Full Name</label>
-              <p className="text-gray-600">{profile?.full_name || 'Not set'}</p>
-            </div>
-            <Button variant="outline" onClick={() => router.push('/onboarding')}>
-              Update Profile
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Data Management</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex justify-between items-center">
-              <div>
-                <p className="font-medium">Uploaded Files</p>
-                <p className="text-sm text-gray-600">{uploadedFiles.length} files</p>
-              </div>
-              <Button variant="outline" size="sm">
-                Manage Files
-              </Button>
-            </div>
-            <div className="flex justify-between items-center">
-              <div>
-                <p className="font-medium">Extracted Data</p>
-                <p className="text-sm text-gray-600">
-                  {extractedData.biomarkers} biomarkers, {extractedData.snps} genetic variants
-                </p>
-              </div>
-              <Button variant="outline" size="sm">
-                View Data
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-red-700">Danger Zone</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Button 
-              variant="destructive" 
-              onClick={() => supabase.auth.signOut().then(() => router.push('/'))}
-            >
-              Sign Out
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-
   const renderProductChecker = () => (
     <div className="space-y-8">
       <div className="flex justify-between items-center">
@@ -1231,7 +2260,7 @@ export default function DashboardPage() {
           type="url"
           value={productUrl}
           onChange={(e) => setProductUrl(e.target.value)}
-          placeholder="Paste Direct Product URL from Brand Website"
+          placeholder="Paste product URL from Amazon, iHerb, etc."
           className="flex-grow bg-dark-panel border border-dark-border rounded-md px-4 py-2 text-dark-primary placeholder-dark-secondary focus:ring-2 focus:ring-dark-accent focus:outline-none"
           disabled={isCheckingProduct}
         />
@@ -1300,9 +2329,6 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           )}
-
-
-
         </motion.div>
       )}
 
@@ -1410,7 +2436,6 @@ export default function DashboardPage() {
               </div>
             )}
           </Button>
-
         </div>
         {studyError && (
           <div className="mt-4 p-4 bg-red-900/50 border border-red-600 rounded-lg">
@@ -1419,126 +2444,63 @@ export default function DashboardPage() {
         )}
       </div>
 
-
-
       {/* Latest Analysis */}
       {studyAnalysis && (
         <div className="bg-dark-panel border border-dark-border rounded-xl p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <BookOpen className="h-6 w-6 text-dark-accent" />
-            <h2 className="text-xl font-semibold text-dark-primary">Latest Analysis</h2>
-          </div>
-          
+          <h2 className="text-xl font-semibold text-dark-primary mb-4">Latest Analysis</h2>
           <div className="space-y-6">
-            {/* Personal Relevance Score */}
-            <div className="bg-dark-background border border-dark-border rounded-lg p-4">
-              <div className="flex items-center gap-3">
-                <Star className="h-6 w-6 text-yellow-400" />
-                <div>
-                  <span className="text-dark-secondary text-sm">Personal Relevance:</span>
-                  <div className="text-3xl font-bold text-yellow-400">{studyAnalysis.relevanceScore}/10</div>
-                </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Star className="h-5 w-5 text-yellow-400" />
+                <span className="text-dark-secondary">Personal Relevance:</span>
+                <span className="text-2xl font-bold text-dark-accent">{studyAnalysis.relevanceScore}/10</span>
               </div>
             </div>
             
-            {/* Personalized Summary */}
             <div>
-              <h3 className="text-lg font-semibold text-dark-primary mb-3 flex items-center gap-2">
-                <User className="h-5 w-5 text-dark-accent" />
-                Personalized Summary
-              </h3>
-              <div className="bg-dark-background border border-dark-border rounded-lg p-4">
-                <p className="text-dark-primary leading-relaxed">{studyAnalysis.personalizedSummary}</p>
-              </div>
+              <h3 className="font-semibold text-dark-accent mb-2">Personalized Summary</h3>
+              <p className="text-dark-secondary">{studyAnalysis.personalizedSummary}</p>
             </div>
             
-            {/* Personal Explanation */}
             <div>
-              <h3 className="text-lg font-semibold text-dark-primary mb-3 flex items-center gap-2">
-                <Brain className="h-5 w-5 text-dark-accent" />
-                Personal Explanation
-              </h3>
-              <div className="bg-dark-background border border-dark-border rounded-lg p-4">
-                <p className="text-dark-primary leading-relaxed">{studyAnalysis.personalizedExplanation}</p>
-              </div>
+              <h3 className="font-semibold text-dark-accent mb-2">Personal Explanation</h3>
+              <p className="text-dark-secondary">{studyAnalysis.personalizedExplanation}</p>
             </div>
             
-            {/* Key Findings */}
             <div>
-              <h3 className="text-lg font-semibold text-dark-primary mb-3 flex items-center gap-2">
-                <FileText className="h-5 w-5 text-dark-accent" />
-                Key Findings
-              </h3>
-              <div className="bg-dark-background border border-dark-border rounded-lg p-4">
-                <ul className="space-y-3">
-                  {studyAnalysis.keyFindings?.map((finding: string, index: number) => (
-                    <li key={index} className="flex items-start gap-3">
-                      <span className="text-dark-accent mt-1 text-lg">•</span>
-                      <span className="text-dark-primary leading-relaxed">{finding}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              <h3 className="font-semibold text-dark-accent mb-2">Key Findings</h3>
+              <ul className="space-y-2">
+                {studyAnalysis.keyFindings?.map((finding: string, index: number) => (
+                  <li key={index} className="flex items-start gap-2">
+                    <span className="text-dark-accent mt-1">•</span>
+                    <span className="text-dark-secondary">{finding}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
             
-            {/* Your Personalized Recommendations */}
             <div>
-              <h3 className="text-lg font-semibold text-dark-primary mb-3 flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-400" />
-                Your Personalized Recommendations
-              </h3>
-              <div className="bg-dark-background border border-dark-border rounded-lg p-4">
-                <ul className="space-y-3">
-                  {studyAnalysis.actionableRecommendations?.map((rec: string, index: number) => (
-                    <li key={index} className="flex items-start gap-3">
-                      <span className="text-green-400 mt-1 text-lg font-bold">✓</span>
-                      <span className="text-dark-primary leading-relaxed">{rec}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              <h3 className="font-semibold text-dark-accent mb-2">Your Personalized Recommendations</h3>
+              <ul className="space-y-2">
+                {studyAnalysis.actionableRecommendations?.map((rec: string, index: number) => (
+                  <li key={index} className="flex items-start gap-2">
+                    <span className="text-green-400 mt-1">✓</span>
+                    <span className="text-dark-secondary">{rec}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
-
-            {/* Important Considerations */}
-            {studyAnalysis.limitations && studyAnalysis.limitations.length > 0 && (
-              <div>
-                <h3 className="text-lg font-semibold text-dark-primary mb-3 flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-yellow-400" />
-                  Important Considerations
-                </h3>
-                <div className="bg-dark-background border border-dark-border rounded-lg p-4">
-                  <ul className="space-y-3">
-                    {studyAnalysis.limitations.map((limitation: string, index: number) => (
-                      <li key={index} className="flex items-start gap-3">
-                        <span className="text-yellow-400 mt-1 text-lg">⚠</span>
-                        <span className="text-dark-primary leading-relaxed">{limitation}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       )}
 
-      {/* Studies History */}
+      {/* Study History */}
       <div className="bg-dark-panel border border-dark-border rounded-xl p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-dark-primary">Your Analyzed Studies</h2>
-          <Button
-            onClick={loadUserStudies}
-            variant="outline"
-            className="border-dark-border text-dark-secondary hover:bg-dark-border"
-          >
-            Refresh
-          </Button>
-        </div>
-        
+        <h2 className="text-xl font-semibold text-dark-primary mb-4">Your Study History</h2>
         {isLoadingStudies ? (
           <div className="text-center py-8">
-            <div className="w-8 h-8 border-2 border-dark-border border-t-dark-accent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-dark-secondary">Loading your studies...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-dark-accent mx-auto"></div>
+            <p className="mt-2 text-dark-secondary">Loading studies...</p>
           </div>
         ) : userStudies.length > 0 ? (
           <div className="space-y-4">
@@ -1716,6 +2678,29 @@ export default function DashboardPage() {
     </div>
   );
 
+  const renderSettings = () => (
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-4xl font-bold text-dark-primary">Settings</h1>
+        <p className="text-lg text-dark-secondary mt-1">
+          Manage your account settings and preferences.
+        </p>
+      </div>
+
+      {/* Settings content will be implemented here */}
+      <div className="bg-dark-panel border border-dark-border rounded-xl p-8 text-center">
+        <Settings className="h-16 w-16 text-dark-secondary mx-auto mb-4" />
+        <h3 className="text-xl font-semibold text-dark-primary mb-2">Settings</h3>
+        <p className="text-dark-secondary">
+          Manage your account settings, notification preferences, and data privacy options.
+        </p>
+        <p className="text-dark-secondary text-sm mt-2">
+          This feature is coming soon!
+        </p>
+      </div>
+    </div>
+  );
+
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
@@ -1723,7 +2708,7 @@ export default function DashboardPage() {
       case 'supplement-plan':
         return renderSupplementPlan();
       case 'analysis':
-        return renderAnalysis();
+        return renderEnhancedAnalysis();
       case 'tracking':
         return renderTracking();
       case 'ai-chat':

@@ -12,34 +12,21 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const date = searchParams.get('date') || new Date().toISOString().split('T')[0];
-    const startDate = searchParams.get('startDate');
-    const endDate = searchParams.get('endDate');
+    const date = searchParams.get('date');
 
-    let query = supabase
-      .from('user_supplement_adherence')
+    const { data, error } = await supabase
+      .from('user_supplement_tracking')
       .select('*')
       .eq('user_id', user.id)
+      .eq('date', date)
       .order('created_at', { ascending: false });
 
-    if (startDate && endDate) {
-      // Date range query
-      query = query.gte('entry_date', startDate).lte('entry_date', endDate);
-    } else {
-      // Single date query
-      query = query.eq('entry_date', date);
-    }
-
-    const { data: supplements, error } = await query;
-
     if (error) {
-      console.error('Error fetching supplement adherence:', error);
-      return NextResponse.json({ error: 'Failed to fetch supplement adherence' }, { status: 500 });
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ supplements });
+    return NextResponse.json(data);
   } catch (error) {
-    console.error('Error in supplements GET:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -55,41 +42,24 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { supplement_name, dosage, taken, notes, entry_date } = body;
+    const { taken, date } = body;
 
-    // Validate required fields
-    if (!supplement_name) {
-      return NextResponse.json({ error: 'Supplement name is required' }, { status: 400 });
-    }
-
-    const supplementData = {
-      user_id: user.id,
-      supplement_name,
-      dosage: dosage || null,
-      taken: taken || false,
-      taken_at: taken ? new Date().toISOString() : null,
-      notes: notes || null,
-      entry_date: entry_date || new Date().toISOString().split('T')[0],
-    };
-
-    // Use upsert to handle duplicate entries (update if exists, insert if not)
-    const { data: supplement, error } = await supabase
-      .from('user_supplement_adherence')
-      .upsert(supplementData, {
-        onConflict: 'user_id,supplement_name,entry_date',
-        ignoreDuplicates: false
+    const { data, error } = await supabase
+      .from('user_supplement_tracking')
+      .insert({
+        user_id: user.id,
+        taken,
+        date,
       })
       .select()
       .single();
 
     if (error) {
-      console.error('Error saving supplement adherence:', error);
-      return NextResponse.json({ error: 'Failed to save supplement adherence' }, { status: 500 });
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ supplement, message: 'Supplement adherence logged successfully' });
+    return NextResponse.json(data);
   } catch (error) {
-    console.error('Error in supplements POST:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

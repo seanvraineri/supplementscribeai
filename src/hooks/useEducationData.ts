@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-// import { getBiomarkerEducation, getSNPEducation } from '@/lib/analysis-helpers';
+import { getBiomarkerEducation, getSNPEducation } from '@/lib/analysis-helpers';
 
 interface EducationData {
   [key: string]: any;
@@ -16,22 +16,6 @@ export const useEducationData = (
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // TEMPORARILY DISABLED - This was causing continuous expensive AI calls
-    // TODO: Implement batched or cached education loading
-    console.log('Education data loading temporarily disabled to prevent excessive AI calls');
-    console.log(`Would load education for ${biomarkers.length} biomarkers and ${snps.length} SNPs`);
-    
-    // Set loading to false immediately
-    setLoading(false);
-    
-    // Provide empty education data for now
-    setBiomarkerEducation({});
-    setSnpEducation({});
-    
-    return;
-
-    // ORIGINAL CODE (commented out):
-    /*
     const loadEducationData = async () => {
       if (biomarkers.length === 0 && snps.length === 0) return;
       
@@ -40,10 +24,15 @@ export const useEducationData = (
       try {
         // Load biomarker education data
         const biomarkerPromises = biomarkers.map(async (marker, index) => {
+          // Ensure all values are strings and handle null/undefined
+          const markerName = String(marker.marker_name || marker.name || '');
+          const markerValue = String(marker.value || '');
+          const markerUnit = String(marker.unit || '');
+          
           const education = await getBiomarkerEducation(
-            marker.marker_name,
-            marker.value,
-            marker.unit,
+            markerName,
+            markerValue,
+            markerUnit,
             userConditions,
             userAllergies
           );
@@ -52,10 +41,15 @@ export const useEducationData = (
 
         // Load SNP education data
         const snpPromises = snps.map(async (snp, index) => {
+          // Ensure all values are strings and handle null/undefined
+          const snpId = String(snp.snp_id || snp.rsid || '');
+          const geneName = String(snp.gene_name || snp.gene || '');
+          const genotype = String(snp.genotype || snp.allele || '');
+          
           const education = await getSNPEducation(
-            snp.snp_id,
-            snp.gene_name,
-            snp.genotype || snp.allele,
+            snpId,
+            geneName,
+            genotype,
             userConditions,
             userAllergies
           );
@@ -68,15 +62,27 @@ export const useEducationData = (
           Promise.all(snpPromises)
         ]);
 
-        // Convert to indexed objects
+        // Convert to name-based objects instead of index-based
         const biomarkerData: EducationData = {};
         biomarkerResults.forEach(({ index, education }) => {
-          biomarkerData[index] = education;
+          const marker = biomarkers[index];
+          const markerName = marker.marker_name || marker.name;
+          if (markerName) {
+            biomarkerData[markerName] = education;
+          }
         });
 
         const snpData: EducationData = {};
         snpResults.forEach(({ index, education }) => {
-          snpData[index] = education;
+          const snp = snps[index];
+          const snpKey = snp.snp_id || snp.rsid || `${snp.gene_name}_${index}`;
+          if (snpKey) {
+            snpData[snpKey] = education;
+            // Also store by gene name for fallback
+            if (snp.gene_name) {
+              snpData[snp.gene_name] = education;
+            }
+          }
         });
 
         setBiomarkerEducation(biomarkerData);
@@ -89,7 +95,6 @@ export const useEducationData = (
     };
 
     loadEducationData();
-    */
   }, [biomarkers, snps, userConditions, userAllergies]);
 
   return {

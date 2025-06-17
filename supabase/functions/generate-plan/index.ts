@@ -23,6 +23,15 @@ interface SupplementRecommendation {
   };
 }
 
+// Supplement interaction matrix to prevent conflicting recommendations
+const SUPPLEMENT_INTERACTIONS: Record<string, string[]> = {
+  'Easy Iron': ['Calcium Citrate', 'Zinc', 'Magnesium'],
+  'Calcium Citrate': ['Easy Iron', 'Zinc', 'Magnesium'],
+  'Zinc': ['Easy Iron', 'Calcium Citrate', 'Chromium'],
+  'Magnesium': ['Easy Iron', 'Calcium Citrate'],
+  'Chromium': ['Zinc'],
+};
+
 Deno.serve(async (req) => {
   // Handle preflight requests
   if (req.method === 'OPTIONS') {
@@ -71,7 +80,8 @@ Deno.serve(async (req) => {
       supabase.from('user_medications').select('medication_name').eq('user_id', userId),
       supabase.from('user_biomarkers').select('marker_name, value, unit, reference_range').eq('user_id', userId),
       supabase.from('user_snps').select('*').eq('user_id', userId),
-      supabase.from('products').select('id, supplement_name, brand, product_name, product_url, price')
+      // FILTER TO ONLY YOUR SUPPLEMENTS
+      supabase.from('products').select('id, supplement_name, brand, product_name, product_url, price').eq('brand', 'OK Capsule')
     ]);
 
     // Check for critical errors
@@ -91,7 +101,7 @@ Deno.serve(async (req) => {
       medicationsCount: medications?.length || 0,
       biomarkersCount: biomarkers?.length || 0,
       snpsCount: snps?.length || 0,
-      productsCount: products?.length || 0
+      yourSupplementsCount: products?.length || 0
     });
 
     console.log('Sample biomarkers:', biomarkers?.slice(0, 5).map(b => `${b.marker_name}: ${b.value} ${b.unit}`));
@@ -139,13 +149,18 @@ Deno.serve(async (req) => {
     const geneticData = enrichedSnps || []; // Use enriched SNPs with gene data
     const availableProducts = products || [];
 
+    // Determine personalization tier
+    const personalizationTier = determinePersonalizationTier(labData, geneticData, userProfile);
+    console.log(`Using personalization tier: ${personalizationTier}`);
+
     // Log the actual data being used for recommendations
     console.log('Health data for recommendations:', {
       labDataCount: labData.length,
       geneticDataCount: geneticData.length,
       hasUserProfile: Object.keys(userProfile).length > 0,
       healthHistoryItems: Object.values(healthHistory).flat().length,
-      questionnaireFields: Object.keys(userProfile).filter(key => userProfile[key] !== null && userProfile[key] !== undefined).length
+      questionnaireFields: Object.keys(userProfile).filter(key => userProfile[key] !== null && userProfile[key] !== undefined).length,
+      personalizationTier
     });
 
     // --- OpenAI API Call ---
@@ -158,9 +173,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Create comprehensive prompt with product database
-    const prompt = createSupplementPrompt(userProfile, healthHistory, labData, geneticData, availableProducts);
-    console.log('Generated prompt, calling OpenAI...');
+    // Create enhanced prompt for exactly 6 supplements
+    const prompt = createSupplementPrompt(userProfile, healthHistory, labData, geneticData, availableProducts, personalizationTier);
+    console.log('Generated enhanced prompt, calling OpenAI...');
 
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -169,37 +184,19 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4-turbo',
+        model: 'gpt-4o',
         messages: [
           {
             role: 'system',
-            content: `You are an expert clinical nutritionist and supplement specialist. 
-
-CRITICAL REQUIREMENTS:
-1. EXACTLY 8-12 recommendations (count them before responding)
-2. Use biomarkers AND genetics AND symptoms equally
-3. Match supplements from the provided product database
-4. Include scientific citations for each recommendation
-5. Consider all health data provided - don't focus only on genetics
-
-Your response must be valid JSON with exactly 8-12 items in the recommendations array.
-
-PRIORITIZE IN THIS ORDER:
-1. Address any biomarker deficiencies first (vitamin D, B12, iron, etc.)
-2. Target genetic variants (MTHFR, COMT, APOE, etc.)  
-3. Address reported symptoms (brain fog, sleep issues, joint pain, etc.)
-4. Support stated health goals
-5. Add foundational supplements for overall health
-
-Available data includes ${labData.length} biomarkers, ${geneticData.length} genetic variants, and comprehensive questionnaire responses.`
+            content: getEnhancedSystemPrompt(personalizationTier, labData.length, geneticData.length)
           },
           {
             role: 'user',
             content: prompt
           }
         ],
-        max_tokens: 3000,
-        temperature: 0.2,
+        max_tokens: 4000,
+        temperature: 0.1, // Lower temperature for more consistent results
       }),
     });
 
@@ -229,21 +226,24 @@ Available data includes ${labData.length} biomarkers, ${geneticData.length} gene
     const planDetails = parseAIRecommendations(aiRecommendations, availableProducts);
     console.log('Successfully parsed recommendations:', planDetails.recommendations?.length || 0);
 
-    // Validate recommendation count with error handling
-    try {
-      const recCount = planDetails.recommendations?.length || 0;
-      if (recCount < 8 || recCount > 12) {
-        console.error(`VALIDATION WARNING: Got ${recCount} recommendations, expected 8-12`);
-        console.log('AI response preview:', aiRecommendations.substring(0, 500));
-        
-        // Don't fail the request, just log the warning and continue
-        // The user will still get their recommendations even if count is off
-      } else {
-        console.log(`✅ Validation passed: ${recCount} recommendations`);
-      }
-    } catch (validationError: any) {
-      console.error('Validation error (non-fatal):', validationError);
-      // Continue processing even if validation fails
+    // CRITICAL VALIDATION: Must be exactly 6 supplements
+    const recCount = planDetails.recommendations?.length || 0;
+    if (recCount !== 6) {
+      console.error(`CRITICAL: Got ${recCount} recommendations, MUST be exactly 6`);
+      
+      // Apply smart fallback to ensure exactly 6 supplements
+      planDetails.recommendations = ensureExactlySixSupplements(planDetails.recommendations, availableProducts, userProfile, labData, geneticData);
+      console.log(`✅ Fallback applied: Now have exactly ${planDetails.recommendations.length} recommendations`);
+    } else {
+      console.log(`✅ Perfect: Exactly ${recCount} recommendations generated`);
+    }
+
+    // Validate no interactions between selected supplements
+    const interactionCheck = validateNoInteractions(planDetails.recommendations);
+    if (!interactionCheck.valid) {
+      console.log('Interaction detected, applying resolution...');
+      planDetails.recommendations = resolveInteractions(planDetails.recommendations, availableProducts);
+      console.log('✅ Interactions resolved');
     }
 
     // Store the plan in the database
@@ -277,7 +277,8 @@ Available data includes ${labData.length} biomarkers, ${geneticData.length} gene
     return new Response(JSON.stringify({ 
       success: true, 
       plan: planDetails,
-      message: 'Personalized supplement plan generated with product recommendations',
+      message: 'Ultimate personalized 6-supplement pack generated',
+      personalization_tier: personalizationTier,
       debug: {
         userId,
         profileExists: !!profile,
@@ -287,7 +288,7 @@ Available data includes ${labData.length} biomarkers, ${geneticData.length} gene
           medications: healthHistory.medications.length,
           biomarkers: labData.length,
           snps: geneticData.length,
-          availableProducts: availableProducts.length
+          yourSupplements: availableProducts.length
         }
       }
     }), {
@@ -306,216 +307,331 @@ Available data includes ${labData.length} biomarkers, ${geneticData.length} gene
   }
 });
 
-function createSupplementPrompt(profile: any, healthHistory: any, labData: any[], geneticData: any[], products: any[]): string {
-  let prompt = `PATIENT HEALTH PROFILE ANALYSIS
+function determinePersonalizationTier(labData: any[], geneticData: any[], profile: any): string {
+  if (labData.length > 0 && geneticData.length > 0) {
+    return 'PRECISION_MEDICINE'; // Tier 1: Full genetic + biomarker data
+  } else if (labData.length > 0) {
+    return 'BIOMARKER_FOCUSED'; // Tier 2: Biomarker data only
+  } else if (profile && Object.keys(profile).length > 5) {
+    return 'SYMPTOM_TARGETED'; // Tier 3: Rich symptom/questionnaire data
+  } else {
+    return 'FOUNDATIONAL_WELLNESS'; // Tier 4: Demographics only
+  }
+}
 
-Please analyze the following comprehensive health profile and provide 8-12 evidence-based supplement recommendations with specific scientific citations.
+function getEnhancedSystemPrompt(tier: string, biomarkerCount: number, geneticCount: number): string {
+  const basePrompt = `You are a deeply caring, empathetic clinical nutritionist who specializes in precision supplement recommendations. You have a gift for making people feel truly seen, understood, and hopeful about their health journey.
 
-=== PATIENT DEMOGRAPHICS ===\n`;
+🎯 ULTIMATE MISSION: Create the perfect 6-supplement personalized pack with DEEPLY PERSONAL, healing-focused explanations that make the user feel cared for and understood
 
+ABSOLUTE REQUIREMENTS:
+1. EXACTLY 6 supplements (no more, no less)
+2. ZERO interactions between supplements
+3. Ultimate personalization based on available data
+4. Only use supplements from the provided catalog
+5. Holistic synchronized approach
+6. 🔥 CRITICAL: Every "reason" field must be deeply personal, empathetic, and healing-focused
+7. Write as if you're reaching out to help them heal and feel better
+8. Connect their data to how they FEEL and how supplements will help them FEEL better
+
+PERSONALIZATION TIER: ${tier}
+Available Data: ${biomarkerCount} biomarkers, ${geneticCount} genetic variants
+
+🔥 COMMUNICATION STYLE:
+- Warm, caring, and supportive tone
+- Make them feel seen and understood
+- Connect their data to their actual experiences
+- Explain how supplements will help them feel better
+- Use hopeful, encouraging language
+- Show genuine care for their wellbeing
+
+Your response must be valid JSON with exactly 6 items in the recommendations array.
+EVERY explanation must be deeply personal, connecting their specific data to their feelings and experiences.`;
+
+  switch (tier) {
+    case 'PRECISION_MEDICINE':
+      return basePrompt + `
+
+🧬 PRECISION MEDICINE APPROACH:
+- Connect their genetic variants to their lived experiences and struggles
+- Explain how their genetics have been affecting how they feel
+- Show how precision supplements will work WITH their unique genetics
+- Make them feel hopeful about overcoming genetic limitations
+- Address biomarker deficiencies with deep understanding of their impact
+- Use warm, encouraging language about their genetic uniqueness`;
+
+    case 'BIOMARKER_FOCUSED':
+      return basePrompt + `
+
+🔬 BIOMARKER-FOCUSED APPROACH:
+- Connect their lab results to their daily experiences and symptoms
+- Explain how deficiencies have been affecting their quality of life
+- Show genuine understanding of their struggles with energy, mood, etc.
+- Paint a hopeful picture of how they'll feel when levels are optimized
+- Address each deficiency with empathy and encouragement
+- Make them feel understood and supported in their healing journey`;
+
+    case 'SYMPTOM_TARGETED':
+      return basePrompt + `
+
+🎯 SYMPTOM-TARGETED APPROACH:
+- Deeply acknowledge their symptoms and how they've been affecting their life
+- Show genuine understanding of their daily struggles
+- Connect supplements to relief of their specific symptoms
+- Paint a hopeful picture of how they'll feel better
+- Address their health goals with encouragement and support
+- Make them feel heard and understood in their health journey`;
+
+    case 'FOUNDATIONAL_WELLNESS':
+      return basePrompt + `
+
+🌟 FOUNDATIONAL WELLNESS APPROACH:
+- Acknowledge their commitment to better health and wellness
+- Connect age and lifestyle factors to their health goals
+- Show understanding of their life stage and unique needs
+- Provide hope and encouragement for their wellness journey
+- Focus on prevention with a caring, supportive approach
+- Make them feel supported in building a strong health foundation`;
+
+    default:
+      return basePrompt;
+  }
+}
+
+function createSupplementPrompt(profile: any, healthHistory: any, labData: any[], geneticData: any[], products: any[], tier: string): string {
+  let prompt = `🎯 ULTIMATE PERSONALIZED SUPPLEMENT PACK ANALYSIS
+
+MISSION: Create the perfect 6-supplement personalized pack from your catalog.
+
+PERSONALIZATION TIER: ${tier}
+
+=== YOUR SUPPLEMENT CATALOG (${products.length} Available) ===\n`;
+
+  // List all available supplements clearly
+  products.forEach((product: any, index: number) => {
+    prompt += `${index + 1}. ${product.supplement_name}\n`;
+  });
+
+  prompt += `\n=== PATIENT PROFILE ===\n`;
+
+  // Demographics
   if (profile.age) prompt += `Age: ${profile.age} years\n`;
   if (profile.gender) prompt += `Gender: ${profile.gender}\n`;
   if (profile.weight_lbs) prompt += `Weight: ${profile.weight_lbs} lbs\n`;
-  if (profile.height_total_inches) prompt += `Height: ${profile.height_total_inches} inches\n`;
-  if (profile.activity_level) prompt += `Activity Level: ${profile.activity_level}\n`;
+  if (profile.activity_level) prompt += `Activity: ${profile.activity_level}\n`;
 
-  // Simplified questionnaire data
-  prompt += `\n=== HEALTH PROFILE ===\n`;
-  
-  // Key concerns only
-  const concerns = [];
-  if (profile.health_goals && profile.health_goals.length > 0) concerns.push(`Goals: ${profile.health_goals.join(', ')}`);
-  if (profile.brain_fog && profile.brain_fog !== 'none') concerns.push(`Brain fog: ${profile.brain_fog}`);
-  if (profile.sleep_quality && profile.sleep_quality !== 'excellent') concerns.push(`Sleep: ${profile.sleep_quality}`);
-  if (profile.energy_levels && profile.energy_levels !== 'high') concerns.push(`Energy: ${profile.energy_levels}`);
-  if (profile.anxiety_level && profile.anxiety_level !== 'none') concerns.push(`Anxiety: ${profile.anxiety_level}`);
-  if (profile.joint_pain && profile.joint_pain !== 'none') concerns.push(`Joint pain: ${profile.joint_pain}`);
-  if (profile.bloating && profile.bloating !== 'none') concerns.push(`Digestive: ${profile.bloating}`);
-  
-  if (concerns.length > 0) {
-    prompt += concerns.join(' | ') + '\n';
-  }
-  
-  // Important history
-  if (profile.low_nutrients && profile.low_nutrients.length > 0) {
-    prompt += `Previous deficiencies: ${profile.low_nutrients.join(', ')}\n`;
+  // Health goals and symptoms
+  if (profile.health_goals && profile.health_goals.length > 0) {
+    prompt += `\n🎯 Health Goals: ${profile.health_goals.join(', ')}\n`;
   }
 
-  // Health History Analysis
+  // Key symptoms
+  const symptoms = [];
+  if (profile.brain_fog && profile.brain_fog !== 'none') symptoms.push(`Brain fog: ${profile.brain_fog}`);
+  if (profile.sleep_quality && profile.sleep_quality !== 'excellent') symptoms.push(`Sleep: ${profile.sleep_quality}`);
+  if (profile.energy_levels && profile.energy_levels !== 'high') symptoms.push(`Energy: ${profile.energy_levels}`);
+  if (profile.anxiety_level && profile.anxiety_level !== 'none') symptoms.push(`Anxiety: ${profile.anxiety_level}`);
+  if (profile.joint_pain && profile.joint_pain !== 'none') symptoms.push(`Joint pain: ${profile.joint_pain}`);
+  if (profile.bloating && profile.bloating !== 'none') symptoms.push(`Digestive: ${profile.bloating}`);
+
+  if (symptoms.length > 0) {
+    prompt += `\n🔍 Key Symptoms: ${symptoms.join(' | ')}\n`;
+  }
+
+  // Health history
   if (healthHistory.conditions.length > 0) {
-    prompt += `\n=== MEDICAL CONDITIONS ===\n`;
-    healthHistory.conditions.forEach((condition: string) => {
-      prompt += `• ${condition}\n`;
-    });
+    prompt += `\n🏥 Conditions: ${healthHistory.conditions.join(', ')}\n`;
   }
-
   if (healthHistory.medications.length > 0) {
-    prompt += `\n=== CURRENT MEDICATIONS ===\n`;
-    healthHistory.medications.forEach((medication: string) => {
-      prompt += `• ${medication}\n`;
-    });
+    prompt += `💊 Medications: ${healthHistory.medications.join(', ')}\n`;
   }
-
   if (healthHistory.allergies.length > 0) {
-    prompt += `\n=== ALLERGIES & SENSITIVITIES ===\n`;
-    healthHistory.allergies.forEach((allergy: string) => {
-      prompt += `• ${allergy}\n`;
-    });
+    prompt += `⚠️ Allergies: ${healthHistory.allergies.join(', ')}\n`;
   }
 
-  // Laboratory Data Analysis
+  // Laboratory data (if available)
   if (labData.length > 0) {
-    prompt += `\n=== LABORATORY BIOMARKERS ===\n`;
+    prompt += `\n=== 🚨 CRITICAL BIOMARKER DEFICIENCIES (TOP PRIORITY) ===\n`;
     
-    // Show only the first 20 most important biomarkers to save tokens
-    const importantMarkers = labData.slice(0, 20);
-    importantMarkers.forEach((marker: any) => {
-      prompt += `• ${marker.marker_name}: ${marker.value} ${marker.unit || ''}\n`;
+    // Identify and prioritize deficiencies
+    const deficiencies: any[] = [];
+    const normal: any[] = [];
+    
+    labData.forEach((marker: any) => {
+      const value = parseFloat(marker.value);
+      const name = marker.marker_name.toLowerCase();
+      
+      // Define deficiency thresholds for common markers
+      const isDeficient = 
+        (name.includes('vitamin d') && value < 30) ||
+        (name.includes('b12') && value < 300) ||
+        (name.includes('magnesium') && value < 1.8) ||
+        (name.includes('iron') && value < 60) ||
+        (name.includes('ferritin') && value < 30) ||
+        (name.includes('folate') && value < 3) ||
+        (name.includes('zinc') && value < 70);
+      
+      if (isDeficient) {
+        deficiencies.push(marker);
+      } else {
+        normal.push(marker);
+      }
     });
     
-    if (labData.length > 20) {
-      prompt += `... and ${labData.length - 20} additional biomarkers available\n`;
+    // Show deficiencies first (HIGHEST PRIORITY)
+    if (deficiencies.length > 0) {
+      prompt += `🔴 DEFICIENT MARKERS (MUST ADDRESS FIRST):\n`;
+      deficiencies.forEach((marker: any) => {
+        prompt += `• ${marker.marker_name}: ${marker.value} ${marker.unit || ''} (ref: ${marker.reference_range || 'optimal range'})\n`;
+      });
+    }
+    
+    // Show normal markers
+    if (normal.length > 0) {
+      prompt += `\n✅ NORMAL MARKERS:\n`;
+      normal.slice(0, 10).forEach((marker: any) => {
+        prompt += `• ${marker.marker_name}: ${marker.value} ${marker.unit || ''}\n`;
+      });
+      
+      if (normal.length > 10) {
+        prompt += `... and ${normal.length - 10} additional normal markers\n`;
+      }
     }
   }
 
-  // Genetic Analysis
+  // Genetic data (if available)
   if (geneticData.length > 0) {
-    prompt += `\n=== GENETIC POLYMORPHISMS ===\n`;
+    prompt += `\n=== GENETIC PROFILE (${geneticData.length} variants) ===\n`;
     
-    // Show only the first 15 most important SNPs to save tokens
-    const importantSNPs = geneticData.slice(0, 15);
-    importantSNPs.forEach((snp: any) => {
-      prompt += `• ${snp.supported_snps?.rsid} (${snp.supported_snps?.gene}): ${snp.genotype}\n`;
+    // Show key genetic variants
+    const keyVariants = geneticData.slice(0, 12);
+    keyVariants.forEach((snp: any) => {
+      if (snp.supported_snps?.rsid && snp.supported_snps?.gene) {
+        prompt += `• ${snp.supported_snps.rsid} (${snp.supported_snps.gene}): ${snp.genotype}\n`;
+      }
     });
     
-    if (geneticData.length > 15) {
-      prompt += `... and ${geneticData.length - 15} additional genetic variants available\n`;
+    if (geneticData.length > 12) {
+      prompt += `... and ${geneticData.length - 12} additional variants\n`;
     }
-    
-    // Simplified genetic analysis
-    prompt += `\n=== KEY GENETIC INSIGHTS ===\n`;
-    const mthfrVar = geneticData.find(s => s.supported_snps?.gene?.includes('MTHFR'));
-    const comtVar = geneticData.find(s => s.supported_snps?.gene?.includes('COMT'));
-    const apoeVar = geneticData.find(s => s.supported_snps?.gene?.includes('APOE'));
-    
-    if (mthfrVar) prompt += `🧬 MTHFR variant - recommend methylfolate\n`;
-    if (comtVar) prompt += `🧬 COMT variant - consider magnesium\n`;
-    if (apoeVar) prompt += `🧬 APOE variant - emphasize omega-3\n`;
   }
-
-  // Available Products
-  prompt += `\n=== AVAILABLE SUPPLEMENT PRODUCTS ===\n`;
-  prompt += `${products.length} supplements available including: `;
-  
-  // Show just the supplement names, not full details
-  const supplementNames = products.slice(0, 20).map((product: any) => product.supplement_name);
-  prompt += supplementNames.join(', ');
-  
-  if (products.length > 20) {
-    prompt += `, and ${products.length - 20} more...`;
-  }
-  prompt += `\n`;
 
   prompt += `
 
-MANDATORY REQUIREMENTS:
-======================
-1. Provide EXACTLY 8-12 supplement recommendations (not 5, not 15 - count them!)
-2. Use biomarkers, genetics, symptoms, and questionnaire data equally
-3. Address specific deficiencies found in lab results
-4. Consider genetic variants for supplement selection
-5. Target reported symptoms (brain fog, sleep, anxiety, etc.)
-6. Only use supplements from the available products list above
+🎯 ULTIMATE PERSONALIZATION REQUIREMENTS:
 
-CRITICAL INSTRUCTION:
-Before finalizing your response, count your recommendations. You MUST have between 8-12 items.
+1. **EXACTLY 6 SUPPLEMENTS** - Count them before responding
+2. **ZERO INTERACTIONS** - No supplements that interfere with each other
+3. **HOLISTIC APPROACH** - Work together synergistically
+4. **MAXIMUM PERSONALIZATION** - Based on all available data
+5. **YOUR CATALOG ONLY** - Use only the supplements listed above
 
-Based on the comprehensive health profile above, provide EXACTLY 8-12 personalized supplement recommendations. Each recommendation must be directly tied to the patient's specific biomarkers, genetic variants, or health profile data.
+🎯 PRIORITIZATION HIERARCHY (MANDATORY ORDER):
+1. DEFICIENT BIOMARKERS (🔴) - Address these FIRST and FOREMOST
+2. GENETIC VARIANTS - Support genetic predispositions  
+3. SEVERE SYMPTOMS - Target reported health issues
+4. HEALTH GOALS - Support stated objectives
+5. FOUNDATIONAL WELLNESS - Fill remaining slots
 
-PRIORITIZE IN THIS ORDER:
-1. Address any biomarker deficiencies first (vitamin D, B12, iron, etc.)
-2. Target genetic variants (MTHFR, COMT, APOE, etc.)  
-3. Address reported symptoms (brain fog, sleep issues, joint pain, etc.)
-4. Support stated health goals
-5. Add foundational supplements for overall health
+CRITICAL: If someone has deficient biomarkers, those supplements MUST be included before anything else.
 
-Provide recommendations in the following JSON format:
+PERSONALIZATION STRATEGY FOR ${tier}:`;
+
+  switch (tier) {
+    case 'PRECISION_MEDICINE':
+      prompt += `
+- Prioritize genetic variants (MTHFR → methylfolate, COMT → magnesium, etc.)
+- Address biomarker deficiencies with precision
+- Use genetic data for supplement form selection
+- Target metabolic pathways based on genetics
+- CITE SPECIFIC GENETIC VARIANTS AND BIOMARKER VALUES in your reasoning`;
+      break;
+    case 'BIOMARKER_FOCUSED':
+      prompt += `
+- Correct deficiencies shown in lab work first
+- Target inflammatory markers if elevated
+- Address metabolic imbalances
+- Focus on nutrient optimization
+- CITE SPECIFIC BIOMARKER VALUES AND RANGES in your reasoning`;
+      break;
+    case 'SYMPTOM_TARGETED':
+      prompt += `
+- Address primary symptoms and health concerns
+- Target brain fog, sleep, energy, anxiety, etc.
+- Support stated health goals
+- Consider lifestyle factors
+- CITE SPECIFIC SYMPTOMS AND HEALTH GOALS in your reasoning`;
+      break;
+    case 'FOUNDATIONAL_WELLNESS':
+      prompt += `
+- Provide essential nutrients for optimal health
+- Consider age/gender-specific needs
+- Focus on prevention and general wellness
+- Target common population deficiencies
+- CITE SPECIFIC AGE, GENDER, AND LIFESTYLE FACTORS in your reasoning`;
+      break;
+  }
+
+  prompt += `
+
+🔥 CRITICAL PERSONALIZATION INSTRUCTIONS:
+- Each "reason" field MUST be deeply personal, empathetic, and healing-focused
+- Write as if you're a caring health coach who truly understands their struggle
+- Connect their specific data to how they FEEL and what they're experiencing
+- Explain HOW this supplement will specifically help THEM feel better
+- Use warm, supportive language that shows you care about their wellbeing
+- Make them feel seen, understood, and hopeful about their health journey
+
+REASONING EXAMPLES:
+- Biomarkers: "Your Vitamin D level of 18 ng/mL explains so much about what you've been experiencing. This severe deficiency is likely contributing to your brain fog, low energy, and difficulty with weight management. By bringing your Vitamin D to optimal levels (30-50 ng/mL), you should start feeling more mentally clear, energetic, and motivated to reach your health goals. This isn't just a number - it's the key to unlocking the vibrant energy you deserve."
+
+- Genetics: "Your MTHFR A1298C variant means your body has been working extra hard to process folate, which explains why you might feel mentally foggy or fatigued. This methylated B-complex bypasses your genetic limitation, giving your brain and nervous system the exact form of B vitamins they can actually use. Think of it as giving your body the right key for the lock - suddenly everything works better."
+
+- Symptoms: "Your severe brain fog and poor sleep quality are deeply connected. This magnesium will help calm your nervous system, allowing for deeper, more restorative sleep. When you sleep better, your brain fog lifts, your energy returns, and you'll feel like yourself again. You deserve to wake up feeling refreshed and mentally sharp."
+
+🚨 ANTI-HALLUCINATION REQUIREMENTS:
+- ONLY use biomarker values that are explicitly listed above
+- ONLY reference genetic variants that are explicitly shown above
+- NEVER make up or assume biomarker values not provided
+- NEVER reference genetic variants not in the data
+- If no biomarker data: focus on symptoms and demographics only
+- If no genetic data: focus on biomarkers and symptoms only
+- NEVER cite studies or values that aren't real
+
+Provide EXACTLY 6 recommendations in this JSON format:
 
 {
   "recommendations": [
     {
-      "supplement": "Exact supplement name from available products list",
-      "dosage": "Specific dosage recommendation (e.g., 2000 IU daily, 400mg twice daily)",
-      "timing": "Optimal timing instructions (e.g., with breakfast, before bed, on empty stomach)",
-      "reason": "Detailed personalized explanation based on their specific health profile",
-      "confidence_score": 85,
-      "interactions": ["Specific medication interactions if any"],
-      "notes": "Important clinical considerations, contraindications, or monitoring needs",
-      "citations": [
-        "Specific scientific citation supporting this recommendation",
-        "Additional relevant research citation if applicable"
-      ]
+      "supplement": "Exact name from your catalog",
+      "dosage": "SPECIFIC DOSAGE with units (e.g., '5000 IU daily', '400 mg daily', '2 capsules daily', '1000 mg daily')",
+      "timing": "Optimal timing for this person's lifestyle/symptoms",
+      "reason": "DEEPLY PERSONAL, empathetic explanation that connects their specific data to how they FEEL and how this supplement will help them feel better. Write as a caring health coach who truly understands their struggle and wants to help them heal and thrive. Make them feel seen, understood, and hopeful.",
+      "confidence_score": 90,
+      "notes": "Caring, supportive guidance specific to this individual's journey",
+      "citations": ["Relevant scientific citation"]
     }
   ],
-  "general_notes": "Overall clinical considerations and implementation strategy",
-  "contraindications": "Important warnings specific to this patient's profile"
+  "general_notes": "Warm, encouraging message about how this personalized pack will help them feel better and achieve their health goals",
+  "contraindications": "Important safety considerations specific to their profile, written with care and concern for their wellbeing"
 }
 
-=== ANALYSIS GUIDELINES ===
+🚨 DOSAGE REQUIREMENTS:
+- ALWAYS include specific amounts with units (mg, IU, capsules, etc.)
+- Examples: "5000 IU daily", "400 mg daily", "2 capsules daily", "1000 mg daily"
+- Base dosages on individual needs, deficiency levels, and body weight
+- For severe deficiencies: use higher therapeutic doses
+- For maintenance: use standard preventive doses
+- NEVER use vague terms like "as directed" - be specific!
 
-1. **Genetic Considerations**: 
-   - MTHFR variants → recommend methylated folate forms
-   - COMT variants → consider magnesium for stress/anxiety
-   - APOE variants → emphasize omega-3 and antioxidants
-
-2. **Biomarker Analysis**:
-   - Low vitamin D → D3 supplementation
-   - Elevated inflammatory markers → omega-3, curcumin
-   - Iron deficiency → iron with vitamin C
-   - B12 deficiency → methylcobalamin
-
-3. **Symptom-Based Recommendations**:
-   - Brain fog → B-complex, omega-3, magnesium
-   - Sleep issues → magnesium glycinate, melatonin, L-theanine
-   - Anxiety/stress → ashwagandha, magnesium, GABA
-   - Joint pain → curcumin, omega-3, glucosamine
-   - Bloating/digestion → probiotics, digestive enzymes, zinc
-   - Energy/fatigue → CoQ10, B-complex, iron (if deficient)
-   - Caffeine sensitivity → L-theanine, B vitamins
-   - Bruising/bleeding → vitamin C, vitamin K, bioflavonoids
-
-4. **Health Goals Alignment**:
-   - Weight management → chromium, green tea extract, fiber
-   - Athletic performance → creatine, protein, BCAAs
-   - Anti-aging → antioxidants, resveratrol, NAD+ precursors
-   - Immune support → vitamin C, zinc, elderberry
-   - Cognitive health → phosphatidylserine, lion's mane, bacopa
-
-5. **Drug Interactions**:
-   - Warfarin interactions with vitamin K, fish oil
-   - Statin interactions with CoQ10 recommendations
-   - Antacid effects on mineral absorption
-
-6. **Clinical Citations**:
-   - Include specific journal references where possible
-   - Reference established clinical guidelines
-   - Cite meta-analyses and systematic reviews
-
-7. **Dosage Precision**:
-   - Age-appropriate dosing
-   - Body weight considerations
-   - Therapeutic vs maintenance doses
-
-CRITICAL: You must recommend EXACTLY 8-12 supplements, use only supplements from the available products list, and provide specific scientific citations for each recommendation.
-
-Provide ONLY the JSON response, no additional text.`;
+CRITICAL: Provide ONLY the JSON response. Count your recommendations - must be exactly 6. Make every explanation uniquely personal to THIS individual.`;
 
   return prompt;
 }
 
 function parseAIRecommendations(aiResponse: string, products: any[]): any {
   try {
-    // Create a map of supplement names to products for easy lookup
+    // Create a map of supplement names to products
     const productMap = new Map();
     products.forEach(product => {
       productMap.set(product.supplement_name.toLowerCase(), product);
@@ -524,7 +640,7 @@ function parseAIRecommendations(aiResponse: string, products: any[]): any {
     const cleanedResponse = aiResponse.trim();
     let jsonResponse;
     
-    // Handle cases where the AI might include extra text
+    // Handle cases where AI might include extra text
     const jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       jsonResponse = JSON.parse(jsonMatch[0]);
@@ -532,7 +648,7 @@ function parseAIRecommendations(aiResponse: string, products: any[]): any {
       jsonResponse = JSON.parse(cleanedResponse);
     }
 
-    // Match recommendations with actual products
+    // Match recommendations with your products
     if (jsonResponse.recommendations) {
       jsonResponse.recommendations = jsonResponse.recommendations.map((rec: any) => {
         // Try exact match first
@@ -559,9 +675,14 @@ function parseAIRecommendations(aiResponse: string, products: any[]): any {
           };
         }
         
-        // Ensure citations array exists
+        // Ensure required fields
         if (!rec.citations || !Array.isArray(rec.citations)) {
-          rec.citations = ["Clinical recommendation based on health profile analysis"];
+          rec.citations = ["Personalized recommendation based on health profile"];
+        }
+        
+        // Ensure proper dosage format
+        if (!rec.dosage || rec.dosage === "As directed" || rec.dosage === "as directed") {
+          rec.dosage = getStandardDosage(rec.supplement);
         }
         
         return rec;
@@ -570,18 +691,18 @@ function parseAIRecommendations(aiResponse: string, products: any[]): any {
     
     return jsonResponse;
   } catch (error) {
-    console.error('Failed to parse AI response as JSON:', error);
+    console.error('Failed to parse AI response:', error);
     
-    // Fallback with sample products
-    const fallbackProducts = products.slice(0, 8);
+    // Smart fallback with your top supplements
+    const fallbackSupplements = products.slice(0, 6);
     
     return {
-      recommendations: fallbackProducts.map((product: any, index: number) => ({
+      recommendations: fallbackSupplements.map((product: any) => ({
         supplement: product.supplement_name,
-        dosage: "As directed on label",
+        dosage: getStandardDosage(product.supplement_name),
         timing: "with meals",
-        reason: "AI recommendation parsing failed, providing basic recommendation based on available products",
-        confidence_score: 50,
+        reason: "Foundational wellness support - AI parsing failed",
+        confidence_score: 60,
         citations: ["Fallback recommendation - consult healthcare provider"],
         product: {
           id: product.id,
@@ -591,8 +712,184 @@ function parseAIRecommendations(aiResponse: string, products: any[]): any {
           price: product.price
         }
       })),
-      general_notes: "AI response could not be parsed. Please regenerate recommendations.",
+      general_notes: "Foundational wellness pack - please regenerate for full personalization",
       contraindications: "Please consult with a healthcare provider before starting any supplements."
     };
   }
+}
+
+// Helper function to provide standard dosages for common supplements
+function getStandardDosage(supplementName: string): string {
+  const name = supplementName.toLowerCase();
+  
+  if (name.includes('vitamin d')) return '5000 IU daily';
+  if (name.includes('b-complex') || name.includes('b complex')) return '1 capsule daily';
+  if (name.includes('omega') || name.includes('fish oil')) return '2000 mg daily';
+  if (name.includes('magnesium')) return '400 mg daily';
+  if (name.includes('vitamin c')) return '1000 mg daily';
+  if (name.includes('zinc')) return '15 mg daily';
+  if (name.includes('iron')) return '18 mg daily';
+  if (name.includes('calcium')) return '500 mg daily';
+  if (name.includes('b12')) return '1000 mcg daily';
+  if (name.includes('folate') || name.includes('folic')) return '800 mcg daily';
+  if (name.includes('multivitamin')) return '1 tablet daily';
+  if (name.includes('probiotic')) return '1 capsule daily';
+  if (name.includes('turmeric') || name.includes('curcumin')) return '500 mg daily';
+  if (name.includes('ashwagandha')) return '300 mg daily';
+  if (name.includes('coq10') || name.includes('coenzyme')) return '100 mg daily';
+  
+  // Default fallback
+  return '1 capsule daily';
+}
+
+function ensureExactlySixSupplements(recommendations: any[], products: any[], profile: any, labData: any[], geneticData: any[]): any[] {
+  if (!recommendations || recommendations.length === 0) {
+    // Complete fallback - create 6 foundational recommendations
+    const foundational = ['Vitamin D', 'Magnesium', 'Omega 3', 'Vitamin B12', 'Vitamin C', 'Multivitamin'];
+    return foundational.map(name => {
+      const matchingProduct = products.find(p => p.supplement_name.toLowerCase().includes(name.toLowerCase()));
+      if (matchingProduct) {
+        return {
+          supplement: matchingProduct.supplement_name,
+          dosage: getStandardDosage(matchingProduct.supplement_name),
+          timing: "with meals",
+          reason: "Foundational wellness support",
+          confidence_score: 70,
+          citations: ["General wellness recommendation"],
+          product: {
+            id: matchingProduct.id,
+            brand: matchingProduct.brand,
+            product_name: matchingProduct.product_name,
+            product_url: matchingProduct.product_url,
+            price: matchingProduct.price
+          }
+        };
+      }
+      return null;
+    }).filter(Boolean).slice(0, 6);
+  }
+
+  if (recommendations.length < 6) {
+    // Add supplements to reach 6
+    const currentSupps = recommendations.map(r => r.supplement.toLowerCase());
+    const availableSupps = products.filter(p => !currentSupps.includes(p.supplement_name.toLowerCase()));
+    
+    const toAdd = 6 - recommendations.length;
+    const additionalSupps = availableSupps.slice(0, toAdd);
+    
+    additionalSupps.forEach(product => {
+      recommendations.push({
+        supplement: product.supplement_name,
+        dosage: getStandardDosage(product.supplement_name),
+        timing: "with meals",
+        reason: "Additional wellness support to complete your 6-supplement pack",
+        confidence_score: 65,
+        citations: ["Complementary wellness support"],
+        product: {
+          id: product.id,
+          brand: product.brand,
+          product_name: product.product_name,
+          product_url: product.product_url,
+          price: product.price
+        }
+      });
+    });
+  } else if (recommendations.length > 6) {
+    // Trim to exactly 6 (keep highest confidence scores)
+    recommendations.sort((a, b) => (b.confidence_score || 0) - (a.confidence_score || 0));
+    recommendations = recommendations.slice(0, 6);
+  }
+
+  return recommendations;
+}
+
+function validateNoInteractions(recommendations: any[]): { valid: boolean; conflicts: string[] } {
+  const conflicts: string[] = [];
+  const suppNames = recommendations.map(r => r.supplement);
+
+  for (let i = 0; i < suppNames.length; i++) {
+    for (let j = i + 1; j < suppNames.length; j++) {
+      const supp1 = suppNames[i];
+      const supp2 = suppNames[j];
+      
+      if ((SUPPLEMENT_INTERACTIONS[supp1] && SUPPLEMENT_INTERACTIONS[supp1].includes(supp2)) || 
+          (SUPPLEMENT_INTERACTIONS[supp2] && SUPPLEMENT_INTERACTIONS[supp2].includes(supp1))) {
+        conflicts.push(`${supp1} conflicts with ${supp2}`);
+      }
+    }
+  }
+
+  return { valid: conflicts.length === 0, conflicts };
+}
+
+function resolveInteractions(recommendations: any[], products: any[]): any[] {
+  const resolved = [...recommendations];
+  const interactionCheck = validateNoInteractions(resolved);
+  
+  if (!interactionCheck.valid) {
+    // Remove conflicting supplements and replace with alternatives
+    const conflictingSupps = new Set<string>();
+    
+    interactionCheck.conflicts.forEach(conflict => {
+      const [supp1, supp2] = conflict.split(' conflicts with ');
+      conflictingSupps.add(supp1);
+      conflictingSupps.add(supp2);
+    });
+    
+    // Remove one supplement from each conflict (keep higher confidence)
+    const toRemove: number[] = [];
+    conflictingSupps.forEach(conflictSupp => {
+      const index = resolved.findIndex(r => r.supplement === conflictSupp);
+      if (index !== -1 && !toRemove.includes(index)) {
+        toRemove.push(index);
+      }
+    });
+    
+    // Remove conflicting supplements (keep only first one found)
+    if (toRemove.length > 0) {
+      toRemove.sort((a, b) => b - a); // Remove from end to avoid index issues
+      toRemove.slice(1).forEach(index => { // Keep first, remove others
+        resolved.splice(index, 1);
+      });
+    }
+    
+    // Fill back to 6 with non-conflicting alternatives
+    const currentSupps = resolved.map(r => r.supplement.toLowerCase());
+    const availableAlternatives = products.filter(p => 
+      !currentSupps.includes(p.supplement_name.toLowerCase()) &&
+      !hasInteractionWithCurrent(p.supplement_name, resolved)
+    );
+    
+    const needed = 6 - resolved.length;
+    const alternatives = availableAlternatives.slice(0, needed);
+    
+    alternatives.forEach(alt => {
+      resolved.push({
+        supplement: alt.supplement_name,
+        dosage: getStandardDosage(alt.supplement_name),
+        timing: "with meals",
+        reason: "Alternative selection to avoid supplement interactions",
+        confidence_score: 60,
+        citations: ["Interaction-free alternative"],
+        product: {
+          id: alt.id,
+          brand: alt.brand,
+          product_name: alt.product_name,
+          product_url: alt.product_url,
+          price: alt.price
+        }
+      });
+    });
+  }
+  
+  return resolved;
+}
+
+function hasInteractionWithCurrent(supplementName: string, currentRecommendations: any[]): boolean {
+  const currentSupps = currentRecommendations.map(r => r.supplement);
+  
+  return currentSupps.some(currentSupp => 
+    (SUPPLEMENT_INTERACTIONS[supplementName] && SUPPLEMENT_INTERACTIONS[supplementName].includes(currentSupp)) ||
+    (SUPPLEMENT_INTERACTIONS[currentSupp] && SUPPLEMENT_INTERACTIONS[currentSupp].includes(supplementName))
+  );
 } 
