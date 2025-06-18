@@ -60,6 +60,7 @@ import { useComprehensiveAnalysis } from '@/hooks/useComprehensiveAnalysis';
 import { useEnhancedAnalysis } from '@/hooks/useEnhancedAnalysis';
 import BiomarkerCard from '@/components/BiomarkerCard';
 import SnpCard from '@/components/SnpCard';
+import HealthScoreCard from '@/components/HealthScoreCard';
 
 
 const supabase = createClient();
@@ -101,6 +102,19 @@ const DashboardGradient = () => (
     />
   </div>
 );
+
+// Key biomarkers and SNPs template for comprehensive analysis
+const KEY_BIOMARKERS = [
+  'glucose', 'hba1c', 'insulin', 'triglycerides', 'cholesterol', 'ldl', 'hdl',
+  'testosterone', 'free_testosterone', 'estradiol', 'dhea', 'cortisol', 'shbg',
+  'vitamin_d', 'vitamin_b12', 'folate', 'magnesium', 'zinc', 'iron', 'ferritin',
+  'homocysteine', 'crp', 'tsh', 'free_t3', 'free_t4', 'vitamin_b6', 'omega_3'
+];
+
+const KEY_SNPS = [
+  'MTHFR', 'COMT', 'APOE', 'FTO', 'VDR', 'FADS1', 'FADS2', 'CYP1A1', 'CYP1B1', 
+  'MTR', 'MTRR', 'BDNF', 'TOMM40', 'MC4R', 'PPARG', 'TCF7L2', 'CYP2R1', 'GC'
+];
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
@@ -209,10 +223,19 @@ export default function DashboardPage() {
   const [biomarkersPerPage] = useState(10);
   const [snpsPerPage] = useState(15);
 
-  // Filter and search functions
+  // Filter and search functions - for comprehensive analysis, only show key markers
   const filteredBiomarkers = biomarkersData.filter(biomarker => {
     const analysis = biomarkerAnalysis[biomarker.marker_name?.toLowerCase()?.replace(/\s+/g, '_')] || {};
     const cleanName = biomarker.marker_name?.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) || 'Unknown Marker';
+    
+    // For comprehensive analysis, only show key biomarkers
+    const isKeyBiomarker = KEY_BIOMARKERS.some(key => {
+      const cleanBioName = biomarker.marker_name?.toLowerCase().replace(/[^a-z0-9]/g, '_');
+      const cleanKeyName = key.toLowerCase();
+      return cleanBioName?.includes(cleanKeyName) || cleanKeyName.includes(cleanBioName?.substring(0, 5) || '');
+    });
+    
+    if (!isKeyBiomarker) return false;
     
     // Search filter
     const matchesSearch = cleanName.toLowerCase().includes(biomarkerSearch.toLowerCase()) ||
@@ -231,6 +254,13 @@ export default function DashboardPage() {
     const gene = snp.supported_snps?.gene || snp.gene_name || 'Unknown';
     const rsid = snp.supported_snps?.rsid || snp.snp_id || 'Unknown';
     const analysis = snpAnalysis[`${gene} (${rsid})`] || {};
+    
+    // For comprehensive analysis, only show key SNPs
+    const isKeySNP = KEY_SNPS.some(key => {
+      return gene.toUpperCase() === key.toUpperCase();
+    });
+    
+    if (!isKeySNP) return false;
     
     // Search filter
     const matchesSearch = gene.toLowerCase().includes(snpSearch.toLowerCase()) ||
@@ -507,6 +537,7 @@ export default function DashboardPage() {
         const ratingsMap: {[key: string]: number} = {};
         
         if (symptoms && Array.isArray(symptoms)) {
+        // ✅ Keep any here - symptom data structure varies from API
         symptoms.forEach((symptom: any) => {
             if (symptom.symptom_name && symptom.value) {
           ratingsMap[symptom.symptom_name] = symptom.value;
@@ -533,6 +564,7 @@ export default function DashboardPage() {
         const { supplements } = supplementsData;
         
         if (supplements && Array.isArray(supplements)) {
+        // ✅ Keep any here - supplement data structure varies from API
         const allTaken = supplements.length > 0 && supplements.every((s: any) => s.taken);
         setDailySupplementsTaken(allTaken);
         } else {
@@ -594,6 +626,7 @@ export default function DashboardPage() {
     // Save to database in background
     if (plan?.recommendations?.length > 0) {
       try {
+        // ✅ Keep any here - recommendation structure varies from AI plan generation
         const promises = plan.recommendations.map((rec: any) =>
           fetch('/api/tracking/supplements', {
             method: 'POST',
@@ -839,34 +872,8 @@ export default function DashboardPage() {
 
       {/* Main Actions Grid */}
       <div className="grid md:grid-cols-2 gap-6">
-        {/* Health Reports Panel */}
-        <div className="bg-dark-panel rounded-xl p-6 border border-dark-border">
-          <div className="flex items-center gap-3 mb-4">
-            <FileText className="h-5 w-5 text-dark-secondary" />
-            <h3 className="text-lg font-semibold text-dark-primary">Health Reports</h3>
-          </div>
-          {uploadedFiles.length > 0 ? (
-            <div className="space-y-3">
-              {uploadedFiles.slice(0, 3).map((file, index) => (
-                <div key={index} className="flex justify-between items-center p-3 bg-dark-background rounded-lg border border-dark-border">
-                  <p className="font-medium text-sm text-dark-primary font-mono">{file.file_name}</p>
-                  <span className={`px-2 py-1 rounded-md text-xs font-medium ${
-                    file.status === 'parsed' ? 'bg-green-900/50 text-green-400' : 'bg-yellow-900/50 text-yellow-400'
-                  }`}>
-                    {file.status}
-                  </span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-dark-secondary mb-4">You haven't uploaded any reports.</p>
-              <Button className="rounded-lg bg-dark-border text-dark-primary hover:bg-dark-accent hover:text-white" onClick={() => router.push('/onboarding')}>
-                Upload Files
-              </Button>
-            </div>
-          )}
-        </div>
+        {/* Health Score Panel */}
+        <HealthScoreCard onViewDetails={() => setActiveTab('analysis')} />
 
         {/* Generate Plan Panel */}
         <div className="bg-dark-panel rounded-xl p-6 border border-dark-border">
@@ -1084,7 +1091,7 @@ export default function DashboardPage() {
                 Comprehensive Analysis
               </h1>
               <p className="text-xl text-dark-secondary max-w-3xl mx-auto leading-relaxed">
-                Get personalized insights from your biomarker and genetic data
+                Deep dive analysis of your onboarding health assessment and uploaded data
               </p>
             </div>
           </div>
@@ -1422,7 +1429,7 @@ export default function DashboardPage() {
             Comprehensive Analysis
           </h1>
           <p className="text-xl text-dark-secondary max-w-3xl mx-auto leading-relaxed">
-            Deep dive into your biomarker and genetic data with AI-powered insights and personalized recommendations
+            AI-powered insights from your key health markers focused on metabolic syndrome, cognitive health, hormonal balance, and nutritional status
           </p>
         </div>
       </div>
