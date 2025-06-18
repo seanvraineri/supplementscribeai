@@ -25,10 +25,10 @@ export function ReviewStep() {
     )
   };
 
-  const renderGoals = (goals: string[] | undefined, customGoals: { value: string }[] | undefined) => {
+  const renderGoals = (goals: string[] | undefined, customGoal: string | undefined) => {
     const allGoals = [
       ...(goals || []),
-      ...(customGoals?.map(g => g.value).filter(Boolean) || [])
+      ...(customGoal ? [customGoal] : [])
     ];
     if (allGoals.length === 0) return "None";
     return (
@@ -99,7 +99,7 @@ export function ReviewStep() {
           <CardTitle>Health Goals</CardTitle>
         </CardHeader>
         <CardContent>
-          {renderGoals(data.healthGoals, data.customHealthGoals)}
+          {renderGoals(data.healthGoals, data.customHealthGoal)}
         </CardContent>
       </Card>
 

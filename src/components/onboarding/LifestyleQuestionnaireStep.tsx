@@ -197,41 +197,6 @@ export function LifestyleQuestionnaireStep() {
           stepId="q-anemia"
           options={[{value:'yes',label:'Yes'},{value:'no',label:'No'},{value:'not_sure',label:'Not sure'}]}
         />
-        
-        <FormField
-          control={form.control}
-          name="low_nutrients"
-          render={({ field }) => (
-            <FormItem className="space-y-6">
-              <FormLabel className="text-lg font-semibold text-dark-primary">Are you aware of any low nutrient levels (e.g., Vitamin D, B12)?</FormLabel>
-              <div className="flex flex-wrap gap-3">
-                {lowNutrientOptions.map(opt=>{
-                  const selected = field.value?.includes(opt.id);
-                  const handleClick = () => {
-                    const current = field.value||[];
-                    if(selected){
-                      field.onChange(current.filter((v:string)=>v!==opt.id));
-                    } else {
-                      if(opt.id==='not_sure'){
-                        field.onChange(['not_sure']);
-                      } else {
-                        const newVals = current.filter((v:string)=>v!=='not_sure');
-                        field.onChange([...newVals,opt.id]);
-                      }
-                    }
-                  };
-                  return (
-                    <button key={opt.id} type="button" onClick={handleClick}
-                      className={`px-5 py-3 rounded-full border-2 transition-all duration-300 text-sm font-medium select-none ${selected?'border-dark-accent bg-dark-accent/10 shadow':'border-dark-border bg-dark-background hover:border-dark-accent/50'}`}> 
-                      <span className="text-dark-primary">{opt.label}</span>
-                    </button>
-                  )
-                })}
-              </div>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
 
         <CardRadioGroup
           fieldName="joint_pain"
