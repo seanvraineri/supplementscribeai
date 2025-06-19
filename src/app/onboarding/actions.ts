@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { onboardingSchema } from '@/lib/schemas';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { generateReferralCode } from '@/lib/referral-utils';
 
 export async function saveOnboardingData(formData: unknown) {
   try {
@@ -71,6 +72,37 @@ export async function saveOnboardingData(formData: unknown) {
     if (customHealthGoal && customHealthGoal.trim()) {
       combinedHealthGoals.push(customHealthGoal.trim());
     }
+
+    // Generate unique referral code for this user
+    let userReferralCode = generateReferralCode();
+    
+    // Ensure uniqueness by checking database
+    let codeExists = true;
+    let attempts = 0;
+    while (codeExists && attempts < 10) {
+      const { data: existingCode } = await supabase
+        .from('user_profiles')
+        .select('id')
+        .eq('referral_code', userReferralCode)
+        .single();
+      
+      if (!existingCode) {
+        codeExists = false;
+      } else {
+        userReferralCode = generateReferralCode();
+        attempts++;
+      }
+    }
+
+    // Handle referral tracking (who referred this user)
+    let referredByCode = null;
+    try {
+      // Note: We can't access localStorage from server actions,
+      // so we'll need to pass this from the client if needed
+      // For now, we'll handle this in a future update
+    } catch (error) {
+      console.log('No referral code found');
+    }
     
     // Upsert Profile Data with new fields
     const { error: profileError } = await supabase
@@ -107,6 +139,11 @@ export async function saveOnboardingData(formData: unknown) {
         primary_health_concern,
         known_biomarkers,
         known_genetic_variants,
+        
+        // Referral system fields
+        referral_code: userReferralCode,
+        referred_by_code: referredByCode,
+        
         updated_at: new Date().toISOString(),
       }, { onConflict: 'id' });
 

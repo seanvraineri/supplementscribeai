@@ -39,12 +39,12 @@ Deno.serve(async (req) => {
     const { data: profile, error: profileError } = await supabaseClient
       .from('user_profiles')
       .select(`
-        age, gender, weight_lbs, height_total_inches, health_goals, activity_level, sleep_hours,
+        full_name, age, gender, weight_lbs, height_total_inches, health_goals, activity_level, sleep_hours,
         primary_health_concern, known_biomarkers, known_genetic_variants, alcohol_intake,
         energy_levels, effort_fatigue, caffeine_effect, digestive_issues, stress_levels, 
         sleep_quality, mood_changes, brain_fog, sugar_cravings, skin_issues, joint_pain,
         immune_system, workout_recovery, food_sensitivities, weight_management, 
-        medication_history, full_name
+        medication_history
       `)
       .eq('id', user.id)
       .single();
@@ -122,12 +122,22 @@ function createPersonalizedHealthDomainsAnalysis(profile: any, conditions: any[]
     }
   };
 
-  // Get user's basic info for personalization
+  // 🔥 ENHANCED: Extract ALL personal details for hyper-personalization
+  const firstName = profile?.full_name?.split(' ')[0] || 'there';
   const age = profile?.age || 30;
+  const gender = profile?.gender || 'not specified';
+  const weight = profile?.weight_lbs;
+  const height = profile?.height_total_inches;
   const activityLevel = profile?.activity_level || 'moderate';
   const sleepHours = profile?.sleep_hours || 7;
   const goals = profile?.health_goals || [];
-  const userName = profile?.full_name?.split(' ')[0] || 'there';
+  const primaryConcern = profile?.primary_health_concern || '';
+  const knownBiomarkers = profile?.known_biomarkers || '';
+  const knownGenetics = profile?.known_genetic_variants || '';
+  
+  // Calculate personal health metrics
+  const totalIssues = Object.values(userIssues).flatMap(domain => Object.values(domain)).filter(Boolean).length;
+  const bmi = weight && height ? (weight / Math.pow(height / 12, 2) * 703).toFixed(1) : null;
 
   // Create goal-specific messaging
   const goalMessages = {
@@ -152,64 +162,71 @@ function createPersonalizedHealthDomainsAnalysis(profile: any, conditions: any[]
 
   return {
     userProfile: {
-      name: userName,
+      name: firstName,
+      personalHealthStory: `${firstName} is a ${age}-year-old ${gender}${bmi ? ` with BMI ${bmi}` : ''} whose primary concern is "${primaryConcern}". They have ${totalIssues}/16 lifestyle issues${conditions.length > 0 ? ` and manage ${conditions.map(c => c.condition_name).join(', ')}` : ''}${medications.length > 0 ? ` while taking ${medications.length} medication(s)` : ''}.`,
       goals: goals,
       goalDescription: userGoalText,
-      primaryConcern: profile?.primary_health_concern || 'general wellness'
+      primaryConcern: primaryConcern,
+      totalIssueCount: totalIssues,
+      riskLevel: totalIssues > 8 ? 'HIGH PRIORITY' : totalIssues > 4 ? 'MODERATE ATTENTION' : 'OPTIMIZATION FOCUS'
     },
     domains: {
       metabolomic: {
         title: "Metabolomic Analysis",
         subtitle: "Energy Production & Glucose Metabolism",
+        significance: `WHY THIS ANALYSIS MATTERS: This reveals how your body creates energy at the cellular level - the difference between feeling energized all day versus crashing at 3pm. Your metabolic profile determines whether you burn fat efficiently, maintain stable blood sugar, and avoid diabetes and heart disease. We analyze the same biomarkers used in cutting-edge longevity research to optimize your mitochondrial function and metabolic flexibility.`,
         insights: [
           userIssues.metabolic.energyLevels 
-            ? "Your reported low energy levels suggest mitochondrial dysfunction - specifically, your cells aren't efficiently converting glucose and fatty acids into ATP (cellular energy currency)"
-            : "Your stable energy levels indicate healthy mitochondrial biogenesis and efficient oxidative phosphorylation pathways",
+            ? `${firstName}, your low energy levels at age ${age} suggest mitochondrial dysfunction - specifically, your cells aren't efficiently converting glucose and fatty acids into ATP. ${gender === 'female' && age > 40 ? 'This is particularly common in women due to declining estrogen affecting mitochondrial biogenesis.' : gender === 'male' && age > 40 ? 'This often correlates with declining testosterone in men over 40.' : 'At your age, this indicates lifestyle factors are impacting cellular energy production.'}`
+            : `${firstName}, your stable energy levels at age ${age} indicate healthy mitochondrial biogenesis and efficient oxidative phosphorylation pathways - this is excellent for a ${gender} in this age range.`,
           userIssues.metabolic.sugarCravings 
-            ? "Sugar cravings indicate chromium deficiency and insulin resistance patterns - your GLUT4 transporters aren't responding optimally to insulin signaling"
-            : "Absence of sugar cravings suggests healthy insulin sensitivity and stable glucose homeostasis",
+            ? `${firstName}, your sugar cravings combined with ${userIssues.metabolic.energyLevels ? 'low energy' : 'other symptoms'} indicate chromium deficiency and insulin resistance patterns. ${weight && bmi && parseFloat(bmi) > 25 ? `Your BMI of ${bmi} supports this metabolic dysfunction pattern.` : 'Despite normal weight, your body is struggling with glucose regulation.'}`
+            : `${firstName}, absence of sugar cravings suggests healthy insulin sensitivity and stable glucose homeostasis - maintain this protective metabolic state.`,
           userIssues.metabolic.caffeineEffect 
-            ? "Caffeine dependence suggests adenosine receptor upregulation and HPA axis dysregulation - your natural circadian cortisol rhythm is likely disrupted"
-            : "Your healthy relationship with caffeine indicates balanced adenosine-dopamine pathways and optimal circadian biology",
+            ? `${firstName}, your caffeine dependence suggests adenosine receptor upregulation and HPA axis dysregulation. ${sleepHours < 7 ? `Your ${sleepHours} hours of sleep is likely contributing to this caffeine dependency cycle.` : 'Despite adequate sleep, your circadian cortisol rhythm appears disrupted.'}`
+            : `${firstName}, your healthy relationship with caffeine indicates balanced adenosine-dopamine pathways and optimal circadian biology.`,
           userIssues.metabolic.effortFatigue 
-            ? "Exercise intolerance indicates poor metabolic flexibility - your body struggles to switch between glycolytic and oxidative energy systems during physical stress"
-            : "Good exercise tolerance suggests healthy lactate buffering capacity and efficient mitochondrial adaptation"
+            ? `${firstName}, exercise intolerance at your ${activityLevel} activity level indicates poor metabolic flexibility - your body struggles to switch between energy systems during physical stress.`
+            : `${firstName}, good exercise tolerance suggests healthy lactate buffering capacity and efficient mitochondrial adaptation.`
         ],
         personalizedFindings: userIssues.metabolic.energyLevels || userIssues.metabolic.sugarCravings ? [
-          `${userName}, your energy crashes likely occur during your circadian cortisol dips (2-4pm) when glucose utilization is naturally reduced`,
+          `${firstName}, at age ${age}, your energy crashes likely occur during circadian cortisol dips (2-4pm) when glucose utilization naturally decreases. ${gender === 'female' ? 'Women often experience more pronounced afternoon energy dips due to hormonal fluctuations.' : 'Men typically maintain steadier energy if metabolically healthy.'}`,
           userIssues.metabolic.weightManagement 
-            ? "Your weight challenges stem from metabolic inflexibility - your body preferentially burns glucose instead of mobilizing stored fat"
-            : "Your metabolic symptoms are primarily mitochondrial rather than adipose-related"
+            ? `${firstName}, your weight challenges stem from metabolic inflexibility - your body preferentially burns glucose instead of mobilizing stored fat. ${bmi && parseFloat(bmi) > 25 ? `With a BMI of ${bmi}, this metabolic dysfunction is creating a cycle of weight gain and energy instability.` : 'Despite normal weight, your metabolism needs optimization.'}`
+            : `${firstName}, your metabolic symptoms are primarily mitochondrial rather than weight-related, suggesting cellular energy production issues.`
         ] : [
-          `Your metabolic profile shows excellent fuel partitioning, ${userName} - focus on optimization rather than correction`,
-          "Your body demonstrates healthy metabolic flexibility between glucose and fat oxidation"
+          `${firstName}, your metabolic profile shows excellent fuel partitioning at age ${age} - focus on optimization rather than correction.`,
+          `${firstName}, your body demonstrates healthy metabolic flexibility between glucose and fat oxidation, which is protective against age-related decline.`
         ],
         recommendations: userIssues.metabolic.energyLevels || userIssues.metabolic.sugarCravings ? [
-          `Implement Zone 2 cardio: 20 minutes at 60-70% max heart rate, 3x/week to enhance mitochondrial biogenesis and fat oxidation capacity`,
-          `Practice 16:8 time-restricted eating with eating window 8am-4pm to align with circadian insulin sensitivity peaks`,
-          `Perform 20 Hindu squats every 90 minutes during work hours to activate GLUT4 translocation and glucose uptake independent of insulin`,
-          `Take 10-minute walks immediately post-meal to enhance glucose disposal rate and activate muscle glucose uptake pathways`
+          `${firstName}, implement Zone 2 cardio: ${age > 50 ? '15-20 minutes' : '20-25 minutes'} at ${Math.round((220 - age) * 0.65)}-${Math.round((220 - age) * 0.70)} BPM, 3x/week to rebuild your fat-burning mitochondria specifically for your age and fitness level.`,
+          `${firstName}, practice 16:8 time-restricted eating with eating window ${age > 50 ? '8am-4pm' : '10am-6pm'} to align with your age-specific circadian insulin sensitivity patterns.`,
+          `${firstName}, perform 20 Hindu squats every 90 minutes during work hours to activate GLUT4 translocation - this is particularly effective for your ${activityLevel} activity level.`,
+          knownBiomarkers 
+            ? `${firstName}, based on your biomarker data "${knownBiomarkers.substring(0, 50)}...", consider targeted supplementation with berberine 500mg before your two largest meals.`
+            : `${firstName}, take 10-minute walks immediately post-meal to enhance glucose disposal rate and activate muscle glucose uptake pathways.`
         ] : [
-          `Maintain metabolic flexibility with weekly 24-hour fasts to upregulate autophagy and enhance ketone production`,
-          `Add cold exposure therapy: 2-3 minutes at 50-60°F water to activate brown adipose tissue and improve metabolic rate`,
-          `Practice nasal breathing during all exercise to optimize oxygen delivery and maintain aerobic metabolism`,
-          `Implement morning sunlight exposure within 30 minutes of waking to optimize circadian cortisol rhythm`
+          `${firstName}, maintain metabolic flexibility with weekly 24-hour fasts to upregulate autophagy and enhance ketone production at your optimal metabolic state.`,
+          `${firstName}, add cold exposure therapy: ${gender === 'male' ? '2-3 minutes' : '1-2 minutes'} at 50-60°F water to activate brown adipose tissue based on your gender-specific cold tolerance.`,
+          `${firstName}, practice nasal breathing during all exercise to optimize oxygen delivery and maintain aerobic metabolism during your ${activityLevel} activities.`,
+          `${firstName}, implement morning sunlight exposure within 30 minutes of waking to optimize your circadian cortisol rhythm at age ${age}.`
         ],
         goalAlignment: (() => {
           if (goals.includes('weight_loss')) {
-            return `🎯 WEIGHT LOSS GOAL: These metabolic protocols will shift your body into a fat-burning state by improving insulin sensitivity, enhancing lipolysis, and optimizing mitochondrial fat oxidation capacity.`;
+            return `🎯 ${firstName.toUpperCase()}'S WEIGHT LOSS GOAL: These metabolic protocols will shift your body into a fat-burning state by improving insulin sensitivity, enhancing lipolysis, and optimizing mitochondrial fat oxidation capacity specifically for a ${age}-year-old ${gender}.`;
           } else if (goals.includes('energy')) {
-            return `🎯 ENERGY GOAL: These interventions target the root causes of fatigue by enhancing mitochondrial ATP production, stabilizing blood glucose, and optimizing cellular energy metabolism.`;
+            return `🎯 ${firstName.toUpperCase()}'S ENERGY GOAL: These interventions target the root causes of your fatigue by enhancing mitochondrial ATP production, stabilizing blood glucose, and optimizing cellular energy metabolism for your specific age and lifestyle.`;
           } else if (goals.includes('muscle_gain')) {
-            return `🎯 MUSCLE GAIN GOAL: Better metabolic flexibility will enhance nutrient partitioning, improve protein synthesis signaling, and optimize recovery between training sessions.`;
+            return `🎯 ${firstName.toUpperCase()}'S MUSCLE GAIN GOAL: Better metabolic flexibility will enhance nutrient partitioning, improve protein synthesis signaling, and optimize recovery between training sessions for your ${activityLevel} activity level.`;
           } else {
-            return `🎯 YOUR GOALS: Metabolic optimization supports your goals to ${userGoalText} by enhancing cellular energy production, improving nutrient utilization, and optimizing hormonal signaling pathways.`;
+            return `🎯 ${firstName.toUpperCase()}'S GOALS: Metabolic optimization supports your goals to ${userGoalText} by enhancing cellular energy production, improving nutrient utilization, and optimizing hormonal signaling pathways specifically for your ${age}-year-old ${gender} physiology.`;
           }
         })()
       },
       lipidomic: {
         title: "Lipidomic Analysis", 
         subtitle: "Cell Membrane Health & Essential Fatty Acids",
+        significance: `WHY THIS ANALYSIS MATTERS: Every cell in your body is surrounded by a membrane made of fats - and the quality of these fats determines everything from brain function to inflammation levels. This analysis reveals whether your cell membranes are flexible and healthy (leading to clear thinking and smooth skin) or rigid and damaged (causing brain fog and joint pain). We use the same membrane science that elite athletes and biohackers rely on for peak performance.`,
         insights: [
           userIssues.inflammation.skinIssues || userIssues.cognitive.brainFog
             ? "Your symptoms indicate compromised cell membrane fluidity due to elevated omega-6/omega-3 ratios and lipid peroxidation from oxidative stress"
@@ -223,7 +240,7 @@ function createPersonalizedHealthDomainsAnalysis(profile: any, conditions: any[]
             : "Stable mood suggests healthy brain phospholipid composition supporting optimal neurotransmitter function"
         ],
         personalizedFindings: userIssues.inflammation.skinIssues || userIssues.cognitive.brainFog ? [
-          `${userName}, your symptoms suggest excessive consumption of omega-6 linoleic acid from processed foods, creating inflammatory membrane environments`,
+          `${firstName}, your symptoms suggest excessive consumption of omega-6 linoleic acid from processed foods, creating inflammatory membrane environments`,
           "Your cell membranes likely have reduced fluidity and compromised cholesterol-to-phospholipid ratios affecting cellular function"
         ] : [
           "Your cellular health markers indicate optimal membrane composition with healthy fatty acid incorporation",
@@ -254,7 +271,8 @@ function createPersonalizedHealthDomainsAnalysis(profile: any, conditions: any[]
       },
       inflammation: {
         title: "Inflammation Analysis",
-        subtitle: "Inflammatory Pathways & Immune Response", 
+        subtitle: "Inflammatory Pathways & Immune Response",
+        significance: `WHY THIS ANALYSIS MATTERS: Inflammation is your body's internal fire - a little bit heals injuries, but too much destroys your organs from the inside out. Chronic inflammation is the root cause of heart disease, diabetes, arthritis, depression, and even cancer. This analysis measures your inflammatory status using the same biomarkers that predict disease risk decades in advance, then provides targeted interventions to cool the fire and extend your healthspan.`,
         insights: [
           userIssues.inflammation.jointPain || userIssues.inflammation.skinIssues 
             ? "Your inflammatory symptoms indicate elevated NF-κB signaling, increased TNF-α and IL-6 production, and compromised resolution pathways"
@@ -268,7 +286,7 @@ function createPersonalizedHealthDomainsAnalysis(profile: any, conditions: any[]
           "Inflammation resolution is an active process requiring specialized lipid mediators (resolvins, protectins, maresins) derived from omega-3 fatty acids"
         ],
         personalizedFindings: userIssues.inflammation.jointPain || userIssues.inflammation.skinIssues ? [
-          `${userName}, your inflammatory patterns likely worsen with high-glycemic foods, sleep deprivation, and psychological stress due to HPA axis activation`,
+          `${firstName}, your inflammatory patterns likely worsen with high-glycemic foods, sleep deprivation, and psychological stress due to HPA axis activation`,
           "Your body is probably producing excess arachidonic acid-derived inflammatory mediators while lacking resolution-promoting compounds"
         ] : [
           "Your inflammatory control indicates excellent cytokine balance and efficient resolution pathway activation",
@@ -302,6 +320,7 @@ function createPersonalizedHealthDomainsAnalysis(profile: any, conditions: any[]
       cognitive: {
         title: "Cognitive Analysis",
         subtitle: "Brain Function & Neurotransmitter Balance",
+        significance: `WHY THIS ANALYSIS MATTERS: Your brain health determines your quality of life - from daily focus and mood stability to long-term memory and decision-making ability. This analysis evaluates the same neurotransmitter pathways and stress markers that neuroscientists use to predict cognitive decline. We identify whether your brain is aging faster than your chronological age and provide evidence-based protocols to enhance mental clarity and protect against dementia.`,
         insights: [
           userIssues.cognitive.brainFog 
             ? "Brain fog typically results from neuroinflammation, compromised blood-brain barrier integrity, or altered neurotransmitter synthesis and clearance"
@@ -317,7 +336,7 @@ function createPersonalizedHealthDomainsAnalysis(profile: any, conditions: any[]
             : "Well-managed stress levels protect brain structure, maintain cognitive reserve, and support healthy neuroplasticity"
         ],
         personalizedFindings: userIssues.cognitive.brainFog || userIssues.cognitive.moodChanges ? [
-          `${userName}, your cognitive symptoms likely peak during afternoon cortisol dips and improve with stable blood glucose and adequate protein intake`,
+          `${firstName}, your cognitive symptoms likely peak during afternoon cortisol dips and improve with stable blood glucose and adequate protein intake`,
           userIssues.cognitive.sleepQuality 
             ? "Your sleep issues are amplifying cognitive dysfunction by impairing overnight brain detoxification and neurotransmitter restoration"
             : "Your cognitive symptoms appear independent of sleep, suggesting neurotransmitter imbalances or blood-brain barrier dysfunction"
@@ -353,6 +372,7 @@ function createPersonalizedHealthDomainsAnalysis(profile: any, conditions: any[]
       gutMicrobiome: {
         title: "Gut & Microbiome Analysis",
         subtitle: "Digestive Health & Microbiome Balance",
+        significance: `WHY THIS ANALYSIS MATTERS: Your gut contains trillions of bacteria that act like a second brain, controlling 70% of your immune system and producing most of your happiness hormones. An unhealthy gut microbiome is linked to depression, autoimmune diseases, obesity, and even Alzheimer's. This analysis uses the same microbiome science that's revolutionizing medicine to optimize your gut bacteria for better mood, immunity, and overall health.`,
         insights: [
           userIssues.gut.digestiveIssues 
             ? "Digestive symptoms typically indicate dysbiosis (altered microbiome diversity), compromised intestinal barrier function, or insufficient digestive enzyme production"
@@ -364,7 +384,7 @@ function createPersonalizedHealthDomainsAnalysis(profile: any, conditions: any[]
           "The gut-brain axis communicates via vagus nerve, microbial metabolites (SCFAs), and neurotransmitter production affecting mood, cognition, and stress response"
         ],
         personalizedFindings: userIssues.gut.digestiveIssues || userIssues.gut.foodSensitivities ? [
-          `${userName}, your gut symptoms likely worsen with stress, antibiotics, NSAIDs, or high-sugar foods that feed pathogenic bacteria and compromise barrier function`,
+          `${firstName}, your gut symptoms likely worsen with stress, antibiotics, NSAIDs, or high-sugar foods that feed pathogenic bacteria and compromise barrier function`,
           "Your microbiome probably has reduced diversity with overgrowth of inflammatory species and insufficient beneficial bacteria for optimal metabolite production"
         ] : [
           "Your digestive health indicates excellent microbiome diversity with healthy short-chain fatty acid production and optimal barrier function",
@@ -398,7 +418,7 @@ function createPersonalizedHealthDomainsAnalysis(profile: any, conditions: any[]
     },
     crossDomainConnections: [
       userIssues.gut.digestiveIssues && (userIssues.cognitive.brainFog || userIssues.cognitive.moodChanges)
-        ? `${userName}, your gut dysbiosis is directly affecting brain function through the vagus nerve and bacterial metabolite production - restoring microbiome balance will improve mental clarity and mood, supporting your goals to ${userGoalText}`
+        ? `${firstName}, your gut dysbiosis is directly affecting brain function through the vagus nerve and bacterial metabolite production - restoring microbiome balance will improve mental clarity and mood, supporting your goals to ${userGoalText}`
         : "Your gut-brain axis appears healthy, supporting stable mood and cognition through optimal neurotransmitter production",
       userIssues.metabolic.sugarCravings && userIssues.cognitive.brainFog 
         ? `Your blood glucose instability is creating neuroinflammation and compromising blood-brain barrier integrity - stabilizing metabolism will clear brain fog and support your ${goals.includes('focus') ? 'mental clarity goals' : 'overall wellness goals'}`
@@ -443,6 +463,6 @@ function createPersonalizedHealthDomainsAnalysis(profile: any, conditions: any[]
       
       return protocols.slice(0, 3); // Limit to 3 protocols
     })(),
-    conflictCheck: `All recommendations are personalized for ${userName} and designed to be safe with ${conditions.length > 0 ? 'your medical conditions' : 'no known medical conditions'}, ${medications.length > 0 ? 'current medications' : 'no medications'}, and ${allergies.length > 0 ? 'known allergies' : 'no known allergies'}. Start with one protocol at a time and build gradually over 2-4 weeks.`
+    conflictCheck: `All recommendations are personalized for ${firstName} and designed to be safe with ${conditions.length > 0 ? 'your medical conditions' : 'no known medical conditions'}, ${medications.length > 0 ? 'current medications' : 'no medications'}, and ${allergies.length > 0 ? 'known allergies' : 'no known allergies'}. Start with one protocol at a time and build gradually over 2-4 weeks.`
   };
 }

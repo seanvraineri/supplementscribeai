@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
+import { extractReferralFromUrl, storeReferralCode } from '@/lib/referral-utils'
 
 export default function SignUpPage() {
   const [email, setEmail] = useState('')
@@ -14,8 +15,18 @@ export default function SignUpPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
+  const [referralCode, setReferralCode] = useState('')
   const router = useRouter()
   const supabase = createClient()
+
+  // Handle referral code from URL parameter
+  useEffect(() => {
+    const urlReferralCode = extractReferralFromUrl()
+    if (urlReferralCode) {
+      setReferralCode(urlReferralCode)
+      storeReferralCode(urlReferralCode)
+    }
+  }, [])
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -43,6 +54,11 @@ export default function SignUpPage() {
       if (error) {
         setMessage(error.message)
       } else {
+        // Store referral code for use during onboarding
+        if (referralCode) {
+          storeReferralCode(referralCode)
+        }
+        
         setMessage('Account created successfully! Redirecting to onboarding...')
         // Use Next.js router for proper navigation
         setTimeout(() => {
@@ -109,6 +125,19 @@ export default function SignUpPage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
+                className="h-12 px-4 text-base bg-dark-background border-dark-border text-dark-primary placeholder:text-dark-secondary/60 focus:border-dark-accent focus:ring-2 focus:ring-dark-accent/20 transition-all duration-200"
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="referralCode" className="text-sm font-semibold text-dark-primary tracking-wide">
+                Referral Code <span className="text-dark-secondary font-normal">(Optional)</span>
+              </label>
+              <Input
+                id="referralCode"
+                type="text"
+                placeholder="Enter referral code (e.g., SUPP87A9)"
+                value={referralCode}
+                onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
                 className="h-12 px-4 text-base bg-dark-background border-dark-border text-dark-primary placeholder:text-dark-secondary/60 focus:border-dark-accent focus:ring-2 focus:ring-dark-accent/20 transition-all duration-200"
               />
             </div>

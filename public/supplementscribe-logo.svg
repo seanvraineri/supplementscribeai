@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <style>
+      .logo-text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-weight: 600; }
+    </style>
+  </defs>
+  
+  <!-- Pill/Capsule Icon -->
+  <g transform="translate(130, 386)">
+    <!-- Outer circle -->
+    <circle cx="126" cy="126" r="126" fill="none" stroke="#000" stroke-width="16"/>
+    <!-- Pill shape -->
+    <rect x="63" y="94.5" width="126" height="63" rx="31.5" ry="31.5" fill="#000"/>
+  </g>
+  
+  <!-- Text -->
+  <text x="360" y="440" class="logo-text" font-size="120" fill="#000">Supplement</text>
+  <text x="360" y="580" class="logo-text" font-size="120" fill="#000">Scribe</text>
+</svg> 

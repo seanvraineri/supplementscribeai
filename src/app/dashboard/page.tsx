@@ -62,6 +62,8 @@ import { useEnhancedAnalysis } from '@/hooks/useEnhancedAnalysis';
 import BiomarkerCard from '@/components/BiomarkerCard';
 import SnpCard from '@/components/SnpCard';
 import HealthScoreCard from '@/components/HealthScoreCard';
+import { generateReferralUrl, generateSignupUrl } from '@/lib/referral-utils';
+import ShareGraphics from '@/components/ShareGraphics';
 
 
 const supabase = createClient();
@@ -190,6 +192,13 @@ export default function DashboardPage() {
   const [dailySupplementsTaken, setDailySupplementsTaken] = useState(false);
   const [symptomRatings, setSymptomRatings] = useState<{[key: string]: number}>({});
   const [hasLoadedToday, setHasLoadedToday] = useState(false);
+  
+  // Referral state
+  const [copiedReferralCode, setCopiedReferralCode] = useState(false);
+  const [copiedReferralUrl, setCopiedReferralUrl] = useState(false);
+  
+  // Share graphics state
+  const [showShareGraphics, setShowShareGraphics] = useState(false);
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
@@ -346,7 +355,7 @@ export default function DashboardPage() {
         try {
           const { data: profileData, error: profileError } = await supabase
             .from('user_profiles')
-            .select('full_name')
+            .select('*')
             .eq('id', user.id)
             .single();
           
@@ -354,6 +363,11 @@ export default function DashboardPage() {
             console.warn('Profile fetch error:', profileError);
           } else {
             setProfile(profileData);
+            
+            // Generate referral code for existing users who don't have one
+            if (profileData && !profileData.referral_code) {
+              generateReferralCodeForExistingUser();
+            }
           }
         } catch (error) {
           console.warn('Profile fetch failed:', error);
@@ -1001,23 +1015,41 @@ export default function DashboardPage() {
               AI-powered recommendations based on your unique health data
             </p>
           </div>
-          <Button 
-            onClick={generatePlan} 
-            disabled={isGenerating}
-            className="bg-dark-accent text-white hover:bg-dark-accent/80 transition-all duration-300"
-          >
-            {isGenerating ? (
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                Regenerating...
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4" />
-                Regenerate Plan
-              </div>
+          <div className="flex items-center gap-3">
+            {plan && (
+              <Button 
+                onClick={() => {
+                  if (profile?.referral_code) {
+                    setShowShareGraphics(true);
+                  } else {
+                    alert('Please visit Settings to set up your referral code first, then you can share your stack!');
+                  }
+                }}
+                size="lg"
+                className="bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-semibold px-6 py-3"
+              >
+                <ExternalLink className="h-5 w-5 mr-2" />
+                🔥 Share Your Stack
+              </Button>
             )}
-          </Button>
+            <Button 
+              onClick={generatePlan} 
+              disabled={isGenerating}
+              className="bg-dark-accent text-white hover:bg-dark-accent/80 transition-all duration-300"
+            >
+              {isGenerating ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  Regenerating...
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4" />
+                  Regenerate Plan
+                </div>
+              )}
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -2652,10 +2684,111 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      {/* Settings content will be implemented here */}
-      <div className="bg-dark-panel border border-dark-border rounded-xl p-8 text-center">
-        <Settings className="h-16 w-16 text-dark-secondary mx-auto mb-4" />
-        <h3 className="text-xl font-semibold text-dark-primary mb-2">Settings</h3>
+      {/* Referral System */}
+      <div className="bg-dark-panel border border-dark-border rounded-xl p-8">
+        <div className="flex items-center gap-3 mb-6">
+          <Network className="h-6 w-6 text-dark-accent" />
+          <h3 className="text-2xl font-semibold text-dark-primary">Refer Friends</h3>
+        </div>
+        <p className="text-dark-secondary mb-6">
+          Share SupplementScribe with friends and help them optimize their health too!
+        </p>
+        
+        {profile?.referral_code ? (
+          <div className="space-y-4">
+            {/* Referral Code */}
+            <div>
+              <label className="text-sm font-medium text-dark-secondary mb-2 block">
+                Your Referral Code
+              </label>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 bg-dark-background border border-dark-border rounded-lg px-4 py-3">
+                  <code className="text-lg font-mono text-dark-accent">{profile.referral_code}</code>
+                </div>
+                <Button
+                  onClick={copyReferralCode}
+                  variant="outline"
+                  className="px-4 py-3 border-dark-border hover:bg-dark-border"
+                >
+                  {copiedReferralCode ? (
+                    <Check className="h-4 w-4 text-green-400" />
+                  ) : (
+                    'Copy'
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {/* Referral URL */}
+            <div>
+              <label className="text-sm font-medium text-dark-secondary mb-2 block">
+                Your Referral Link
+              </label>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 bg-dark-background border border-dark-border rounded-lg px-4 py-3">
+                  <code className="text-sm text-dark-primary break-all">
+                    {generateReferralUrl(profile.referral_code)}
+                  </code>
+                </div>
+                <Button
+                  onClick={copyReferralUrl}
+                  variant="outline"
+                  className="px-4 py-3 border-dark-border hover:bg-dark-border"
+                >
+                  {copiedReferralUrl ? (
+                    <Check className="h-4 w-4 text-green-400" />
+                  ) : (
+                    'Copy'
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {/* Referral Stats */}
+            <div className="bg-dark-background border border-dark-border rounded-lg p-4 mt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-dark-secondary">People you've referred</p>
+                  <p className="text-2xl font-bold text-dark-accent">{profile.referral_count || 0}</p>
+                </div>
+                <Star className="h-8 w-8 text-dark-accent" />
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <div className="bg-dark-background border border-dark-border rounded-lg p-6">
+              <Network className="h-12 w-12 text-dark-accent mx-auto mb-4" />
+              <h4 className="text-lg font-semibold text-dark-primary mb-2">Setting up your referral code...</h4>
+              <p className="text-dark-secondary mb-4">
+                Click the button below to generate your unique referral code.
+              </p>
+              <div className="space-y-3">
+                <Button 
+                  onClick={generateReferralCodeForExistingUser}
+                  className="bg-dark-accent text-white hover:bg-dark-accent/80"
+                >
+                  Generate My Referral Code
+                </Button>
+                <Button 
+                  onClick={() => window.location.reload()} 
+                  variant="outline"
+                  className="border-dark-border text-dark-secondary hover:bg-dark-border"
+                >
+                  Refresh Page
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Account Settings Placeholder */}
+      <div className="bg-dark-panel border border-dark-border rounded-xl p-8">
+        <div className="flex items-center gap-3 mb-4">
+          <Settings className="h-6 w-6 text-dark-secondary" />
+          <h3 className="text-2xl font-semibold text-dark-primary">Account Settings</h3>
+        </div>
         <p className="text-dark-secondary">
           Manage your account settings, notification preferences, and data privacy options.
         </p>
@@ -2843,6 +2976,138 @@ export default function DashboardPage() {
     return `${Math.floor(diffInSeconds / 86400)}d ago`;
   };
 
+  // Referral functions
+  const copyReferralCode = async () => {
+    if (profile?.referral_code) {
+      await navigator.clipboard.writeText(profile.referral_code);
+      setCopiedReferralCode(true);
+      setTimeout(() => setCopiedReferralCode(false), 2000);
+    }
+  };
+
+  const copyReferralUrl = async () => {
+    if (profile?.referral_code) {
+      const url = generateReferralUrl(profile.referral_code);
+      await navigator.clipboard.writeText(url);
+      setCopiedReferralUrl(true);
+      setTimeout(() => setCopiedReferralUrl(false), 2000);
+    }
+  };
+
+  const generateReferralCodeForExistingUser = async () => {
+    if (!user?.id || profile?.referral_code) return;
+
+    try {
+      console.log('🔍 Starting referral code generation for user:', user.id);
+      
+      // FIRST: Test if we can even access the table structure
+      console.log('🧪 Testing schema access...');
+      const { data: schemaTest, error: schemaError } = await supabase
+        .from('user_profiles')
+        .select('id, full_name')
+        .eq('id', user.id)
+        .single();
+      
+      console.log('🧪 Schema test result:', { schemaTest, schemaError });
+      
+      if (schemaError) {
+        console.error('❌ Basic schema access failed:', schemaError);
+        return;
+      }
+      
+      // First, check if user profile exists
+      const { data: existingProfile, error: profileCheckError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      
+      console.log('👤 User profile check:', { existingProfile, profileCheckError });
+      
+      if (profileCheckError || !existingProfile) {
+        console.error('❌ User profile does not exist! Cannot update referral code.');
+        return;
+      }
+      
+      // Generate a unique referral code using the utility function
+      const { generateReferralCode } = await import('@/lib/referral-utils');
+      let newCode = generateReferralCode();
+      
+      console.log('🎲 Generated code:', newCode);
+      
+      // Check uniqueness with a simple retry
+      let attempts = 0;
+      while (attempts < 5) {
+        const { data: existingUser, error: checkError } = await supabase
+          .from('user_profiles')
+          .select('id')
+          .eq('referral_code', newCode)
+          .single();
+        
+        console.log('🔍 Uniqueness check result:', { existingUser, checkError });
+        
+        if (!existingUser) break; // Code is unique
+        
+        newCode = generateReferralCode();
+        attempts++;
+        console.log('🔄 Retry attempt', attempts, 'with new code:', newCode);
+      }
+      
+      console.log('✅ Final unique code:', newCode);
+      
+      // INSTEAD OF UPSERT, try a simple UPDATE first
+      console.log('📝 Attempting to UPDATE profile for user:', user.id);
+      
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .update({ referral_code: newCode })
+        .eq('id', user.id)
+        .select('*')
+        .single();
+
+      console.log('📊 Update result:', { data, error });
+
+      if (error) {
+        console.error('❌ Supabase update error:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        
+        // If UPDATE fails, try UPSERT as fallback
+        console.log('🔄 Trying UPSERT as fallback...');
+        const { data: upsertData, error: upsertError } = await supabase
+          .from('user_profiles')
+          .upsert({ 
+            id: user.id,
+            referral_code: newCode 
+          })
+          .select('*')
+          .single();
+          
+        console.log('📊 Upsert result:', { upsertData, upsertError });
+        
+        if (upsertError) {
+          throw upsertError;
+        }
+        
+        if (upsertData) {
+          console.log('✅ Successfully updated profile with referral code via upsert');
+          setProfile(upsertData);
+        }
+        return;
+      }
+
+      if (data) {
+        console.log('✅ Successfully updated profile with referral code');
+        setProfile(data);
+      }
+    } catch (error) {
+      console.error('💥 Full error generating referral code:', error);
+    }
+  };
+
   const checkProduct = async () => {
     if (!productUrl) return;
     setIsCheckingProduct(true);
@@ -2992,6 +3257,37 @@ export default function DashboardPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Share Graphics Modal */}
+      {showShareGraphics && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-dark-background border border-dark-border rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-dark-primary">Share Your Stack</h2>
+                <Button
+                  onClick={() => setShowShareGraphics(false)}
+                  variant="outline"
+                  size="sm"
+                  className="border-dark-border text-dark-secondary hover:bg-dark-border"
+                >
+                  ✕
+                </Button>
+              </div>
+              
+              {profile?.referral_code && plan?.recommendations && (
+                <ShareGraphics
+                  userName={profile.full_name || 'Anonymous'}
+                  supplements={plan.recommendations.map((rec: any) => rec.supplement)}
+                  healthScore={profile.health_score}
+                  referralCode={profile.referral_code}
+                  referralUrl={generateReferralUrl(profile.referral_code)}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

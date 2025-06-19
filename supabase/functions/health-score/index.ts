@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
     const { data: profile, error: profileError } = await supabaseClient
       .from('user_profiles')
       .select(`
-        age, gender, weight_lbs, height_total_inches, health_goals, activity_level, sleep_hours,
+        first_name, age, gender, weight_lbs, height_total_inches, health_goals, activity_level, sleep_hours,
         primary_health_concern, known_biomarkers, known_genetic_variants, alcohol_intake,
         energy_levels, effort_fatigue, caffeine_effect, digestive_issues, stress_levels, 
         sleep_quality, mood_changes, brain_fog, sugar_cravings, skin_issues, joint_pain,
@@ -90,14 +90,14 @@ Deno.serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are a comprehensive health analyst. Analyze the user's onboarding health assessment and provide a holistic health score.
+            content: `You are a personalized health analyst for ${profile.first_name || 'this individual'}. Analyze their specific onboarding health assessment and provide a hyper-personalized health score.
 
 CRITICAL REQUIREMENTS:
 1. Return ONLY valid JSON, no markdown formatting
-2. Be realistic and evidence-based in scoring based on ACTUAL onboarding data
-3. Provide HIGHLY SPECIFIC, personalized holistic recommendations - NO generic advice
-4. Focus on natural, supplement-based, and lifestyle solutions ONLY
-5. Base scoring on the 4 categories below using their actual responses
+2. Be ULTRA-REALISTIC in scoring - most people with multiple lifestyle issues should score 60-75
+3. Address ${profile.first_name || 'them'} by name and reference their exact age (${profile.age}) and primary concern
+4. Create a "health story" that connects their symptoms and issues logically
+5. Make scoring harsh but fair - someone with 6+ issues should NOT score above 70
 
 Return JSON with this exact structure:
 {
@@ -114,6 +114,12 @@ Return JSON with this exact structure:
   "topRecommendations": ["5-7 HIGHLY SPECIFIC supplement and lifestyle recommendations based on their exact issues"],
   "scoreExplanation": "detailed explanation of how the score was calculated from their onboarding data"
 }
+
+PERSONALIZATION REQUIREMENTS:
+- Reference ${profile.first_name || 'the user'}'s exact age (${profile.age}) and primary concern: "${profile.primary_health_concern}"
+- Connect their symptoms into a coherent health narrative
+- Make recommendations feel like they're written specifically for their situation
+- Use realistic scoring - someone with multiple "yes" answers has real health challenges
 
 RECOMMENDATION REQUIREMENTS:
 - Be EXTREMELY specific with holistic lifestyle recommendations ONLY
@@ -156,17 +162,17 @@ SCORING CATEGORIES (based on onboarding data):
 - Age and demographic factors
 - Known health issues
 
-SCORING GUIDELINES:
-- 90-100: Exceptional health with minimal issues
-- 80-89: Very good health with minor concerns  
-- 70-79: Good health with some areas to improve
-- 60-69: Fair health with multiple concerns
-- 50-59: Poor health with significant issues
-- Below 50: Critical health concerns needing immediate attention
+SCORING GUIDELINES (BE REALISTIC):
+- 85-100: Exceptional health (0-2 lifestyle issues max)
+- 75-84: Good health (3-4 lifestyle issues)
+- 65-74: Fair health (5-6 lifestyle issues) 
+- 55-64: Poor health (7-8 lifestyle issues)
+- 45-54: Very poor health (9+ lifestyle issues)
+- Below 45: Critical health concerns (12+ issues)
 
 Count "yes" answers to lifestyle questions as negative factors (they indicate problems).
 Count "no" answers as positive factors (they indicate absence of problems).
-Be realistic - most people should score 60-80 based on typical onboarding responses.
+Most users will score 60-75. Only give high scores (80+) to users with genuinely few issues.
 
 SPECIFIC HOLISTIC RECOMMENDATION MAPPING (use these for their "yes" answers):
 - Digestive issues → "Eat 1 cup fermented vegetables daily + chew each bite 30 times + avoid eating 3 hours before bed"
@@ -301,28 +307,38 @@ function buildHealthAnalysisPrompt(profile: any, conditions: any[], medications:
   if (profile?.brain_fog === 'no') lifestyleStrengths.push('Good cognitive function');
   if (profile?.mood_changes === 'no') lifestyleStrengths.push('Stable mood');
   
-  return `COMPREHENSIVE HEALTH ANALYSIS - ONBOARDING ASSESSMENT
+  return `PERSONALIZED HEALTH ANALYSIS FOR ${profile.first_name?.toUpperCase() || 'USER'}
 
-=== BASIC DEMOGRAPHICS ===
-• Age: ${profile.age || 'Not specified'}
+=== PERSONAL PROFILE ===
+• Name: ${profile.first_name || 'Not provided'}
+• Age: ${profile.age || 'Not specified'} years old
 • Gender: ${profile.gender || 'Not specified'}
 • Height: ${profile.height_total_inches ? Math.floor(profile.height_total_inches / 12) + "'" + (profile.height_total_inches % 12) + '"' : 'Not specified'}
 • Weight: ${profile.weight_lbs ? profile.weight_lbs + ' lbs' : 'Not specified'}
 
-=== PRIMARY HEALTH CONCERN ===
-${profile.primary_health_concern || 'Not specified'}
+=== ${profile.first_name?.toUpperCase() || 'USER'}'S PRIMARY HEALTH STORY ===
+Main Concern: "${profile.primary_health_concern || 'General wellness optimization'}"
+
+${profile.age && profile.age > 40 ? `At ${profile.age} years old, age-related factors may be contributing to health challenges.` : profile.age && profile.age < 30 ? `At ${profile.age}, this is an optimal time to establish strong health foundations.` : `At ${profile.age || 'this'} age, focusing on sustainable health practices is key.`}
 
 === LIFESTYLE HABITS ASSESSMENT ===
 • Activity Level: ${profile.activity_level || 'Not specified'}
 • Sleep Hours: ${profile.sleep_hours || 'Not specified'} hours per night
 • Alcohol Intake: ${profile.alcohol_intake || 'Not specified'}
 
-=== LIFESTYLE ISSUES (Yes Answers = Problems) ===
-Total Issues: ${lifestyleIssues.length}/16
+=== LIFESTYLE REALITY CHECK ===
+Total Health Issues: ${lifestyleIssues.length}/16 (Higher count = more concerning)
+Total Positive Factors: ${lifestyleStrengths.length}/16
+
+${lifestyleIssues.length > 8 ? `🚨 CRITICAL: ${profile.first_name || 'User'} has ${lifestyleIssues.length} significant health issues - this requires immediate lifestyle intervention.` : 
+  lifestyleIssues.length > 5 ? `⚠️ CONCERNING: ${profile.first_name || 'User'} has ${lifestyleIssues.length} health issues that need targeted attention.` :
+  lifestyleIssues.length > 2 ? `📋 MODERATE: ${profile.first_name || 'User'} has ${lifestyleIssues.length} issues - good foundation but room for improvement.` :
+  `✅ EXCELLENT: ${profile.first_name || 'User'} has minimal health issues - focus on optimization.`}
+
+=== SPECIFIC ISSUES IDENTIFIED ===
 ${lifestyleIssues.length > 0 ? lifestyleIssues.map(issue => `• ${issue}`).join('\n') : '• No significant lifestyle issues reported'}
 
-=== LIFESTYLE STRENGTHS (No Answers = Good) ===
-Total Strengths: ${lifestyleStrengths.length}/16
+=== POSITIVE HEALTH FACTORS ===
 ${lifestyleStrengths.length > 0 ? lifestyleStrengths.map(strength => `• ${strength}`).join('\n') : '• Limited lifestyle strengths identified'}
 
 === HEALTH GOALS ===
@@ -337,8 +353,14 @@ ${profile.health_goals?.length > 0 ? profile.health_goals.join(', ') : 'Not spec
 • User-Entered Biomarkers: ${profile.known_biomarkers || 'None provided'}
 • User-Entered Genetic Variants: ${profile.known_genetic_variants || 'None provided'}
 
-ANALYSIS INSTRUCTIONS:
-Provide a health score (0-100) based on this onboarding data:
+**PERSONALIZED SCORING FOR ${profile.first_name?.toUpperCase() || 'THIS USER'}:**
+- Current issue count (${lifestyleIssues.length}) suggests realistic score should be: ${
+  lifestyleIssues.length > 8 ? '45-60' : 
+  lifestyleIssues.length > 5 ? '60-70' :
+  lifestyleIssues.length > 2 ? '70-80' : '80-90'
+}
+- Age factor (${profile.age}): ${profile.age && profile.age > 50 ? 'Reduce score by 5-10 points' : profile.age && profile.age < 25 ? 'Can add 5 points' : 'Neutral factor'}
+- Primary concern severity: ${profile.primary_health_concern ? 'Significant concern requiring attention' : 'No major specific concern'}
 
 **SCORING BREAKDOWN:**
 1. **Lifestyle Habits (25 points)**: Sleep, activity, alcohol, caffeine, stress
@@ -353,7 +375,7 @@ Provide a health score (0-100) based on this onboarding data:
 - Age factor: ${profile.age ? (profile.age > 50 ? 'Older adult' : profile.age > 30 ? 'Middle-aged adult' : 'Young adult') : 'Unknown'}
 - Activity level: ${profile.activity_level || 'Unknown'}
 
-Be realistic in scoring. Someone with 8+ lifestyle issues should score below 70. Someone with 2-3 issues might score 75-85. Only those with minimal issues and good habits should score above 85.`;
+BE REALISTIC: Do not give inflated scores. ${profile.first_name || 'This person'} has real health challenges that need honest assessment.`;
 }
 
 function createFallbackHealthScore(profile: any): any {
