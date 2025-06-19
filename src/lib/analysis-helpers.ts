@@ -634,7 +634,7 @@ export const getBiomarkerEducation = async (markerName: string, value: string, u
       currentRange: 'Unknown',
       referenceRange: 'Not available',
       symptoms: [],
-      recommendations: ['Upload lab results to get personalized analysis'],
+              recommendations: ['Complete health assessment to get personalized analysis'],
       riskLevel: 'Unknown'
     };
   }
@@ -726,7 +726,7 @@ export const getSNPEducation = async (snpId: string, geneName: string, genotype:
       effect: 'Unknown',
       impact: 'Cannot determine impact without genotype data',
       riskLevel: 'Unknown',
-      recommendations: ['Upload genetic test results to get personalized analysis'],
+              recommendations: ['Complete genetic assessment to get personalized analysis'],
       functionalImpact: 'Unknown'
     };
   }

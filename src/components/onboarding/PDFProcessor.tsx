@@ -1,14 +1,9 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-
-// NOT USED IN NEW FRICTIONLESS ONBOARDING - FILE UPLOAD REMOVED
-// This component is kept for reference but disabled
+// REMOVED: PDFProcessor component no longer needed in frictionless onboarding
+// File upload functionality has been replaced with assessment-based approach
 
 export function PDFProcessor({ file, onProcessed }: { file: File; onProcessed: (data: any) => void }) {
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
   return (
     <div className="p-4 border border-dark-border rounded-lg bg-dark-surface">
       <p className="text-dark-secondary text-sm">

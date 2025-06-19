@@ -123,7 +123,7 @@ export default function DashboardPage() {
   const [plan, setPlan] = useState<any>(null);
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
-  const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
+  // REMOVED: uploadedFiles state (legacy file upload functionality)
   const [selectedSupplement, setSelectedSupplement] = useState<any>(null);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [extractedData, setExtractedData] = useState({ biomarkers: 0, snps: 0 });
@@ -359,24 +359,8 @@ export default function DashboardPage() {
           console.warn('Profile fetch failed:', error);
         }
 
-        // Fetch uploaded files with error handling
-        try {
-          const { data: filesData, error: filesError } = await supabase
-            .from('user_lab_reports')
-            .select('file_name, report_type, created_at, status')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false });
-          
-          if (filesError) {
-            console.warn('Files fetch error:', filesError);
-            setUploadedFiles([]);
-          } else {
-            setUploadedFiles(filesData || []);
-          }
-        } catch (error) {
-          console.warn('Files fetch failed:', error);
-          setUploadedFiles([]);
-        }
+        // REMOVED: Legacy file upload functionality
+        // Files are no longer uploaded in frictionless onboarding
 
         // Check for extracted biomarkers and SNPs with error handling
         try {
@@ -1643,13 +1627,13 @@ export default function DashboardPage() {
               </div>
               <h3 className="text-2xl font-bold text-dark-primary mb-4">No Lab Results Yet</h3>
               <p className="text-dark-secondary mb-8 max-w-md mx-auto leading-relaxed">
-                Upload your lab reports to unlock personalized biomarker analysis and health insights
+                Complete your health assessment to unlock personalized biomarker analysis and health insights
               </p>
               <Button 
                 onClick={() => router.push('/onboarding')} 
                 className="bg-gradient-to-r from-dark-accent to-blue-500 hover:from-dark-accent/80 hover:to-blue-500/80 text-white px-8 py-4 text-lg font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
               >
-                Upload Lab Results
+                Complete Assessment
               </Button>
             </div>
           </motion.div>
@@ -1858,13 +1842,13 @@ export default function DashboardPage() {
               </div>
               <h3 className="text-2xl font-bold text-dark-primary mb-4">No Genetic Data Yet</h3>
               <p className="text-dark-secondary mb-8 max-w-md mx-auto leading-relaxed">
-                Upload your genetic test results (23andMe, AncestryDNA, etc.) to unlock personalized genetic insights
+                Complete your genetic assessment to unlock personalized genetic insights and recommendations
               </p>
               <Button 
                 onClick={() => router.push('/onboarding')} 
                 className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-500/80 hover:to-pink-500/80 text-white px-8 py-4 text-lg font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
               >
-                Upload Genetic Data
+                Complete Assessment
               </Button>
             </div>
           </motion.div>

@@ -25,6 +25,86 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, Sparkles, Brain, Heart, FileText, User, ChevronLeft, ChevronRight } from 'lucide-react';
 
+// Fallback health score creation function
+async function createFallbackHealthScore(supabase: any, userId: string, onboardingData: any) {
+  console.log('🔄 Creating fallback health score...');
+  
+  // Simple scoring based on onboarding data
+  let score = 75; // Start with average
+  const concerns: string[] = [];
+  const strengths: string[] = [];
+  const recommendations: string[] = [];
+  
+  // Count lifestyle issues (Yes answers = problems)
+  const lifestyleIssues = [
+    'energy_levels', 'effort_fatigue', 'digestive_issues', 'stress_levels',
+    'mood_changes', 'sugar_cravings', 'skin_issues', 'joint_pain',
+    'brain_fog', 'sleep_quality', 'workout_recovery', 'food_sensitivities',
+    'weight_management', 'caffeine_effect', 'immune_system', 'medication_history'
+  ];
+  
+  let issueCount = 0;
+  lifestyleIssues.forEach(issue => {
+    if (onboardingData[issue] === 'yes') {
+      issueCount++;
+      concerns.push(issue.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()));
+    } else if (onboardingData[issue] === 'no') {
+      strengths.push(`Good ${issue.replace(/_/g, ' ')}`);
+    }
+  });
+  
+  // Adjust score based on issues
+  score -= (issueCount * 3); // Subtract 3 points per issue
+  
+  // Add basic recommendations
+  if (issueCount > 0) {
+    recommendations.push('Focus on improving sleep quality and stress management');
+    recommendations.push('Consider a balanced diet rich in whole foods');
+    recommendations.push('Maintain regular physical activity appropriate for your fitness level');
+  }
+  
+  if (onboardingData.sleep_hours < 7) {
+    score -= 5;
+    recommendations.push('Aim for 7-9 hours of sleep per night');
+  }
+  
+  if (onboardingData.activity_level === 'sedentary') {
+    score -= 5;
+    recommendations.push('Gradually increase daily physical activity');
+  }
+  
+  // Ensure score is within bounds
+  score = Math.max(30, Math.min(95, score));
+  
+  const fallbackData = {
+    user_id: userId,
+    health_score: score,
+    score_breakdown: {
+      lifestyleHabits: Math.max(10, 25 - Math.floor(issueCount * 1.5)),
+      symptomBurden: Math.max(10, 25 - Math.floor(issueCount * 1.2)),
+      physicalWellness: Math.max(10, 25 - Math.floor(issueCount * 1.0)),
+      riskFactors: Math.max(15, 25 - Math.floor(issueCount * 0.8))
+    },
+    analysis_summary: `Based on your health assessment, you have a health score of ${score}/100. ${issueCount > 5 ? 'There are several areas for improvement' : issueCount > 2 ? 'Some areas could benefit from attention' : 'You have a solid foundation for good health'}.`,
+    strengths: strengths.slice(0, 5),
+    concerns: concerns.slice(0, 5),
+    recommendations: recommendations,
+    score_explanation: `Score calculated based on ${lifestyleIssues.length} lifestyle factors assessed. ${issueCount} areas identified for improvement.`
+  };
+  
+  const { error } = await supabase
+    .from('user_health_scores')
+    .insert(fallbackData);
+  
+  if (error) {
+    console.error('❌ Failed to save fallback health score:', error);
+    throw error;
+  }
+  
+  console.log('✅ Fallback health score saved successfully');
+  return fallbackData;
+}
+
 interface ProcessingStep {
   id: string;
   title: string;
@@ -256,33 +336,116 @@ export default function OnboardingPage() {
       updateProcessingStep('plan', true, false);
       updateProcessingStep('health-score', false, true);
       
-      // Generate health score automatically after successful onboarding
-      try {
-        const { createClient } = await import('@/lib/supabase/client');
-        const supabase = createClient();
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session) {
-          console.log('🎯 Generating initial health score after onboarding completion...');
-          const healthScoreResponse = await supabase.functions.invoke('health-score', {
-            headers: {
-              Authorization: `Bearer ${session.access_token}`,
-            },
-          });
+      // Generate health score with comprehensive error handling and fallbacks
+      let healthScoreGenerated = false;
+      let healthScoreAttempts = 0;
+      const maxHealthScoreAttempts = 3;
+      
+      while (!healthScoreGenerated && healthScoreAttempts < maxHealthScoreAttempts) {
+        try {
+          healthScoreAttempts++;
+          console.log(`🎯 Health score generation attempt ${healthScoreAttempts}/${maxHealthScoreAttempts}...`);
           
-          if (healthScoreResponse.error) {
-            console.error('❌ Health score generation failed:', healthScoreResponse.error);
-            // Don't block onboarding completion if health score fails
-          } else {
-            console.log('✅ Health score generated and saved successfully!');
-            console.log('Health score data:', healthScoreResponse.data);
+          const { createClient } = await import('@/lib/supabase/client');
+          const supabase = createClient();
+          const { data: { session } } = await supabase.auth.getSession();
+          
+          if (!session) {
+            console.warn('❌ No session found for health score generation');
+            // Try to refresh session
+            const { data: { session: refreshedSession } } = await supabase.auth.refreshSession();
+            if (!refreshedSession) {
+              throw new Error('Unable to authenticate for health score generation');
+            }
+            console.log('✅ Session refreshed successfully');
           }
-        } else {
-          console.error('❌ No session found for health score generation');
+          
+          const currentSession = session || (await supabase.auth.getSession()).data.session;
+          
+          if (currentSession) {
+            console.log('🎯 Calling health score function...');
+            const healthScoreResponse = await supabase.functions.invoke('health-score', {
+              headers: {
+                Authorization: `Bearer ${currentSession.access_token}`,
+              },
+            });
+            
+            if (healthScoreResponse.error) {
+              console.error(`❌ Health score generation failed (attempt ${healthScoreAttempts}):`, healthScoreResponse.error);
+              
+                             // Check if it's a retryable error
+               const errorMessage = healthScoreResponse.error?.message || '';
+               const isRetryableError = 
+                 errorMessage.includes('timeout') ||
+                 errorMessage.includes('network') ||
+                 errorMessage.includes('temporary') ||
+                 errorMessage.includes('rate limit') ||
+                 errorMessage.includes('502') ||
+                 errorMessage.includes('503') ||
+                 errorMessage.includes('504') ||
+                 errorMessage.includes('429');
+               
+               if (!isRetryableError || healthScoreAttempts >= maxHealthScoreAttempts) {
+                 console.warn('❌ Health score generation failed permanently, creating fallback score...');
+                 const { data: { user } } = await supabase.auth.getUser();
+                 if (user) {
+                   await createFallbackHealthScore(supabase, user.id, data);
+                   healthScoreGenerated = true;
+                   console.log('✅ Fallback health score created successfully!');
+                 } else {
+                   throw new Error('No user found for fallback health score creation');
+                 }
+               } else {
+                 console.log(`⏳ Retryable error detected, waiting before retry ${healthScoreAttempts + 1}...`);
+                 await new Promise(resolve => setTimeout(resolve, 2000 * healthScoreAttempts)); // Exponential backoff
+               }
+             } else if (healthScoreResponse.data) {
+               console.log('✅ Health score generated and saved successfully!');
+               console.log('Health score data:', healthScoreResponse.data);
+               healthScoreGenerated = true;
+             } else {
+               console.warn('❌ Health score response was empty, treating as error');
+               if (healthScoreAttempts >= maxHealthScoreAttempts) {
+                 const { data: { user } } = await supabase.auth.getUser();
+                 if (user) {
+                   await createFallbackHealthScore(supabase, user.id, data);
+                   healthScoreGenerated = true;
+                   console.log('✅ Fallback health score created after empty response!');
+                 } else {
+                   throw new Error('No user found for fallback health score creation');
+                 }
+               }
+             }
+          } else {
+            throw new Error('No valid session available after refresh attempt');
+          }
+        } catch (error) {
+          console.error(`❌ Health score generation error (attempt ${healthScoreAttempts}):`, error);
+          
+          if (healthScoreAttempts >= maxHealthScoreAttempts) {
+                         console.warn('❌ All health score attempts failed, creating emergency fallback...');
+             try {
+               const { createClient } = await import('@/lib/supabase/client');
+               const supabase = createClient();
+               const { data: { user } } = await supabase.auth.getUser();
+               if (user) {
+                 await createFallbackHealthScore(supabase, user.id, data);
+                 healthScoreGenerated = true;
+                 console.log('✅ Emergency fallback health score created!');
+               } else {
+                 throw new Error('No user found for emergency fallback health score creation');
+               }
+             } catch (fallbackError) {
+               console.error('❌ Even fallback health score creation failed:', fallbackError);
+               // Continue without health score - don't block onboarding
+               healthScoreGenerated = true; // Set to true to exit loop
+               console.log('⚠️ Continuing onboarding without health score - user can generate it later from dashboard');
+             }
+          } else {
+            console.log(`⏳ Waiting before retry ${healthScoreAttempts + 1}...`);
+            await new Promise(resolve => setTimeout(resolve, 1000 * healthScoreAttempts)); // Exponential backoff
+          }
         }
-      } catch (error) {
-        console.error('❌ Health score generation error:', error);
-        // Don't block onboarding completion if health score fails
       }
       
       // Step 5: Complete

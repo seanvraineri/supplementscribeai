@@ -45,6 +45,7 @@ export default function HealthScoreCard({ onViewDetails }: HealthScoreCardProps)
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
 
   const loadExistingHealthScore = async () => {
     setIsLoading(true);
@@ -67,7 +68,7 @@ export default function HealthScoreCard({ onViewDetails }: HealthScoreCardProps)
         .eq('user_id', session.user.id)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (existingScore && !dbError) {
         console.log('✅ Health score loaded from database');
@@ -94,8 +95,46 @@ export default function HealthScoreCard({ onViewDetails }: HealthScoreCardProps)
     }
   };
 
-  // NO MANUAL CALCULATION - HEALTH SCORE IS PURELY STATIC
-  // Only generated during onboarding, then stays forever
+  const regenerateHealthScore = async () => {
+    setIsRegenerating(true);
+    setError(null);
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        setError('Please log in to regenerate your health score');
+        return;
+      }
+
+      console.log('🔄 Regenerating health score...');
+
+      // Call the health-score edge function
+      const healthScoreResponse = await supabase.functions.invoke('health-score', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (healthScoreResponse.error) {
+        console.error('❌ Health score regeneration failed:', healthScoreResponse.error);
+        setError('Failed to regenerate health score. Please try again later.');
+      } else if (healthScoreResponse.data) {
+        console.log('✅ Health score regenerated successfully!');
+        
+        // Wait for database commit then reload (simple timing fix)
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
+        await loadExistingHealthScore();
+      } else {
+        setError('Health score regeneration returned empty response');
+      }
+    } catch (err: any) {
+      console.error('Health score regeneration error:', err);
+      setError(err.message || 'Failed to regenerate health score');
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
 
   useEffect(() => {
     loadExistingHealthScore();
@@ -213,10 +252,27 @@ export default function HealthScoreCard({ onViewDetails }: HealthScoreCardProps)
           <div className="text-center py-8">
             <Sparkles className="h-12 w-12 text-dark-accent mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-dark-primary mb-2">No Health Score Available</h3>
-            <p className="text-dark-secondary mb-2">Your health score is generated automatically when you complete the onboarding process.</p>
-            <p className="text-dark-secondary text-sm">
-              This appears to be an older account. New users get their health score automatically after onboarding.
+            <p className="text-dark-secondary mb-4">Your health score is generated automatically when you complete the onboarding process.</p>
+            <p className="text-dark-secondary text-sm mb-6">
+              This appears to be an older account or the health score generation may have failed during onboarding.
             </p>
+            <Button 
+              onClick={regenerateHealthScore} 
+              disabled={isRegenerating}
+              className="bg-dark-accent hover:bg-dark-accent/80 text-white"
+            >
+              {isRegenerating ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Generate Health Score
+                </>
+              )}
+            </Button>
           </div>
         </CardContent>
       </Card>

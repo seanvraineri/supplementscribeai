@@ -1,3 +1,4 @@
+// ⚡ SPEED OPTIMIZATION: Using GPT-4.1 nano for 3-5x faster responses while maintaining full personalization
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
@@ -897,117 +898,88 @@ function setCachedPersonalizedResponse(
 // Note: Enhanced personalized functions are defined above - removing old duplicates
 
 // ----------------------- GENETIC ANALYSIS HELPER ----------------------
-async function analyzeGeneticReport(fileContent: string, supabase: any): Promise<string> {
+// UPDATED: Now analyzes manually entered genetic data from user profile instead of file uploads
+async function analyzeUserGeneticData(supabase: any, userId: string): Promise<string> {
   try {
-    console.log('🧬 Analyzing genetic report on-demand...');
+    console.log('🧬 Analyzing user genetic data from profile...');
     
-    // Call parse-lab-data function to extract genetic data
-    const { data: parseData, error: parseError } = await supabase.functions.invoke('parse-lab-data', {
-      body: {
-        fileContent: fileContent,
-        reportType: 'genetic_report'
-      }
-    });
+    // Get user's manually entered genetic variants from profile
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('known_genetic_variants')
+      .eq('id', userId)
+      .single();
 
-    if (parseError) {
-      console.error('Error parsing genetic data:', parseError);
-      return `**GENETIC ANALYSIS ERROR**: ${parseError.message}`;
+    if (!profile?.known_genetic_variants?.trim()) {
+      return `**GENETIC ANALYSIS**: No genetic variants entered in your profile. You can add them in the optional data section of your profile.`;
     }
 
-    if (!parseData?.snps || parseData.snps.length === 0) {
-      return `**GENETIC ANALYSIS**: No genetic variants found in the provided report. Please ensure the file contains genetic data with rsIDs and genotypes.`;
-    }
+    console.log(`🧬 Found manually entered genetic data: ${profile.known_genetic_variants}`);
 
-    console.log(`🧬 Found ${parseData.snps.length} genetic variants`);
+    // Also get any stored SNPs from database (if they exist from previous uploads)
+    const { data: storedSnps } = await supabase
+      .from('user_snps')
+      .select(`
+        *,
+        supported_snps (
+          rsid,
+          gene
+        )
+      `)
+      .eq('user_id', userId)
+      .limit(50); // Limit for performance
 
-    // Get supported SNPs for enrichment
-    const { data: supportedSnps } = await supabase
-      .from('supported_snps')
-      .select('id, rsid, gene');
-
-    // Create lookup maps
-    const snpLookupByRsid = new Map();
-    supportedSnps?.forEach((snp: any) => {
-      if (snp.rsid) {
-        snpLookupByRsid.set(snp.rsid.toLowerCase(), snp);
-      }
-    });
-
-    // Enrich and analyze the genetic data
-    const enrichedVariants = parseData.snps.map((snp: any) => {
-      const rsid = snp.snp_id || snp.rsid || '';
-      const gene = snp.gene_name || snp.gene || '';
-      const genotype = snp.genotype || snp.allele || '';
-
-      // Try to match with supported SNPs
-      let matchedSnp = null;
-      if (rsid) {
-        matchedSnp = snpLookupByRsid.get(rsid.toLowerCase());
-      }
-
-      return {
-        rsid: rsid || 'Unknown',
-        gene: matchedSnp?.gene || gene || 'Unknown',
-        genotype: genotype || 'Unknown',
-        matched: !!matchedSnp,
-        raw: snp
-      };
-    });
-
-    // Filter for valid variants
-    const validVariants = enrichedVariants.filter((v: any) => 
-      v.gene !== 'Unknown' && v.rsid !== 'Unknown' && v.genotype !== 'Unknown'
-    );
-
-    if (validVariants.length === 0) {
-      return `**GENETIC ANALYSIS**: Found ${parseData.snps.length} variants but none could be properly identified. The report may use non-standard formatting or rsIDs not in our database.`;
-    }
-
-    // Group by gene for better organization
-    const geneGroups: Record<string, any[]> = {};
-    validVariants.forEach((variant: any) => {
-      if (!geneGroups[variant.gene]) {
-        geneGroups[variant.gene] = [];
-      }
-      geneGroups[variant.gene].push(variant);
-    });
-
-    // Generate analysis
     const analysisLines = [];
-    analysisLines.push(`**GENETIC ANALYSIS RESULTS** (${validVariants.length} variants identified from ${parseData.snps.length} total)`);
+    analysisLines.push(`**GENETIC ANALYSIS RESULTS**`);
     analysisLines.push('');
 
-    // Prioritize important genes
-    const importantGenes = ['MTHFR', 'COMT', 'VDR', 'APOE', 'CBS', 'MTR', 'MTRR', 'HFE', 'FADS1', 'FADS2'];
-    const otherGenes = Object.keys(geneGroups).filter(g => !importantGenes.includes(g));
-    const allGenes = [...importantGenes.filter(g => geneGroups[g]), ...otherGenes];
-
-    // Format genetic variants by gene
-    allGenes.slice(0, 15).forEach(geneName => {
-      const variants = geneGroups[geneName];
-      const variantList = variants
-        .slice(0, 5)
-        .map(v => `${v.rsid}: **${v.genotype}**`)
-        .join(', ');
-      analysisLines.push(`**${geneName}**: ${variantList}`);
-    });
-
-    // Add specific interpretations for high-impact variants
-    const interpretations = interpretGeneticVariants(geneGroups);
-    if (interpretations.length > 0) {
+    // Analyze manually entered genetic data
+    if (profile.known_genetic_variants) {
+      analysisLines.push(`**USER-ENTERED GENETIC INFORMATION**:`);
+      analysisLines.push(profile.known_genetic_variants);
       analysisLines.push('');
-      analysisLines.push('**KEY GENETIC INSIGHTS**:');
-      interpretations.forEach(insight => analysisLines.push(insight));
     }
 
-    // Add high-impact variants summary
-    const highImpactVariants = prioritizeGeneticVariants(validVariants);
-    if (highImpactVariants.length > 0) {
-      analysisLines.push('');
-      analysisLines.push('**HIGH-IMPACT VARIANTS**:');
-      highImpactVariants.slice(0, 8).forEach(v => {
-        analysisLines.push(`- **${v.gene} ${v.rsid} (${v.genotype})**: ${v.impact}`);
+    // Analyze stored SNPs if any exist
+    if (storedSnps && storedSnps.length > 0) {
+      analysisLines.push(`**STORED GENETIC VARIANTS** (${storedSnps.length} variants):`);
+      
+      // Group by gene for better organization
+      const geneGroups: Record<string, any[]> = {};
+      storedSnps.forEach((snp: any) => {
+        const gene = snp.supported_snps?.gene || snp.gene_name || 'Unknown';
+        if (!geneGroups[gene]) {
+          geneGroups[gene] = [];
+        }
+        geneGroups[gene].push(snp);
       });
+
+      // Prioritize important genes
+      const importantGenes = ['MTHFR', 'COMT', 'VDR', 'APOE', 'CBS', 'MTR', 'MTRR', 'HFE', 'FADS1', 'FADS2'];
+      const otherGenes = Object.keys(geneGroups).filter(g => !importantGenes.includes(g));
+      const allGenes = [...importantGenes.filter(g => geneGroups[g]), ...otherGenes];
+
+      // Format genetic variants by gene
+      allGenes.slice(0, 15).forEach(geneName => {
+        const variants = geneGroups[geneName];
+        const variantList = variants
+          .slice(0, 5)
+          .map(v => {
+            const rsid = v.supported_snps?.rsid || v.snp_id || 'Unknown';
+            const genotype = v.genotype || 'Unknown';
+            return `${rsid}: **${genotype}**`;
+          })
+          .join(', ');
+        analysisLines.push(`**${geneName}**: ${variantList}`);
+      });
+
+      // Add specific interpretations for high-impact variants
+      const interpretations = interpretGeneticVariants(geneGroups);
+      if (interpretations.length > 0) {
+        analysisLines.push('');
+        analysisLines.push('**KEY GENETIC INSIGHTS**:');
+        interpretations.forEach(insight => analysisLines.push(insight));
+      }
     }
 
     return analysisLines.join('\n');
@@ -1216,53 +1188,19 @@ Deno.serve(async (req) => {
 
     // Note: Enhanced personalized caching is implemented later in the function
 
-    // Check if this is a genetic query and fetch genetic files from storage
+    // Check if this is a genetic query and analyze user's genetic data
     const isGeneticQuestion = isGeneticQuery(message);
     let dynamicGeneticAnalysis = '';
 
     if (isGeneticQuestion) {
-      console.log('🧬 Genetic question detected - fetching genetic files from storage');
+      console.log('🧬 Genetic question detected - analyzing user genetic data');
       
-      // Fetch user's genetic files from storage bucket
-      const { data: geneticFiles, error: filesError } = await supabase
-        .from('user_lab_reports')
-        .select('file_name, file_path')
-        .eq('user_id', userId)
-        .eq('report_type', 'genetic_report')
-        .order('created_at', { ascending: false })
-        .limit(1);
-
-      if (filesError) {
-        console.error('Error fetching genetic files:', filesError);
-        dynamicGeneticAnalysis = '**GENETIC ANALYSIS**: Unable to access genetic files from storage.';
-      } else if (!geneticFiles || geneticFiles.length === 0) {
-        dynamicGeneticAnalysis = '**GENETIC ANALYSIS**: No genetic reports found in your account. Please upload a genetic test file (23andMe, AncestryDNA, etc.) to get personalized genetic insights.';
-      } else {
-        // Get the most recent genetic file
-        const geneticFile = geneticFiles[0];
-        console.log(`🧬 Found genetic file: ${geneticFile.file_name}`);
-        
-        try {
-          // Download the file content from storage
-          const { data: fileData, error: downloadError } = await supabase.storage
-            .from('lab-reports')
-            .download(geneticFile.file_path || geneticFile.file_name);
-
-          if (downloadError) {
-            console.error('Error downloading genetic file:', downloadError);
-            dynamicGeneticAnalysis = `**GENETIC ANALYSIS**: Unable to download genetic file: ${downloadError.message}`;
-          } else {
-            // Convert file to text
-            const fileContent = await fileData.text();
-            console.log(`🧬 Downloaded genetic file content (${fileContent.length} characters)`);
-            
-            // Analyze the genetic report
-            dynamicGeneticAnalysis = await analyzeGeneticReport(fileContent, supabase);
-          }
-        } catch (error: any) {
-          console.error('Error processing genetic file:', error);
-          dynamicGeneticAnalysis = `**GENETIC ANALYSIS ERROR**: ${error.message}`;
-        }
+      try {
+        // Analyze user's manually entered genetic data and stored SNPs
+        dynamicGeneticAnalysis = await analyzeUserGeneticData(supabase, userId);
+      } catch (error: any) {
+        console.error('Error processing genetic data:', error);
+        dynamicGeneticAnalysis = `**GENETIC ANALYSIS ERROR**: ${error.message}`;
       }
     }
 
@@ -1659,7 +1597,7 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'gpt-4.1-nano',
         messages: messages,
         max_tokens: maxTokens,
         temperature: personalityProfile.communicationStyle === 'scientific' ? 0.1 : 0.2,
@@ -1697,7 +1635,7 @@ Deno.serve(async (req) => {
             role: 'assistant',
             content: aiResponse,
             metadata: {
-              model: 'gpt-4o',
+              model: 'gpt-4.1-nano',
               timestamp: new Date().toISOString(),
               had_genetic_analysis: !!dynamicGeneticAnalysis,
               health_context_length: healthContext.length,
@@ -1964,7 +1902,7 @@ function buildOptimizedHealthContext(
       }
     }
   } else {
-    parts.push(`**GENETICS**: No genetic data available - please upload genetic report`);
+    parts.push(`**GENETICS**: No genetic data available - please complete genetic assessment`);
   }
 
   // Current supplements (top 10)

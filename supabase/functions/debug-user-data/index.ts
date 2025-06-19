@@ -219,7 +219,7 @@ Deno.serve(async (req) => {
         steps: [
           'Check supported_snps table has rsid and gene data',
           'Verify SNP ID formats in user uploads',
-          'Review parse-lab-data function SNP extraction',
+          'REMOVED: parse-lab-data function no longer exists',
           'Check user_snps table schema has snp_id and gene_name columns'
         ]
       });
