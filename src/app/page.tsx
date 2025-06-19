@@ -345,69 +345,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* For Everyone Section */}
-      <section className="py-24 bg-dark-panel">
-        <div className="container mx-auto px-6 max-w-6xl">
-          <motion.div 
-            className="text-center mb-12"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-          >
-            <h2 className="text-3xl font-bold mb-4 text-dark-primary">For Everyone</h2>
-            <p className="text-dark-secondary max-w-2xl mx-auto">
-              How everyday people benefit from personalized nutrition without being health experts
-            </p>
-          </motion.div>
-          
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                title: "How It Works",
-                description: "Understanding the science behind personalized nutrition and why your biology matters",
-                href: "/how-it-works",
-                icon: <Dna className="w-8 h-8 text-dark-accent" />
-              },
-              {
-                title: "For Everyone",
-                description: "How everyday people benefit from personalized nutrition without being health experts",
-                href: "/for-everyone", 
-                icon: <HeartHandshake className="w-8 h-8 text-dark-accent" />
-              },
-              {
-                title: "The Science",
-                description: "Research evidence and genetic variations that influence your nutritional needs",
-                href: "/science",
-                icon: <Microscope className="w-8 h-8 text-dark-accent" />
-              }
-            ].map((item, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                viewport={{ once: true }}
-              >
-                <Link href={item.href}>
-                  <div className="group bg-dark-panel border border-dark-border rounded-2xl p-8 text-center hover:border-dark-accent transition-all duration-300 cursor-pointer h-full">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-dark-accent/10 rounded-2xl mb-6">
-                      {item.icon}
-                    </div>
-                    <h3 className="text-xl font-bold mb-4 text-dark-primary group-hover:text-dark-accent transition-colors">
-                      {item.title}
-                    </h3>
-                    <p className="text-dark-secondary leading-relaxed">
-                      {item.description}
-                    </p>
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Precision Panel Section */}
       <section className="py-32">
         <div className="container mx-auto px-4">
