@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { BiomarkerData, SNPData } from '@/lib/types';
 
 const supabase = createClient();
 
@@ -10,7 +11,7 @@ interface AnalysisData {
     currentValue?: string;
     referenceRange?: string;
     status?: string;
-    statusColor?: string;
+    statusColor?: 'green' | 'yellow' | 'red' | 'blue';
     interpretation?: string;
     recommendations?: string[];
     symptoms?: string[];
@@ -18,7 +19,7 @@ interface AnalysisData {
     variantEffect?: string;
     functionalImpact?: string;
     riskLevel?: string;
-    riskColor?: string;
+    riskColor?: 'green' | 'orange' | 'red' | 'blue';
     // Enhanced analysis properties
     whatItDoes?: string;
     inRangeStatus?: string;
@@ -30,8 +31,8 @@ interface AnalysisData {
 export function useComprehensiveAnalysis(biomarkers: any[], snps: any[]) {
   const [biomarkerAnalysis, setBiomarkerAnalysis] = useState<AnalysisData>({});
   const [snpAnalysis, setSnpAnalysis] = useState<AnalysisData>({});
-  const [loading, setLoading] = useState(false);
-  const [computing, setComputing] = useState(false);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [computing, setComputing] = useState<boolean>(false);
 
   useEffect(() => {
     if (biomarkers.length > 0 || snps.length > 0) {
@@ -39,7 +40,7 @@ export function useComprehensiveAnalysis(biomarkers: any[], snps: any[]) {
     }
   }, [biomarkers, snps]);
 
-  const loadAnalysis = async () => {
+  const loadAnalysis = async (): Promise<void> => {
     setLoading(true);
     
     try {
@@ -72,8 +73,8 @@ export function useComprehensiveAnalysis(biomarkers: any[], snps: any[]) {
 
       setComputing(false);
 
-      // Process the response
-      if (data?.biomarkerAnalysis) {
+      // Process the response - ✅ Keep any here for flexible API response
+      if (data?.biomarkerAnalysis && Array.isArray(data.biomarkerAnalysis)) {
         const biomarkerData: AnalysisData = {};
         data.biomarkerAnalysis.forEach((analysis: any) => {
           // Extract marker name from the analysis or use a key
@@ -83,7 +84,7 @@ export function useComprehensiveAnalysis(biomarkers: any[], snps: any[]) {
         setBiomarkerAnalysis(biomarkerData);
       }
 
-      if (data?.snpAnalysis) {
+      if (data?.snpAnalysis && Array.isArray(data.snpAnalysis)) {
         const snpData: AnalysisData = {};
         data.snpAnalysis.forEach((analysis: any) => {
           // Extract SNP identifier from the analysis
@@ -100,7 +101,7 @@ export function useComprehensiveAnalysis(biomarkers: any[], snps: any[]) {
     }
   };
 
-  const triggerRecomputation = async () => {
+  const triggerRecomputation = async (): Promise<void> => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;

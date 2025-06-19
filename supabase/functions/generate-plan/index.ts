@@ -273,6 +273,21 @@ Deno.serve(async (req) => {
 
     console.log('Successfully stored supplement plan');
 
+    // 🔥 ORCHESTRATION: Notify AI functions of updated health profile
+    try {
+      console.log('💊 Plan generated successfully. Refreshing AI ecosystem context...');
+      
+      // Note: AI functions (chat, product checker, study buddy) will automatically
+      // fetch fresh data on next use - no explicit refresh needed since they
+      // query the database directly for current user data
+      
+      console.log('✅ AI ecosystem context ready for fresh data');
+      
+    } catch (contextError) {
+      console.error('⚠️ AI context refresh warning (not failing plan):', contextError);
+      // Don't fail plan generation if context refresh fails
+    }
+
     return new Response(JSON.stringify({ 
       success: true, 
       plan: planDetails,
@@ -427,22 +442,85 @@ PERSONALIZATION TIER: ${tier}
     prompt += `\n⚠️ CRITICAL: This is their MAIN concern. Your supplement plan MUST address this above all else.\n`;
   }
 
-  // Health goals and symptoms
+  // Health goals (including custom goals)
   if (profile.health_goals && profile.health_goals.length > 0) {
-    prompt += `\n🎯 Health Goals: ${profile.health_goals.join(', ')}\n`;
+    prompt += `\n🎯 Health Goals:\n`;
+    profile.health_goals.forEach((goal: string) => {
+      prompt += `• ${goal}\n`;
+    });
+  }
+  
+  // Custom health goal (separate field)
+  if (profile.custom_health_goal && profile.custom_health_goal.trim()) {
+    prompt += `🎯 Custom Health Goal: "${profile.custom_health_goal}"\n`;
   }
 
-  // Key symptoms
-  const symptoms = [];
-  if (profile.brain_fog && profile.brain_fog !== 'none') symptoms.push(`Brain fog: ${profile.brain_fog}`);
-  if (profile.sleep_quality && profile.sleep_quality !== 'excellent') symptoms.push(`Sleep: ${profile.sleep_quality}`);
-  if (profile.energy_levels && profile.energy_levels !== 'high') symptoms.push(`Energy: ${profile.energy_levels}`);
-  if (profile.anxiety_level && profile.anxiety_level !== 'none') symptoms.push(`Anxiety: ${profile.anxiety_level}`);
-  if (profile.joint_pain && profile.joint_pain !== 'none') symptoms.push(`Joint pain: ${profile.joint_pain}`);
-  if (profile.bloating && profile.bloating !== 'none') symptoms.push(`Digestive: ${profile.bloating}`);
+  // 🔥 NEW: LIFESTYLE ASSESSMENT - 16 YES/NO QUESTIONS
+  prompt += `\n=== 🔍 LIFESTYLE ASSESSMENT (16 Yes/No Health Questions) ===\n`;
+  prompt += `These questions ask about health problems. "YES" means they HAVE the problem.\n\n`;
+  
+  const lifestyleProblems = [
+    { key: 'energy_levels', problem: 'Often feels tired or low energy', supplements: ['Easy Iron', 'Methyl B-Complex', 'CoQ10'] },
+    { key: 'effort_fatigue', problem: 'Physical activity feels more difficult than it should', supplements: ['CoQ10', 'Magnesium', 'Easy Iron'] },
+    { key: 'caffeine_effect', problem: 'Relies on caffeine to get through the day', supplements: ['Methyl B-Complex', 'Rhodiola', 'Magnesium'] },
+    { key: 'digestive_issues', problem: 'Experiences digestive discomfort regularly', supplements: ['Complete Probiotic', 'Digestive Enzymes', 'Zinc'] },
+    { key: 'stress_levels', problem: 'Feels stressed or anxious frequently', supplements: ['Magnesium', 'Theanine', 'Ashwagandha'] },
+    { key: 'sleep_quality', problem: 'Has trouble falling asleep or staying asleep', supplements: ['Magnesium', 'Melatonin', 'Theanine'] },
+    { key: 'mood_changes', problem: 'Experiences mood swings or irritability', supplements: ['Omega-3', 'Magnesium', 'Methyl B-Complex'] },
+    { key: 'brain_fog', problem: 'Experiences brain fog or difficulty concentrating', supplements: ['Methyl B-Complex', 'Omega-3', 'Lion\'s Mane'] },
+    { key: 'sugar_cravings', problem: 'Craves sugar or processed foods', supplements: ['Chromium', 'Berberine', 'Methyl B-Complex'] },
+    { key: 'skin_issues', problem: 'Has skin problems (acne, dryness, sensitivity)', supplements: ['Zinc', 'Vitamin E', 'Omega-3'] },
+    { key: 'joint_pain', problem: 'Experiences joint pain or stiffness', supplements: ['Turmeric', 'Omega-3', 'Vitamin D'] },
+    { key: 'immune_system', problem: 'Gets sick more often than they\'d like', supplements: ['Vitamin C', 'Vitamin D', 'Zinc'] },
+    { key: 'workout_recovery', problem: 'Takes longer to recover from workouts', supplements: ['Protein Powder', 'Magnesium', 'CoQ10'] },
+    { key: 'food_sensitivities', problem: 'Certain foods make them feel unwell', supplements: ['Digestive Enzymes', 'Complete Probiotic', 'Quercetin'] },
+    { key: 'weight_management', problem: 'Difficult to maintain healthy weight', supplements: ['Berberine', 'Chromium', 'Green Tea Extract'] },
+    { key: 'medication_history', problem: 'Has been prescribed ADHD/Anxiety meds that haven\'t worked', supplements: ['Magnesium', 'Methyl B-Complex', 'Omega-3'] }
+  ];
 
-  if (symptoms.length > 0) {
-    prompt += `\n🔍 Key Symptoms: ${symptoms.join(' | ')}\n`;
+  const activeProblems: any[] = [];
+  const noProblems: any[] = [];
+
+  lifestyleProblems.forEach(q => {
+    const response = profile[q.key];
+    if (response === 'yes') {
+      activeProblems.push(q);
+    } else if (response === 'no') {
+      noProblems.push(q);
+    }
+  });
+
+  if (activeProblems.length > 0) {
+    prompt += `🔴 ACTIVE HEALTH PROBLEMS (Answered YES - URGENT SUPPLEMENTATION NEEDED):\n`;
+    activeProblems.forEach(q => {
+      prompt += `• ${q.problem} → Target with: ${q.supplements.join(', ')}\n`;
+    });
+    prompt += `\n⚠️ CRITICAL: These ${activeProblems.length} problems are actively affecting their daily life.\n`;
+    prompt += `Your supplement plan MUST prioritize addressing these issues.\n`;
+  }
+
+  if (noProblems.length > 0) {
+    prompt += `\n✅ AREAS FUNCTIONING WELL (Answered NO - These are strengths):\n`;
+    noProblems.slice(0, 5).forEach(q => {
+      prompt += `• Does NOT have: ${q.problem}\n`;
+    });
+    if (noProblems.length > 5) {
+      prompt += `... and ${noProblems.length - 5} other areas functioning well\n`;
+    }
+  }
+
+  // Optional manual biomarker input (Step 8 - user-entered text)
+  if (profile.known_biomarkers && profile.known_biomarkers.trim()) {
+    prompt += `\n🔬 USER-ENTERED BIOMARKER CONCERNS (Step 8 - Optional):\n`;
+    prompt += `"${profile.known_biomarkers}"\n`;
+    prompt += `⚠️ IMPORTANT: Address these specific biomarker concerns they manually entered.\n`;
+  }
+
+  // Optional manual genetic variant input (Step 8 - user-entered text)
+  if (profile.known_genetic_variants && profile.known_genetic_variants.trim()) {
+    prompt += `\n🧬 USER-ENTERED GENETIC VARIANTS (Step 8 - Optional):\n`;
+    prompt += `"${profile.known_genetic_variants}"\n`;
+    prompt += `⚠️ IMPORTANT: Consider these genetic variants they manually entered.\n`;
   }
 
   // Health history
@@ -566,11 +644,11 @@ PERSONALIZATION TIER: ${tier}
 
 🎯 PRIORITIZATION HIERARCHY (MANDATORY ORDER):
 1. 🚨 PRIMARY HEALTH CONCERN - Address their stated main concern FIRST
-2. DEFICIENT BIOMARKERS (🔴) - Address critical deficiencies
-3. GENETIC VARIANTS - Support genetic predispositions  
-4. 🏥 CRITICAL MEDICAL CONDITIONS - Target serious medical conditions with priority
-5. SEVERE SYMPTOMS - Target reported health issues
-6. HEALTH GOALS - Support stated objectives
+2. 🔴 ACTIVE HEALTH PROBLEMS - Address lifestyle issues they answered "YES" to
+3. 🔬 USER-ENTERED BIOMARKERS - Address manually entered biomarker concerns
+4. 🧬 USER-ENTERED GENETICS - Consider manually entered genetic variants
+5. 🏥 CRITICAL MEDICAL CONDITIONS - Target serious medical conditions
+6. 🎯 HEALTH GOALS - Support their stated objectives
 7. FOUNDATIONAL WELLNESS - Fill remaining slots
 
 CRITICAL: The PRIMARY HEALTH CONCERN is their most important issue. At least 2-3 supplements should directly address this concern.

@@ -34,68 +34,79 @@ export async function saveOnboardingData(formData: unknown) {
       height_ft,
       height_in,
       weight_lbs,
-      primary_health_concern,
       healthGoals,
-      customHealthGoals,
+      customHealthGoal,
       allergies,
       conditions,
       medications,
       activity_level,
       sleep_hours,
       alcohol_intake,
+      // 16 Lifestyle Assessment Questions (Yes/No)
       energy_levels,
       effort_fatigue,
       caffeine_effect,
-      brain_fog,
-      anxiety_level,
-      stress_resilience,
+      digestive_issues,
+      stress_levels,
       sleep_quality,
-      sleep_aids,
-      bloating,
-      anemia_history,
-      digestion_speed,
-      low_nutrients,
-      bruising_bleeding,
-      belly_fat,
+      mood_changes,
+      brain_fog,
+      sugar_cravings,
+      skin_issues,
       joint_pain,
+      immune_system,
+      workout_recovery,
+      food_sensitivities,
+      weight_management,
+      medication_history, // ADHD/Anxiety meds question
+      primary_health_concern,
+      known_biomarkers,
+      known_genetic_variants,
     } = result.data;
 
     const height_total_inches = (height_ft * 12) + height_in;
-    const combinedHealthGoals = [
-      ...(healthGoals || []),
-      ...(customHealthGoals?.map(g => g.value).filter(Boolean) || [])
-    ];
     
-    // Upsert Profile Data
+    // Combine health goals (excluding 'custom' placeholder) and add custom goal if provided
+    const combinedHealthGoals = healthGoals.filter(goal => goal !== 'custom');
+    if (customHealthGoal && customHealthGoal.trim()) {
+      combinedHealthGoals.push(customHealthGoal.trim());
+    }
+    
+    // Upsert Profile Data with new fields
     const { error: profileError } = await supabase
       .from('user_profiles')
       .upsert({
-        id: user.id, // Important for upsert
+        id: user.id,
         full_name: fullName,
         age: age,
         gender: gender,
         height_total_inches: height_total_inches,
         weight_lbs: weight_lbs,
-        primary_health_concern: primary_health_concern,
         health_goals: combinedHealthGoals,
+
         activity_level,
         sleep_hours,
         alcohol_intake,
+        // 16 Lifestyle Assessment Questions (Yes/No)
         energy_levels,
         effort_fatigue,
         caffeine_effect,
-        brain_fog,
-        anxiety_level,
-        stress_resilience,
+        digestive_issues,
+        stress_levels,
         sleep_quality,
-        sleep_aids,
-        bloating,
-        anemia_history,
-        digestion_speed,
-        low_nutrients,
-        bruising_bleeding,
-        belly_fat,
+        mood_changes,
+        brain_fog,
+        sugar_cravings,
+        skin_issues,
         joint_pain,
+        immune_system,
+        workout_recovery,
+        food_sensitivities,
+        weight_management,
+        medication_history, // ADHD/Anxiety meds question
+        primary_health_concern,
+        known_biomarkers,
+        known_genetic_variants,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'id' });
 
@@ -150,13 +161,51 @@ export async function saveOnboardingData(formData: unknown) {
       }
     }
 
-    revalidatePath('/onboarding');
+    // ✅ SUCCESS: Generate supplement plan immediately
+    console.log('🎉 Frictionless onboarding complete! Generating supplement plan...');
+    
+    try {
+      // Get user session token for authenticated edge function call
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.access_token) {
+        // Call generate-plan function with user's access token
+        const planResponse = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/generate-plan`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({}),
+        });
+
+        if (!planResponse.ok) {
+          console.error('Failed to generate plan:', await planResponse.text());
+          // Don't fail the onboarding if plan generation fails
+        } else {
+          console.log('✅ Supplement plan generated successfully');
+        }
+      } else {
+        console.error('No session token available for plan generation');
+      }
+    } catch (planError) {
+      console.error('Error generating plan:', planError);
+      // Don't fail the onboarding if plan generation fails
+    }
+
+    // Revalidate and redirect to dashboard
     revalidatePath('/dashboard');
+    
+    return {
+      success: true,
+      message: 'Profile saved successfully! Your personalized supplement plan is being generated.',
+    };
 
-    return { success: true };
-
-  } catch (error) {
-    console.error('Unexpected error in saveOnboardingData:', error);
-    return { success: false, error: 'An unexpected error occurred while saving your profile.' };
+  } catch (error: any) {
+    console.error('Error in saveOnboardingData:', error);
+    return {
+      success: false,
+      error: error.message || 'An unexpected error occurred.',
+    };
   }
 } 

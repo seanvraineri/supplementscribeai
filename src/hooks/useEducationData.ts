@@ -1,10 +1,17 @@
 import { useState, useEffect } from 'react';
 import { getBiomarkerEducation, getSNPEducation } from '@/lib/analysis-helpers';
 
+// ✅ Keep flexible here - education data has various structures
 interface EducationData {
   [key: string]: any;
 }
 
+interface EducationResult {
+  index: number;
+  education: any; // ✅ Keep any - education content is dynamic
+}
+
+// ✅ Keep any for input parameters - they come from flexible sources (PDFs, uploads)
 export const useEducationData = (
   biomarkers: any[],
   snps: any[],
@@ -13,17 +20,17 @@ export const useEducationData = (
 ) => {
   const [biomarkerEducation, setBiomarkerEducation] = useState<EducationData>({});
   const [snpEducation, setSnpEducation] = useState<EducationData>({});
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
-    const loadEducationData = async () => {
+    const loadEducationData = async (): Promise<void> => {
       if (biomarkers.length === 0 && snps.length === 0) return;
       
       setLoading(true);
       
       try {
         // Load biomarker education data
-        const biomarkerPromises = biomarkers.map(async (marker, index) => {
+        const biomarkerPromises: Promise<EducationResult>[] = biomarkers.map(async (marker, index) => {
           // Ensure all values are strings and handle null/undefined
           const markerName = String(marker.marker_name || marker.name || '');
           const markerValue = String(marker.value || '');
@@ -40,7 +47,7 @@ export const useEducationData = (
         });
 
         // Load SNP education data
-        const snpPromises = snps.map(async (snp, index) => {
+        const snpPromises: Promise<EducationResult>[] = snps.map(async (snp, index) => {
           // Ensure all values are strings and handle null/undefined
           const snpId = String(snp.snp_id || snp.rsid || '');
           const geneName = String(snp.gene_name || snp.gene || '');

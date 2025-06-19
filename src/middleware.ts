@@ -76,6 +76,28 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
+  // NEW USER ONBOARDING CHECK: Only redirect to onboarding if user is brand new
+  // (has no profile at all) and trying to access dashboard
+  if (user && request.nextUrl.pathname === '/dashboard') {
+    try {
+      const { data: profile, error } = await supabase
+        .from('user_profiles')
+        .select('id')
+        .eq('id', user.id)
+        .single()
+      
+      // If no profile exists at all (brand new user), redirect to onboarding
+      // If profile exists but incomplete, let them see dashboard with banner
+      if (error && error.code === 'PGRST116') { // No rows returned
+        return NextResponse.redirect(new URL('/onboarding', request.url))
+      }
+    } catch (error) {
+      // If there's any error checking profile, let them through to dashboard
+      // The dashboard will handle showing the onboarding banner
+      console.warn('Profile check failed in middleware:', error)
+    }
+  }
+
   return response
 }
 

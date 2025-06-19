@@ -3,10 +3,11 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, CheckCircle, Info, AlertTriangle, Sparkles, Target, Check, Dna } from 'lucide-react';
+import { SNPData, SNPAnalysisData } from '@/lib/types';
 
 interface SnpCardProps {
-  snp: any;
-  analysis: any;
+  snp: SNPData;
+  analysis: SNPAnalysisData;
   gene: string;
   rsid: string;
   index: number;
@@ -14,6 +15,9 @@ interface SnpCardProps {
 
 export default function SnpCard({ snp, analysis, gene, rsid, index }: SnpCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+
+  const safeAnalysis = analysis as any;
+  const safeSnp = snp as any;
 
   return (
     <motion.div
@@ -35,18 +39,18 @@ export default function SnpCard({ snp, analysis, gene, rsid, index }: SnpCardPro
           </div>
           <div className="flex items-center space-x-3">
             <span className="px-3 py-1 bg-dark-border/50 rounded-xl text-sm font-mono text-dark-primary border border-dark-border">
-              {snp.genotype || 'N/A'}
+              {safeSnp.genotype || 'N/A'}
             </span>
             <span className={`px-4 py-2 rounded-xl text-sm font-semibold shadow-lg ${
-              analysis.riskColor === 'green'
+              safeAnalysis.riskColor === 'green'
                 ? 'bg-gradient-to-r from-emerald-500/20 to-green-500/20 text-emerald-400 border border-emerald-500/30'
-                : analysis.riskColor === 'orange'
+                : safeAnalysis.riskColor === 'orange'
                 ? 'bg-gradient-to-r from-orange-500/20 to-yellow-500/20 text-orange-400 border border-orange-500/30'
-                : analysis.riskColor === 'red'
+                : safeAnalysis.riskColor === 'red'
                 ? 'bg-gradient-to-r from-red-500/20 to-pink-500/20 text-red-400 border border-red-500/30'
                 : 'bg-gradient-to-r from-blue-500/20 to-cyan-500/20 text-blue-400 border border-blue-500/30'
             }`}>
-              {analysis.riskLevel || 'Normal'}
+              {safeAnalysis.riskLevel || 'Normal'}
             </span>
             <button
               onClick={() => setIsExpanded(!isExpanded)}
@@ -66,10 +70,10 @@ export default function SnpCard({ snp, analysis, gene, rsid, index }: SnpCardPro
             </div>
             <div className="space-y-1">
               <p className="text-dark-primary leading-relaxed">
-                {analysis.variantStatus || analysis.variantEffect || analysis.functionalImpact || 'Genetic variant analyzed successfully'}
+                {safeAnalysis.variantStatus || safeAnalysis.variantEffect || safeAnalysis.functionalImpact || 'Genetic variant analyzed successfully'}
               </p>
-              {analysis.variantEffect && analysis.functionalImpact && (
-                <p className="text-xs text-dark-secondary">Impact: {analysis.functionalImpact}</p>
+              {safeAnalysis.variantEffect && safeAnalysis.functionalImpact && (
+                <p className="text-xs text-dark-secondary">Impact: {safeAnalysis.functionalImpact}</p>
               )}
             </div>
           </div>
@@ -87,37 +91,37 @@ export default function SnpCard({ snp, analysis, gene, rsid, index }: SnpCardPro
             className="border-t border-dark-border/30"
           >
             <div className="p-6 space-y-6">
-              {analysis.whatItDoes && (
+              {safeAnalysis.whatItDoes && (
                 <div className="bg-dark-panel/40 rounded-xl p-4">
                   <div className="flex items-center space-x-2 mb-3">
                     <Info className="h-5 w-5 text-blue-400" />
                     <h4 className="text-lg font-semibold text-dark-primary">What This Gene Does</h4>
                   </div>
-                  <p className="text-dark-secondary leading-relaxed">{analysis.whatItDoes}</p>
+                  <p className="text-dark-secondary leading-relaxed">{safeAnalysis.whatItDoes}</p>
                 </div>
               )}
 
-              {analysis.variantEffect && (
+              {safeAnalysis.variantEffect && (
                 <div className="bg-purple-500/5 border border-purple-500/20 rounded-xl p-4">
                   <div className="flex items-center space-x-2 mb-3">
                     <Dna className="h-5 w-5 text-purple-400" />
                     <h4 className="text-lg font-semibold text-dark-primary">Genetic Variant Effect</h4>
                   </div>
-                  <p className="text-dark-primary leading-relaxed mb-2">{analysis.variantEffect}</p>
-                  {analysis.functionalImpact && (
-                    <p className="text-sm text-dark-secondary"><strong>Functional Impact:</strong> {analysis.functionalImpact}</p>
+                  <p className="text-dark-primary leading-relaxed mb-2">{safeAnalysis.variantEffect}</p>
+                  {safeAnalysis.functionalImpact && (
+                    <p className="text-sm text-dark-secondary"><strong>Functional Impact:</strong> {safeAnalysis.functionalImpact}</p>
                   )}
                 </div>
               )}
 
-              {analysis.recommendations && analysis.recommendations.length > 0 && (
+              {safeAnalysis.recommendations && safeAnalysis.recommendations.length > 0 && (
                 <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4">
                   <div className="flex items-center space-x-2 mb-3">
                     <Sparkles className="h-5 w-5 text-emerald-400" />
                     <h4 className="text-lg font-semibold text-dark-primary">Personalized Recommendations</h4>
                   </div>
                   <div className="space-y-3">
-                    {analysis.recommendations.map((rec: string, idx: number) => (
+                    {safeAnalysis.recommendations.map((rec: string, idx: number) => (
                       <div key={idx} className="flex items-start space-x-3">
                         <div className="p-1 bg-gradient-to-r from-emerald-500/20 to-green-500/20 rounded-lg mt-0.5">
                           <Check className="h-3 w-3 text-emerald-400" />
@@ -129,13 +133,13 @@ export default function SnpCard({ snp, analysis, gene, rsid, index }: SnpCardPro
                 </div>
               )}
 
-              {analysis.actionPlan && (
+              {safeAnalysis.actionPlan && (
                 <div className="bg-purple-500/5 border border-purple-500/20 rounded-xl p-4">
                   <div className="flex items-center space-x-2 mb-3">
                     <Target className="h-5 w-5 text-purple-400" />
                     <h4 className="text-lg font-semibold text-dark-primary">Action Plan</h4>
                   </div>
-                  <p className="text-dark-primary leading-relaxed">{analysis.actionPlan}</p>
+                  <p className="text-dark-primary leading-relaxed">{safeAnalysis.actionPlan}</p>
                 </div>
               )}
             </div>

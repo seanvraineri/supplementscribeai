@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,6 +14,7 @@ export default function SignUpPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
+  const router = useRouter()
   const supabase = createClient()
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -42,8 +44,10 @@ export default function SignUpPage() {
         setMessage(error.message)
       } else {
         setMessage('Account created successfully! Redirecting to onboarding...')
-        // Redirect to onboarding immediately
-        window.location.href = '/onboarding'
+        // Use Next.js router for proper navigation
+        setTimeout(() => {
+          router.push('/onboarding')
+        }, 1000)
       }
     } catch (error) {
       setMessage('An unexpected error occurred')

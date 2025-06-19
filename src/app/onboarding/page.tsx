@@ -7,7 +7,7 @@ import { onboardingSchema, type OnboardingData } from '@/lib/schemas';
 
 // Import new frictionless onboarding components
 import { HealthGoalsStep } from '@/components/onboarding/01-HealthGoalsStep';
-import { LifestyleAssessment } from '@/components/onboarding/02-LifestyleAssessment';
+import { LifestyleAssessment, LIFESTYLE_QUESTIONS } from '@/components/onboarding/02-LifestyleAssessment';
 import { ActivityLevelStep } from '@/components/onboarding/03-ActivityLevelStep';
 import { SleepHoursStep } from '@/components/onboarding/04-SleepHoursStep';
 import { AlcoholStep } from '@/components/onboarding/05-AlcoholStep';
@@ -15,6 +15,7 @@ import { HealthProfileStep } from '@/components/onboarding/06-HealthProfileStep'
 import { PrimaryConcernStep } from '@/components/onboarding/07-PrimaryConcernStep';
 import { OptionalDataStep } from '@/components/onboarding/08-OptionalDataStep';
 import { PersonalDetailsStep } from '@/components/onboarding/09-PersonalDetailsStep';
+import { ReviewStep } from '@/components/onboarding/10-ReviewStep';
 import { StepContainer } from '@/components/onboarding/shared/DesignSystem';
 
 import { saveOnboardingData } from './actions';
@@ -36,40 +37,44 @@ interface ProcessingStep {
 // Step titles and subtitles
 const STEP_INFO = [
   {
-    title: "What are your health goals?",
+    title: "Health Goals",
     subtitle: "Select all that apply - we'll create a personalized plan"
   },
   {
-    title: "Quick lifestyle check",
-    subtitle: "Just a few yes/no questions to understand you better"
+    title: "Lifestyle Assessment",
+    subtitle: "A few quick questions to understand you better"
   },
   {
-    title: "What's your activity level?",
+    title: "Activity Level",
     subtitle: "This helps us customize your supplement needs"
   },
   {
-    title: "How many hours do you sleep?",
-    subtitle: "On average per night"
+    title: "Sleep Habits",
+    subtitle: "On average, how many hours do you sleep per night?"
   },
   {
-    title: "How often do you drink alcohol?",
+    title: "Alcohol Consumption",
     subtitle: "This affects supplement absorption and recommendations"
   },
   {
-    title: "Health profile",
-    subtitle: "Help us ensure your supplements are safe for you"
+    title: "Health Profile",
+    subtitle: "Help us ensure your supplements are safe and effective for you"
   },
   {
-    title: "What's your primary health concern?",
+    title: "Primary Health Concern",
     subtitle: "This helps us prioritize your recommendations"
   },
   {
-    title: "Optional: Specific health data",
-    subtitle: "Only if you happen to know any of these"
+    title: "Optional Health Data",
+    subtitle: "Only if you happen to know any of these details"
   },
   {
-    title: "Almost done!",
-    subtitle: "Just a few personal details to complete your profile"
+    title: "Personal Details",
+    subtitle: "Just a few final details to complete your profile"
+  },
+  {
+    title: "Review & Submit",
+    subtitle: "One final look before we generate your plan"
   }
 ];
 
@@ -100,6 +105,14 @@ export default function OnboardingPage() {
       title: 'Personalized Plan',
       description: 'Creating your custom 6-supplement protocol',
       icon: <Sparkles className="h-5 w-5" />,
+      completed: false,
+      active: false
+    },
+    {
+      id: 'health-score',
+      title: 'Health Score',
+      description: 'Generating your AI-powered health assessment',
+      icon: <Brain className="h-5 w-5" />,
       completed: false,
       active: false
     },
@@ -140,19 +153,30 @@ export default function OnboardingPage() {
       activity_level: undefined,
       sleep_hours: '' as any,
       alcohol_intake: undefined,
+      // New 16 lifestyle questions
       energy_levels: undefined,
       effort_fatigue: undefined,
       caffeine_effect: undefined,
+      digestive_issues: undefined,
+      stress_levels: undefined,
+      sleep_quality: undefined,
+      mood_changes: undefined,
       brain_fog: undefined,
+      sugar_cravings: undefined,
+      skin_issues: undefined,
+      joint_pain: undefined,
+      immune_system: undefined,
+      workout_recovery: undefined,
+      food_sensitivities: undefined,
+      weight_management: undefined,
+      medication_history: undefined,
+      // Backwards compatibility fields
       anxiety_level: undefined,
       stress_resilience: undefined,
-      medication_history: undefined,
-      sleep_quality: undefined,
       sleep_aids: undefined,
       bloating: undefined,
       digestion_speed: undefined,
       anemia_history: undefined,
-      joint_pain: undefined,
       bruising_bleeding: undefined,
       belly_fat: undefined,
       primary_health_concern: '',
@@ -162,8 +186,8 @@ export default function OnboardingPage() {
   });
   
   const steps = [
-    { id: 1, component: HealthGoalsStep, title: 'Health Goals', fields: ['healthGoals'] },
-    { id: 2, component: () => <div>Lifestyle Assessment</div>, title: 'Lifestyle Assessment', fields: ['energy_levels', 'effort_fatigue', 'caffeine_effect', 'brain_fog', 'anxiety_level', 'stress_resilience', 'medication_history', 'sleep_quality', 'sleep_aids', 'bloating', 'digestion_speed', 'anemia_history', 'joint_pain', 'bruising_bleeding', 'belly_fat'] },
+    { id: 1, component: HealthGoalsStep, title: 'Health Goals', fields: ['healthGoals', 'customHealthGoal'] },
+    { id: 2, component: () => <div>Lifestyle Assessment</div>, title: 'Lifestyle Assessment', fields: ['energy_levels', 'effort_fatigue', 'caffeine_effect', 'digestive_issues', 'stress_levels', 'sleep_quality', 'mood_changes', 'brain_fog', 'sugar_cravings', 'skin_issues', 'joint_pain', 'immune_system', 'workout_recovery', 'food_sensitivities', 'weight_management', 'medication_history'] },
     { id: 3, component: ActivityLevelStep, title: 'Activity Level', fields: ['activity_level'] },
     { id: 4, component: SleepHoursStep, title: 'Sleep Hours', fields: ['sleep_hours'] },
     { id: 5, component: AlcoholStep, title: 'Alcohol Intake', fields: ['alcohol_intake'] },
@@ -171,6 +195,7 @@ export default function OnboardingPage() {
     { id: 7, component: PrimaryConcernStep, title: 'Primary Concern', fields: ['primary_health_concern'] },
     { id: 8, component: OptionalDataStep, title: 'Optional Data', fields: ['known_biomarkers', 'known_genetic_variants'] },
     { id: 9, component: PersonalDetailsStep, title: 'Personal Details', fields: ['fullName', 'age', 'gender', 'height_ft', 'height_in', 'weight_lbs'] },
+    { id: 10, component: ReviewStep, title: 'Review & Submit', fields: [] }
   ];
 
   const totalSteps = steps.length;
@@ -185,8 +210,9 @@ export default function OnboardingPage() {
     const currentStepConfig = steps[step - 1];
     const fieldsToValidate = currentStepConfig.fields as (keyof OnboardingData)[] | undefined;
     
-    // Skip validation for optional step
-    const isValid = (step === 8) ? true : fieldsToValidate ? await form.trigger(fieldsToValidate) : true;
+    const isValid = fieldsToValidate && fieldsToValidate.length > 0 
+      ? await form.trigger(fieldsToValidate) 
+      : true;
 
     if (isValid) {
       setStep((prev) => Math.min(prev + 1, totalSteps));
@@ -219,47 +245,73 @@ export default function OnboardingPage() {
       // Call the actual save function
       const result = await saveOnboardingData(data);
       
-      // Step 4: Complete
+      if (result?.error) {
+        console.error('Onboarding error:', result.error);
+        alert(`Error saving profile: ${result.error}`);
+        setIsSubmitting(false); // Reset on error
+        return;
+      }
+
+      // Step 4: Generate Health Score
       updateProcessingStep('plan', true, false);
+      updateProcessingStep('health-score', false, true);
+      
+      // Generate health score automatically after successful onboarding
+      try {
+        const { createClient } = await import('@/lib/supabase/client');
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session) {
+          console.log('🎯 Generating initial health score after onboarding completion...');
+          const healthScoreResponse = await supabase.functions.invoke('health-score', {
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+            },
+          });
+          
+          if (healthScoreResponse.error) {
+            console.error('❌ Health score generation failed:', healthScoreResponse.error);
+            // Don't block onboarding completion if health score fails
+          } else {
+            console.log('✅ Health score generated and saved successfully!');
+            console.log('Health score data:', healthScoreResponse.data);
+          }
+        } else {
+          console.error('❌ No session found for health score generation');
+        }
+      } catch (error) {
+        console.error('❌ Health score generation error:', error);
+        // Don't block onboarding completion if health score fails
+      }
+      
+      // Step 5: Complete
+      updateProcessingStep('health-score', true, false);
       updateProcessingStep('complete', true, false);
       
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      if (result?.error) {
-        console.error('Onboarding error:', result.error);
-        alert(`Error saving profile: ${result.error}`);
-      } else {
-        console.log('✅ Frictionless onboarding completed successfully!');
-        router.push('/dashboard');
-      }
+      console.log('✅ Frictionless onboarding completed successfully!');
+      router.push('/dashboard');
     } catch (error) {
       console.error('Error submitting onboarding:', error);
       alert('An error occurred while saving your information. Please try again.');
-    } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false); // Reset on error
     }
   };
 
-
-
-  const LoadingScreen = () => (
-    <div className="min-h-screen bg-dark-background flex items-center justify-center">
-      <div className="max-w-md w-full p-8">
-        <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold text-dark-primary mb-2">Creating Your Personalized Plan</h2>
-          <p className="text-dark-secondary">Analyzing your health data and generating recommendations...</p>
-        </div>
-        
+  const LoadingAnimation = () => (
+    <div className="max-w-md w-full p-8 mx-auto">
         <div className="space-y-4">
           {processingSteps.map((step, index) => (
             <motion.div
               key={step.id}
               className={`flex items-center gap-4 p-4 rounded-lg border transition-all ${
                 step.completed 
-                  ? 'bg-green-50 border-green-200' 
+                  ? 'bg-green-500/10 border-green-500/20' 
                   : step.active 
-                  ? 'bg-blue-50 border-blue-200' 
-                  : 'bg-dark-surface border-dark-border'
+                  ? 'bg-dark-accent/10 border-dark-accent/20' 
+                  : 'bg-dark-panel border-dark-border'
               }`}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -269,12 +321,12 @@ export default function OnboardingPage() {
                 step.completed 
                   ? 'bg-green-500 text-white' 
                   : step.active 
-                  ? 'bg-blue-500 text-white animate-pulse' 
+                  ? 'bg-dark-accent text-white animate-pulse' 
                   : 'bg-dark-border text-dark-secondary'
               }`}>
                 {step.completed ? <CheckCircle className="h-5 w-5" /> : step.icon}
               </div>
-              <div className="flex-1">
+              <div className="flex-1 text-left">
                 <h3 className="font-semibold text-dark-primary">{step.title}</h3>
                 <p className="text-sm text-dark-secondary">{step.description}</p>
               </div>
@@ -282,129 +334,136 @@ export default function OnboardingPage() {
           ))}
         </div>
       </div>
-    </div>
   );
+  
+  // For lifestyle assessment, show current question progress
+  const isLifestyleStep = step === 2;
+  const stepInfo = STEP_INFO[step - 1];
 
-  if (isSubmitting) {
-    return <LoadingScreen />;
+  let displayTitle = stepInfo.title;
+  let displaySubtitle = stepInfo.subtitle;
+
+  if (isLifestyleStep) {
+    const currentQuestion = LIFESTYLE_QUESTIONS[currentSubStep - 1];
+    if (currentQuestion) {
+      displayTitle = currentQuestion.question;
+      displaySubtitle = `Question ${currentSubStep} of 16`;
+    }
   }
-
-  const renderStep = () => {
-    const stepInfo = STEP_INFO[step - 1];
-    
-    if (!stepInfo) return null;
-    
-    const stepContent = (() => {
-      switch (step) {
-        case 1:
-          return <HealthGoalsStep />;
-        case 2:
-          return <LifestyleAssessment 
-            currentSubStep={currentSubStep} 
-            onSubStepComplete={() => {
-              if (currentSubStep < 16) {
-                setCurrentSubStep((prev: number) => prev + 1);
-              } else {
-                // Lifestyle assessment complete, move to next step
-                setCurrentSubStep(1);
-                nextStep();
-              }
-            }} 
-            totalSubSteps={16}
-          />;
-        case 3:
-          return <ActivityLevelStep />;
-        case 4:
-          return <SleepHoursStep />;
-        case 5:
-          return <AlcoholStep />;
-        case 6:
-          return <HealthProfileStep />;
-        case 7:
-          return <PrimaryConcernStep />;
-        case 8:
-          return <OptionalDataStep />;
-        case 9:
-          return <PersonalDetailsStep />;
-        default:
-          return null;
-      }
-    })();
-    
-    // For lifestyle assessment, show current question progress
-    const isLifestyleStep = step === 2;
-    const displayTitle = isLifestyleStep ? `Question ${currentSubStep} of 16` : stepInfo.title;
-    const displaySubtitle = isLifestyleStep ? "Quick yes/no - helps us personalize your plan" : stepInfo.subtitle;
-    const displayCurrentStep = isLifestyleStep ? currentSubStep : step;
-    const displayTotalSteps = isLifestyleStep ? 16 : totalSteps;
-    
-    // Navigation handlers
-    const handleBack = () => {
-      if (isLifestyleStep && currentSubStep > 1) {
-        setCurrentSubStep((prev: number) => prev - 1);
-      } else if (step > 1) {
-        prevStep();
-      }
-    };
-    
-    const handleNext = () => {
-      if (step < totalSteps) {
-        nextStep();
-      } else {
-        form.handleSubmit(onSubmit)();
-      }
-    };
-    
-    const canGoBack = step > 1 || (isLifestyleStep && currentSubStep > 1);
-    const canProceed = step < totalSteps || !isSubmitting;
-    const nextLabel = step === totalSteps ? (isSubmitting ? 'Creating Plan...' : 'Complete Setup') : 'Continue';
-    
-    return (
-      <StepContainer
-        title={displayTitle}
-        subtitle={displaySubtitle}
-        currentStep={displayCurrentStep}
-        totalSteps={displayTotalSteps}
-        onBack={canGoBack ? handleBack : undefined}
-        onNext={!isLifestyleStep ? handleNext : undefined}
-        nextLabel={nextLabel}
-        nextDisabled={!canProceed}
-        showBack={canGoBack}
-      >
-        {stepContent}
-      </StepContainer>
-    );
+  
+  const handleBack = () => {
+    if (isLifestyleStep && currentSubStep > 1) {
+      setCurrentSubStep((prev: number) => prev - 1);
+    } else if (step > 1) {
+      prevStep();
+    }
+  };
+  
+  const handleNext = () => {
+    if (isLifestyleStep) {
+       if (currentSubStep < 16) {
+          setCurrentSubStep((prev: number) => prev + 1);
+        } else {
+          setCurrentSubStep(1); // Reset for next time
+          nextStep();
+        }
+    } else if (step < totalSteps) {
+      nextStep();
+    } else {
+      form.handleSubmit(onSubmit)();
+    }
   };
 
+  const stepContent = (() => {
+    switch (step) {
+      case 1:
+        return <HealthGoalsStep onNext={handleNext} />;
+      case 2:
+        return <LifestyleAssessment 
+          currentSubStep={currentSubStep} 
+          onSubStepComplete={handleNext} 
+          totalSubSteps={16}
+        />;
+      case 3:
+        return <ActivityLevelStep onNext={handleNext} />;
+      case 4:
+        return <SleepHoursStep onNext={handleNext} />;
+      case 5:
+        return <AlcoholStep onNext={handleNext} />;
+      case 6:
+        return <HealthProfileStep />;
+      case 7:
+        return <PrimaryConcernStep />;
+      case 8:
+        return <OptionalDataStep />;
+      case 9:
+        return <PersonalDetailsStep />;
+      case 10:
+        return <ReviewStep />;
+      default:
+        return null;
+    }
+  })();
+  
+  const canGoBack = !isSubmitting && (step > 1 || (isLifestyleStep && currentSubStep > 1));
+  const isLastStep = step === totalSteps;
+
+  const getNextLabel = () => {
+    if (isLastStep) return form.formState.isSubmitting ? 'Creating Plan...' : 'Submit & Create My Plan';
+    if ([1, 6, 7, 8, 9].includes(step)) return 'Continue';
+    return 'Next';
+  }
+
   return (
-    <div className="min-h-screen bg-dark-background">
-      <div className="max-w-2xl mx-auto p-6">
-        {/* Progress Header */}
-        <div className="mb-8">
+    <div className="font-sans antialiased bg-dark-background text-dark-primary">
+      <div className="fixed top-0 left-0 right-0 p-6 z-10">
+        <div className="max-w-4xl mx-auto">
           <div className="flex justify-between items-center mb-4">
-            <h1 className="text-2xl font-bold text-dark-primary">Health Assessment</h1>
-            <span className="text-sm text-dark-secondary">
-              Step {step} of {totalSteps}
+            <h1 className="text-xl font-bold">Health Assessment</h1>
+            <span className="text-sm font-mono text-dark-secondary">
+              {!isSubmitting ? `STEP ${step.toString().padStart(2, '0')}/${totalSteps.toString().padStart(2, '0')}` : 'GENERATING PLAN'}
             </span>
           </div>
-          
-          {/* Progress Bar */}
-          <div className="w-full bg-dark-border rounded-full h-3">
-            <div 
-              className="bg-dark-accent h-3 rounded-full transition-all duration-300"
-              style={{ width: `${(step / totalSteps) * 100}%` }}
+          <div className="w-full bg-dark-panel rounded-full h-2">
+            <motion.div 
+              className="bg-dark-accent h-2 rounded-full"
+              animate={{ width: isSubmitting ? '100%' : `${(step / totalSteps) * 100}%` }}
+              transition={{ duration: 0.5, ease: "easeInOut" }}
             />
           </div>
         </div>
-
-        <FormProvider {...form}>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              {renderStep()}
-            </form>
-          </Form>
-        </FormProvider>
       </div>
+      
+      <FormProvider {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="h-screen">
+          <StepContainer
+            title={isSubmitting ? 'Creating Your Personalized Plan' : displayTitle}
+            subtitle={isSubmitting ? 'Analyzing your health data and generating recommendations...' : displaySubtitle}
+            onBack={canGoBack ? handleBack : undefined}
+            onNext={handleNext}
+            nextLabel={getNextLabel()}
+            nextDisabled={form.formState.isSubmitting}
+            isLastStep={isLastStep}
+            showNextButton={!isSubmitting && ![2, 3, 4, 5].includes(step)}
+          >
+            <AnimatePresence mode="wait">
+              {isSubmitting ? (
+                <LoadingAnimation key="loading" />
+              ) : (
+                <motion.div
+                  key={step + (isLifestyleStep ? `-${currentSubStep}`: '')}
+                  initial={{ opacity: 0, x: 50 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -50 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                >
+                  {stepContent}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </StepContainer>
+        </form>
+      </FormProvider>
     </div>
   );
 } 

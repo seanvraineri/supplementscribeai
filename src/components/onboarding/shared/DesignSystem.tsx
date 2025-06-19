@@ -1,158 +1,52 @@
 "use client";
 
-import { ReactNode } from 'react';
+import React, { ReactNode, ComponentType } from 'react';
+import { motion } from 'framer-motion';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 // Custom SVG Icons (Premium, not emoji)
+const IconWrapper = (IconComponent: ComponentType<React.SVGProps<SVGSVGElement>>) => {
+  const WrappedIcon = ({ className, ...props }: { className?: string } & React.SVGProps<SVGSVGElement>) => (
+    <IconComponent className={`w-6 h-6 ${className}`} {...props} />
+  );
+  WrappedIcon.displayName = `IconWrapper(${IconComponent.displayName || IconComponent.name || 'Component'})`;
+  return WrappedIcon;
+};
+
 export const Icons = {
-  Energy: () => (
-    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  ),
-  Brain: () => (
-    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M9.5 2A2.5 2.5 0 0 0 7 4.5v15A2.5 2.5 0 0 0 9.5 22h5a2.5 2.5 0 0 0 2.5-2.5v-15A2.5 2.5 0 0 0 14.5 2h-5z" stroke="currentColor" strokeWidth="2"/>
-      <path d="m9 9 2 2 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  ),
-  Sleep: () => (
-    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" strokeWidth="2"/>
-    </svg>
-  ),
-  Wellness: () => (
-    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7z" stroke="currentColor" strokeWidth="2"/>
-    </svg>
-  ),
-  Digestion: () => (
-    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z" stroke="currentColor" strokeWidth="2"/>
-      <path d="m9 12 2 2 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  ),
-  Athletic: () => (
-    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M6.5 12L11 7.5L16.5 13L22 7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M2 19h20" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-    </svg>
-  ),
-  Longevity: () => (
-    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" strokeWidth="2"/>
-    </svg>
-  ),
-  Weight: () => (
-    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M3 12h18m-9-9v18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  ),
-  Custom: () => (
-    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" strokeWidth="2"/>
-      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2"/>
-    </svg>
-  ),
-  // Activity Level Icons
-  Sedentary: () => (
-    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M3 20h18M7 20V10l3-3V4h4v3l3 3v10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  ),
-  LightlyActive: () => (
-    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M16 8V4l-4-2-4 2v4M8 14l4 2 4-2M12 22v-8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  ),
-  ModeratelyActive: () => (
-    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M8 2l8 4v8l-8 4-8-4V6l8-4z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  ),
-  VeryActive: () => (
-    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M12 3v12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  ),
-  ExtremelyActive: () => (
-    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M6.5 12L11 7.5L16.5 13L22 7.5M2 19h20M12 2v3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  ),
-  // Sleep Icons
-  Sleep5: () => (
-    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" strokeWidth="2"/>
-      <path d="M12 6v6l4 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  ),
-  Sleep6: () => (
-    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" strokeWidth="2"/>
-      <path d="M12 9v3l2 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  ),
-  Sleep7: () => (
-    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" strokeWidth="2"/>
-      <circle cx="12" cy="12" r="1" fill="currentColor"/>
-    </svg>
-  ),
-  Sleep8: () => (
-    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" strokeWidth="2"/>
-      <path d="M8 12h8M12 8v8" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
-    </svg>
-  ),
-  Sleep9: () => (
-    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" strokeWidth="2"/>
-      <path d="M8 8h8v8H8z" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
-    </svg>
-  ),
-  // Alcohol Icons
-  Never: () => (
-    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
-      <path d="m15 9-6 6M9 9l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  ),
-  Rarely: () => (
-    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M5 12V7a7 7 0 0 1 14 0v5M9 21h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  ),
-  Occasionally: () => (
-    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M5 12V7a7 7 0 0 1 14 0v5M3 12h18v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7z" stroke="currentColor" strokeWidth="2"/>
-    </svg>
-  ),
-  Moderately: () => (
-    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M5 12V7a7 7 0 0 1 14 0v5M3 12h18v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7zM12 15v2" stroke="currentColor" strokeWidth="2"/>
-    </svg>
-  ),
-  Regularly: () => (
-    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M5 12V7a7 7 0 0 1 14 0v5M3 12h18v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7zM8 15v2M12 15v2M16 15v2" stroke="currentColor" strokeWidth="2"/>
-    </svg>
-  ),
-  Check: () => (
-    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="m9 12 2 2 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  ),
-  Plus: () => (
-    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  ),
-  X: () => (
-    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M18 6 6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  )
+  Energy: IconWrapper((props) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M13 3L7 14h7l-1 8 6-11H9l1-8z"/></svg>
+  )),
+  Brain: IconWrapper((props) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M9.5 2A2.5 2.5 0 0112 4.5v1a2.5 2.5 0 01-2.5 2.5h-1A2.5 2.5 0 016 5.5v-1A2.5 2.5 0 018.5 2h1zM14.5 2A2.5 2.5 0 0117 4.5v1a2.5 2.5 0 01-2.5 2.5h-1A2.5 2.5 0 0111 5.5v-1A2.5 2.5 0 0113.5 2h1zM6 10a2.5 2.5 0 00-2.5 2.5v4A2.5 2.5 0 006 19h12a2.5 2.5 0 002.5-2.5v-4A2.5 2.5 0 0018 10h-1a2.5 2.5 0 01-2.5-2.5v-1A2.5 2.5 0 0012 4a2.5 2.5 0 00-2.5 2.5v1A2.5 2.5 0 017 10H6z"/></svg>
+  )),
+  Sleep: IconWrapper((props) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+  )),
+  Wellness: IconWrapper((props) => (
+     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
+  )),
+  Digestion: IconWrapper((props) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
+  )),
+  Athletic: IconWrapper((props) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+  )),
+  Longevity: IconWrapper((props) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/><path d="M12 6v6l4 2"/></svg>
+  )),
+  Weight: IconWrapper((props) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zM12 8v8m-4-4h8"/></svg>
+  )),
+  Custom: IconWrapper((props) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+  )),
+  Check: IconWrapper((props) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M20 6L9 17l-5-5"/></svg>
+  )),
+  X: IconWrapper((props) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M18 6L6 18M6 6l12 12"/></svg>
+  )),
 };
 
 // Premium Button Component
@@ -333,86 +227,76 @@ interface StepContainerProps {
   children: ReactNode;
   title: string;
   subtitle?: string;
-  currentStep: number;
-  totalSteps: number;
   onBack?: () => void;
   onNext?: () => void;
   nextLabel?: string;
   nextDisabled?: boolean;
-  showBack?: boolean;
+  isLastStep?: boolean;
+  showNextButton?: boolean;
 }
 
 export function StepContainer({ 
   children, 
   title, 
   subtitle, 
-  currentStep, 
-  totalSteps,
   onBack,
   onNext,
   nextLabel = "Continue",
   nextDisabled = false,
-  showBack = true
+  isLastStep = false,
+  showNextButton = true
 }: StepContainerProps) {
   return (
-    <div className="h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex flex-col">
-      {/* Progress Dots - More Compact */}
-      <div className="flex-shrink-0 pt-4 pb-2">
-        <ProgressDots currentStep={currentStep} totalSteps={totalSteps} />
-      </div>
+    <div className="flex flex-col min-h-screen w-full">
+      <main className="flex-1 flex items-center justify-center pt-24 pb-24 px-6">
+        <div className="w-full max-w-lg text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+          >
+            <h2 className="text-2xl font-bold text-dark-primary mb-2">{title}</h2>
+            {subtitle && <p className="text-base text-dark-secondary mb-8">{subtitle}</p>}
+          </motion.div>
+          {children}
+        </div>
+      </main>
       
-      {/* Title Section - More Compact */}
-      <div className="flex-shrink-0 text-center px-4 pb-4">
-        <h1 className="text-2xl font-bold text-gray-800 mb-1">{title}</h1>
-        {subtitle && (
-          <p className="text-base text-gray-600">{subtitle}</p>
-        )}
-      </div>
-      
-      {/* Content Area - Fixed Height with Better Spacing */}
-      <div className="flex-1 px-4 flex items-start justify-center min-h-0">
-        <div className="w-full max-w-2xl h-full flex flex-col">
-          <div className="bg-white rounded-2xl shadow-lg p-4 border border-gray-100 flex-1 overflow-y-auto">
-            {children}
+      <footer className="fixed bottom-0 left-0 right-0 p-6 z-10">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex justify-between items-center">
+            <div>
+              {onBack && (
+                <button
+                  onClick={onBack}
+                  className="flex items-center gap-2 px-4 py-2 text-dark-secondary hover:text-dark-primary transition-colors rounded-md hover:bg-dark-panel"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Back
+                </button>
+              )}
+            </div>
+            
+            <div>
+            {showNextButton && onNext && (
+              <button
+                onClick={onNext}
+                disabled={nextDisabled}
+                className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105
+                  ${!nextDisabled
+                    ? 'bg-dark-accent text-dark-background shadow-lg hover:shadow-cyan-500/50'
+                    : 'bg-dark-panel text-dark-secondary cursor-not-allowed'
+                  }`
+                }
+              >
+                {nextLabel}
+                {!isLastStep && <ChevronRight className="w-4 h-4" />}
+              </button>
+            )}
+            </div>
           </div>
         </div>
-      </div>
-      
-      {/* Navigation - More Compact */}
-      <div className="flex-shrink-0 px-4 py-4">
-        <div className="max-w-2xl mx-auto flex justify-between items-center">
-          {showBack && onBack ? (
-            <button
-              onClick={onBack}
-              className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-800 transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              Back
-            </button>
-          ) : (
-            <div></div>
-          )}
-          
-          {onNext && (
-            <button
-              onClick={onNext}
-              disabled={nextDisabled}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold transition-all ${
-                !nextDisabled
-                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg hover:shadow-xl hover:scale-105'
-                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-              }`}
-            >
-              {nextLabel}
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          )}
-        </div>
-      </div>
+      </footer>
     </div>
   );
 }

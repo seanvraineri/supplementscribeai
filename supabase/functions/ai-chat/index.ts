@@ -1331,7 +1331,14 @@ Deno.serve(async (req) => {
         { data: biomarkers },
         { data: supplementPlan }
       ] = await Promise.all([
-        supabase.from('user_profiles').select('age, gender, weight_lbs, height_total_inches, health_goals, energy_levels, brain_fog, sleep_quality, anxiety_level, joint_pain, bloating, activity_level').eq('id', userId).single(),
+        supabase.from('user_profiles').select(`
+          age, gender, weight_lbs, height_total_inches, health_goals, activity_level, sleep_hours,
+          primary_health_concern, known_biomarkers, known_genetic_variants, alcohol_intake,
+          energy_levels, effort_fatigue, caffeine_effect, digestive_issues, stress_levels, 
+          sleep_quality, mood_changes, brain_fog, sugar_cravings, skin_issues, joint_pain,
+          immune_system, workout_recovery, food_sensitivities, weight_management, 
+          medication_history, anxiety_level, stress_resilience, bloating
+        `).eq('id', userId).single(),
         supabase.from('user_allergies').select('ingredient_name').eq('user_id', userId).limit(20),
         supabase.from('user_conditions').select('condition_name').eq('user_id', userId).limit(20),
         supabase.from('user_medications').select('medication_name').eq('user_id', userId).limit(20),
@@ -1739,6 +1746,60 @@ Deno.serve(async (req) => {
   }
 });
 
+// Build onboarding context from new frictionless onboarding data
+function buildOnboardingContext(profile: any): string {
+  const parts = [];
+  
+  // Primary Health Concern - Most Important!
+  if (profile?.primary_health_concern?.trim()) {
+    parts.push(`**PRIMARY HEALTH CONCERN**: ${profile.primary_health_concern}`);
+  }
+  
+  // Manual Biomarker/Genetic Input
+  if (profile?.known_biomarkers?.trim()) {
+    parts.push(`**USER-ENTERED BIOMARKERS**: ${profile.known_biomarkers}`);
+  }
+  if (profile?.known_genetic_variants?.trim()) {
+    parts.push(`**USER-ENTERED GENETICS**: ${profile.known_genetic_variants}`);
+  }
+  
+  // Lifestyle Assessment Issues (Yes answers only) - Detailed context
+  const lifestyleIssues = [];
+  if (profile?.energy_levels === 'yes') lifestyleIssues.push('Often feels tired or low energy (needs energy-boosting nutrients like B-vitamins and iron)');
+  if (profile?.effort_fatigue === 'yes') lifestyleIssues.push('Physical activity feels more difficult than it should (may benefit from performance-enhancing supplements like CoQ10)');
+  if (profile?.digestive_issues === 'yes') lifestyleIssues.push('Experiences digestive discomfort regularly (needs gut-healing nutrients and probiotics)');
+  if (profile?.stress_levels === 'yes') lifestyleIssues.push('Feels stressed or anxious frequently (needs stress-fighting nutrients like magnesium)');
+  if (profile?.mood_changes === 'yes') lifestyleIssues.push('Experiences mood swings or irritability (needs mood-stabilizing nutrients like omega-3s)');
+  if (profile?.sugar_cravings === 'yes') lifestyleIssues.push('Craves sugar or processed foods (needs blood sugar stabilizing nutrients)');
+  if (profile?.skin_issues === 'yes') lifestyleIssues.push('Has skin problems like acne, dryness, or sensitivity (needs skin-supporting vitamins like zinc and vitamin E)');
+  if (profile?.joint_pain === 'yes') lifestyleIssues.push('Experiences joint pain or stiffness (needs anti-inflammatory supplements like turmeric)');
+  if (profile?.brain_fog === 'yes') lifestyleIssues.push('Experiences brain fog or difficulty concentrating (needs brain-boosting supplements for mental clarity)');
+  if (profile?.sleep_quality === 'yes') lifestyleIssues.push('Has trouble falling asleep or staying asleep (needs sleep-promoting supplements like melatonin)');
+  if (profile?.workout_recovery === 'yes') lifestyleIssues.push('Takes longer to recover from workouts (needs recovery-enhancing supplements)');
+  if (profile?.food_sensitivities === 'yes') lifestyleIssues.push('Certain foods make them feel unwell (needs digestive enzymes and gut repair nutrients)');
+  if (profile?.weight_management === 'yes') lifestyleIssues.push('Difficult to maintain a healthy weight (needs metabolism-supporting supplements)');
+  
+  // Also include positive lifestyle factors (No answers)
+  const lifestyleStrengths = [];
+  if (profile?.caffeine_effect === 'no') lifestyleStrengths.push('Does not rely on caffeine to get through the day');
+  if (profile?.immune_system === 'no') lifestyleStrengths.push('Does not get sick more often than desired (good immune function)');
+  
+  if (lifestyleIssues.length > 0) {
+    parts.push(`**LIFESTYLE CONCERNS**: ${lifestyleIssues.join(' • ')}`);
+  }
+  
+  if (lifestyleStrengths.length > 0) {
+    parts.push(`**LIFESTYLE STRENGTHS**: ${lifestyleStrengths.join(' • ')}`);
+  }
+  
+  // ADHD/Anxiety Medication History
+  if (profile?.medication_history === 'yes') {
+    parts.push(`**MEDICATION HISTORY**: Previously tried ADHD/anxiety medications that didn't work effectively`);
+  }
+  
+  return parts.join('\n');
+}
+
 function buildOptimizedHealthContext(
   profile: any,
   allergies: any[],
@@ -1749,6 +1810,12 @@ function buildOptimizedHealthContext(
   supplementPlan: any
 ): string {
   const parts = [];
+
+  // Add onboarding context at the beginning for priority
+  const onboardingContext = buildOnboardingContext(profile);
+  if (onboardingContext) {
+    parts.push(onboardingContext);
+  }
 
   // Essential demographics
   if (profile.age || profile.gender) {

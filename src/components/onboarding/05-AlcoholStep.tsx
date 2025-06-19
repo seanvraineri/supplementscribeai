@@ -2,122 +2,82 @@
 
 import { useFormContext } from 'react-hook-form';
 import { OnboardingData } from '@/lib/schemas';
-import { Icons, PremiumButton } from './shared/DesignSystem';
+import { motion } from 'framer-motion';
+import { Circle, GlassWater, Wine, Beer } from 'lucide-react';
 
 const ALCOHOL_OPTIONS = [
   { 
     value: 'never', 
-    label: 'Never', 
-    icon: Icons.Never, 
-    description: 'I don\'t drink alcohol',
-    feedback: 'Excellent choice! This supports optimal nutrient absorption',
-    impact: 'Maximum supplement effectiveness and liver health',
-    variant: 'success' as const
-  },
-  { 
-    value: 'rarely', 
-    label: 'Rarely', 
-    icon: Icons.Rarely, 
-    description: 'Few times a year',
-    feedback: 'Great moderation! Minimal impact on nutrient absorption',
-    impact: 'Excellent supplement compatibility',
-    variant: 'primary' as const
+    label: 'None',
+    description: "I do not drink alcohol.",
+    icon: Circle 
   },
   { 
     value: 'occasionally', 
-    label: 'Occasionally', 
-    icon: Icons.Occasionally, 
-    description: '1-2 times per month',
-    feedback: 'Good balance! We\'ll optimize your B-vitamins and liver support',
-    impact: 'Minor adjustments for optimal results',
-    variant: 'primary' as const
+    label: 'Occasionally',
+    description: "1-2 drinks per week.",
+    icon: GlassWater
   },
   { 
     value: 'moderately', 
-    label: 'Moderately', 
-    icon: Icons.Moderately, 
-    description: '1-2 times per week',
-    feedback: 'We\'ll enhance B-vitamins, magnesium, and liver support',
-    impact: 'Targeted nutrients for alcohol metabolism',
-    variant: 'secondary' as const
+    label: 'Moderately',
+    description: "3-5 drinks per week.",
+    icon: Wine
   },
   { 
     value: 'regularly', 
-    label: 'Regularly', 
-    icon: Icons.Regularly, 
-    description: '3+ times per week',
-    feedback: 'Important to support your liver and nutrient levels',
-    impact: 'Comprehensive support for liver function and nutrient depletion',
-    variant: 'none' as const
-  }
+    label: 'Regularly',
+    description: "5+ drinks per week.",
+    icon: Beer
+  },
 ];
 
-export function AlcoholStep() {
+interface AlcoholStepProps {
+  onNext: () => void;
+}
+
+export function AlcoholStep({ onNext }: AlcoholStepProps) {
   const form = useFormContext<OnboardingData>();
   const selectedIntake = form.watch('alcohol_intake');
   
-  const selectAlcoholIntake = (intake: string) => {
-    form.setValue('alcohol_intake', intake, { shouldValidate: true });
+  const handleSelect = (intake: string) => {
+    form.setValue('alcohol_intake', intake, { shouldValidate: true, shouldDirty: true });
+    setTimeout(() => onNext(), 200);
   };
   
-  const selectedOption = ALCOHOL_OPTIONS.find(option => option.value === selectedIntake);
-  
   return (
-    <div className="space-y-4">
-      <div className="space-y-3">
-        {ALCOHOL_OPTIONS.map(option => (
-          <PremiumButton
+    <div className="space-y-3 w-full max-w-md mx-auto">
+      {ALCOHOL_OPTIONS.map((option, index) => {
+        const isSelected = selectedIntake === option.value;
+        return (
+          <motion.button
             key={option.value}
-            onClick={() => selectAlcoholIntake(option.value)}
-            selected={selectedIntake === option.value}
-            variant={option.variant}
-            size="md"
-            autoAdvance={true}
-            icon={<option.icon />}
-            className="w-full text-left justify-start h-auto py-4"
+            type="button"
+            onClick={() => handleSelect(option.value)}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3, delay: index * 0.05, ease: "easeOut" }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className={`w-full p-4 rounded-lg border-2 text-left transition-all duration-200 flex items-center gap-4
+              ${isSelected
+                ? 'bg-dark-accent/10 border-dark-accent'
+                : 'bg-dark-panel border-dark-border hover:border-dark-border/70'
+              }`
+            }
           >
-            <div className="flex-1 ml-3">
-              <div className="font-bold text-base">{option.label}</div>
-              <div className="text-sm opacity-75 mt-1">{option.description}</div>
+            <option.icon className={`w-6 h-6 transition-colors ${isSelected ? 'text-dark-accent' : 'text-dark-secondary'}`} />
+            <div className="flex-1">
+              <h3 className="font-semibold text-dark-primary text-base">
+                {option.label}
+              </h3>
+              <p className="text-sm text-dark-secondary">
+                {option.description}
+              </p>
             </div>
-          </PremiumButton>
-        ))}
-      </div>
-      
-      {selectedOption && (
-        <div className={`text-center rounded-lg p-4 border ${
-          selectedOption.variant === 'success' 
-            ? 'bg-green-50 border-green-200'
-            : selectedOption.variant === 'primary'
-            ? 'bg-blue-50 border-blue-200'
-            : selectedOption.variant === 'secondary'
-            ? 'bg-yellow-50 border-yellow-200'
-            : 'bg-orange-50 border-orange-200'
-        }`}>
-          <p className={`text-base font-semibold mb-1 ${
-            selectedOption.variant === 'success' 
-              ? 'text-green-800'
-              : selectedOption.variant === 'primary'
-              ? 'text-blue-800'
-              : selectedOption.variant === 'secondary'
-              ? 'text-yellow-800'
-              : 'text-orange-800'
-          }`}>
-            {selectedOption.feedback}
-          </p>
-          <p className={`text-sm ${
-            selectedOption.variant === 'success' 
-              ? 'text-green-600'
-              : selectedOption.variant === 'primary'
-              ? 'text-blue-600'
-              : selectedOption.variant === 'secondary'
-              ? 'text-yellow-600'
-              : 'text-orange-600'
-          }`}>
-            {selectedOption.impact}
-          </p>
-        </div>
-      )}
+          </motion.button>
+        )
+      })}
     </div>
   );
 } 

@@ -1,7 +1,37 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { withRetryRecovery } from '@/lib/error-recovery';
 
-export async function GET(request: NextRequest) {
+// Type definitions for API requests
+interface SupplementPostBody {
+  supplement_name: string;
+  dosage?: string;
+  taken: boolean;
+  entry_date: string;
+}
+
+interface SupplementPutBody {
+  id?: string;
+  supplement_name?: string;
+  taken?: boolean;
+  notes?: string;
+  entry_date?: string;
+}
+
+interface SupplementRecord {
+  id: string;
+  user_id: string;
+  supplement_name: string;
+  dosage?: string;
+  taken: boolean;
+  taken_at?: string;
+  entry_date: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     const supabase = await createClient();
     
@@ -14,24 +44,40 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const date = searchParams.get('date');
 
-    const { data, error } = await supabase
-      .from('user_supplement_adherence')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('entry_date', date)
-      .order('created_at', { ascending: false });
+    // Use safe retry for database queries
+    const queryResult = await withRetryRecovery(
+      async () => {
+        const result = await supabase
+          .from('user_supplement_adherence')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('entry_date', date)
+          .order('created_at', { ascending: false });
+        
+        if (result.error) {
+          throw new Error(result.error.message);
+        }
+        
+        return result.data;
+      },
+      {
+        context: 'supplement data fetch',
+        maxRetries: 2
+      }
+    );
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (!queryResult.success) {
+      console.error('Failed to fetch supplements:', queryResult.message);
+      return NextResponse.json({ error: 'Failed to fetch supplement data' }, { status: 500 });
     }
 
-    return NextResponse.json({ supplements: data || [] });
+    return NextResponse.json({ supplements: queryResult.data || [] });
   } catch (error) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const supabase = await createClient();
     
@@ -41,7 +87,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body: SupplementPostBody = await request.json();
     const { supplement_name, dosage, taken, entry_date } = body;
 
     // Upsert the supplement adherence record
@@ -71,7 +117,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function PUT(request: NextRequest) {
+export async function PUT(request: NextRequest): Promise<NextResponse> {
   try {
     const supabase = await createClient();
     
@@ -81,11 +127,11 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body: SupplementPutBody = await request.json();
     const { id, supplement_name, taken, notes, entry_date } = body;
 
-    // Support both ID-based and name+date based updates
-    let updateData: any = {};
+    // ✅ Keep any here for flexible update data - database fields can vary
+    const updateData: Record<string, any> = {};
     
     if (taken !== undefined) {
       updateData.taken = taken;

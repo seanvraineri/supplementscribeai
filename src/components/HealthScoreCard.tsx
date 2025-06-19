@@ -46,7 +46,7 @@ export default function HealthScoreCard({ onViewDetails }: HealthScoreCardProps)
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
 
-  const fetchHealthScore = async () => {
+  const loadExistingHealthScore = async () => {
     setIsLoading(true);
     setError(null);
     
@@ -58,27 +58,47 @@ export default function HealthScoreCard({ onViewDetails }: HealthScoreCardProps)
         return;
       }
 
-      const response = await supabase.functions.invoke('health-score', {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
+      console.log('🔍 Loading existing health score from database...');
 
-      if (response.error) {
-        throw new Error(response.error.message || 'Failed to fetch health score');
+      // Load existing health score from database ONLY
+      const { data: existingScore, error: dbError } = await supabase
+        .from('user_health_scores')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (existingScore && !dbError) {
+        console.log('✅ Health score loaded from database');
+        // Health score exists, use it
+        setHealthScore({
+          healthScore: existingScore.health_score,
+          scoreBreakdown: existingScore.score_breakdown,
+          summary: existingScore.analysis_summary,
+          strengths: existingScore.strengths || [],
+          concerns: existingScore.concerns || [],
+          topRecommendations: existingScore.recommendations || [],
+          scoreExplanation: existingScore.score_explanation || 'Your health score is calculated based on your onboarding responses across multiple health domains.'
+        });
+      } else {
+        console.log('❌ No health score found in database');
+        // No existing health score found
+        setHealthScore(null);
       }
-
-      setHealthScore(response.data);
     } catch (err: any) {
-      console.error('Health score fetch error:', err);
+      console.error('Health score load error:', err);
       setError(err.message || 'Failed to load health score');
     } finally {
       setIsLoading(false);
     }
   };
 
+  // NO MANUAL CALCULATION - HEALTH SCORE IS PURELY STATIC
+  // Only generated during onboarding, then stays forever
+
   useEffect(() => {
-    fetchHealthScore();
+    loadExistingHealthScore();
   }, []);
 
   const getScoreColor = (score: number) => {
@@ -164,12 +184,9 @@ export default function HealthScoreCard({ onViewDetails }: HealthScoreCardProps)
           <div className="text-center py-8">
             <AlertTriangle className="h-12 w-12 text-red-400 mx-auto mb-4" />
             <p className="text-dark-secondary mb-4">{error}</p>
-            <Button 
-              onClick={fetchHealthScore}
-              className="bg-dark-accent text-white hover:bg-dark-accent/80"
-            >
-              Try Again
-            </Button>
+            <p className="text-dark-secondary text-sm">
+              Health scores are generated during onboarding. Please contact support if this issue persists.
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -195,13 +212,11 @@ export default function HealthScoreCard({ onViewDetails }: HealthScoreCardProps)
         <CardContent>
           <div className="text-center py-8">
             <Sparkles className="h-12 w-12 text-dark-accent mx-auto mb-4" />
-            <p className="text-dark-secondary mb-4">Complete your onboarding to get your health score</p>
-            <Button 
-              onClick={fetchHealthScore}
-              className="bg-dark-accent text-white hover:bg-dark-accent/80"
-            >
-              Generate Health Score
-            </Button>
+            <h3 className="text-lg font-semibold text-dark-primary mb-2">No Health Score Available</h3>
+            <p className="text-dark-secondary mb-2">Your health score is generated automatically when you complete the onboarding process.</p>
+            <p className="text-dark-secondary text-sm">
+              This appears to be an older account. New users get their health score automatically after onboarding.
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -221,14 +236,9 @@ export default function HealthScoreCard({ onViewDetails }: HealthScoreCardProps)
               AI-powered health assessment
             </CardDescription>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={fetchHealthScore}
-            className="text-dark-secondary hover:text-dark-primary"
-          >
-            <RefreshCw className="h-4 w-4" />
-          </Button>
+          <div className="w-6 h-6 flex items-center justify-center">
+            <BarChart3 className="h-4 w-4 text-dark-accent" />
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">

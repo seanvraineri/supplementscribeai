@@ -6,7 +6,132 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
-import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai";
+import { extractText, getDocumentProxy } from 'npm:unpdf@1.0.6';
+// Using OpenAI instead of Gemini for better reliability
+// import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai";
+
+// Bulletproof extraction function - IMPROVED
+async function runBulletproofExtraction(text: string) {
+  console.log('🔥 Running IMPROVED bulletproof NER extraction...');
+  
+  // Known biomarker names for validation
+  const knownBiomarkers = [
+    'glucose', 'cholesterol', 'hemoglobin', 'hematocrit', 'vitamin d', 'vitamin b12',
+    'tsh', 'free t4', 'free t3', 'cortisol', 'testosterone', 'estradiol', 'progesterone',
+    'creatinine', 'bun', 'alt', 'ast', 'alkaline phosphatase', 'bilirubin', 'albumin',
+    'sodium', 'potassium', 'chloride', 'calcium', 'magnesium', 'phosphorus',
+    'triglycerides', 'hdl', 'ldl', 'total cholesterol', 'c-reactive protein', 'crp',
+    'ferritin', 'iron', 'folate', 'b12', 'rbc', 'wbc', 'platelets', 'mcv', 'mch', 'mchc'
+  ];
+  
+  // Medical units - comprehensive list
+  const medicalUnits = [
+    'mg/dl', 'mg/dL', 'mmol/l', 'mmol/L', 'ng/ml', 'ng/mL', 
+    'μg/dl', 'μg/dL', 'iu/l', 'IU/L', 'u/l', 'U/L', 
+    'g/dl', 'g/dL', '%', 'pg/ml', 'pg/mL', 'miu/l', 'mIU/L',
+    'copies/ml', 'cells/ul', 'cells/uL', 'k/ul', 'k/uL', 'fl', 'fL', 'pg'
+  ];
+
+  const biomarkers: any[] = [];
+  
+  // Strategy 1: Direct biomarker name + value patterns
+  const directPatterns = [
+    // "Glucose 95 mg/dL" or "Glucose: 95 mg/dL"
+    /\b(glucose|cholesterol|hemoglobin|hematocrit|creatinine|sodium|potassium|calcium)\s*:?\s*([0-9.,]+)\s*(mg\/d[lL]|g\/d[lL]|mmol\/[lL]|mEq\/[lL])/gi,
+    // "TSH 2.5 mIU/L"
+    /\b(tsh|free\s*t[34]|cortisol|testosterone|estradiol)\s*:?\s*([0-9.,]+)\s*(miu\/l|mIU\/L|ng\/ml|ng\/mL|pg\/ml|pg\/mL)/gi,
+    // "Vitamin D 32 ng/mL"
+    /\b(vitamin\s*[db]?12?|folate|ferritin|iron)\s*:?\s*([0-9.,]+)\s*(ng\/ml|ng\/mL|μg\/dl|μg\/dL|pg\/ml|pg\/mL)/gi,
+    // "HDL 65 mg/dL"
+    /\b(hdl|ldl|triglycerides|total\s*cholesterol)\s*:?\s*([0-9.,]+)\s*(mg\/d[lL])/gi
+  ];
+  
+  for (const pattern of directPatterns) {
+    let match;
+    while ((match = pattern.exec(text)) !== null) {
+      const name = match[1].trim().replace(/\s+/g, ' ');
+      const value = parseFloat(match[2].replace(',', ''));
+      const unit = match[3].trim();
+      
+      if (!isNaN(value) && value > 0 && value < 10000) { // Reasonable range
+        biomarkers.push({
+          marker_name: name,
+          value: value,
+          unit: unit,
+          source: 'direct-pattern',
+          confidence: 95
+        });
+      }
+    }
+  }
+  
+  // Strategy 2: Table row parsing (common lab format)
+  const lines = text.split('\n');
+  for (const line of lines) {
+    // Skip obviously non-data lines
+    if (line.length < 10 || line.includes('Patient') || line.includes('Date') || line.includes('Page')) {
+      continue;
+    }
+    
+    // Look for: "Test Name    Value    Unit    Reference"
+    const parts = line.trim().split(/\s{2,}/); // Split on 2+ spaces
+    if (parts.length >= 3) {
+      const testName = parts[0].trim().toLowerCase();
+      const valueStr = parts[1].trim();
+      const unitStr = parts[2].trim();
+      
+      // Check if test name is a known biomarker
+      const isKnownBiomarker = knownBiomarkers.some(known => 
+        testName.includes(known) || known.includes(testName)
+      );
+      
+      if (isKnownBiomarker) {
+        const value = parseFloat(valueStr.replace(',', ''));
+        if (!isNaN(value) && value > 0 && medicalUnits.some(unit => 
+          unitStr.toLowerCase().includes(unit.toLowerCase())
+        )) {
+          const exists = biomarkers.some(b => 
+            b.marker_name.toLowerCase() === testName && 
+            Math.abs(b.value - value) < 0.01
+          );
+          
+          if (!exists) {
+            biomarkers.push({
+              marker_name: testName,
+              value: value,
+              unit: unitStr,
+              source: 'table-row',
+              confidence: 90
+            });
+          }
+        }
+      }
+    }
+  }
+  
+  // Filter out obviously bad extractions
+  const filteredBiomarkers = biomarkers.filter(b => {
+    // Must have reasonable name length
+    if (b.marker_name.length < 3 || b.marker_name.length > 50) return false;
+    
+    // Must not be mostly random characters
+    const alphaRatio = (b.marker_name.match(/[a-zA-Z]/g) || []).length / b.marker_name.length;
+    if (alphaRatio < 0.5) return false;
+    
+    // Must not be single letters or random combinations
+    if (b.marker_name.match(/^[a-zA-Z]\s*[a-zA-Z]?$/)) return false;
+    
+    return true;
+  });
+  
+  console.log(`🎯 IMPROVED extraction found ${filteredBiomarkers.length} valid biomarkers`);
+  
+  return {
+    biomarkers: filteredBiomarkers.slice(0, 20), // Limit to top 20 quality results
+    snps: [],
+    strategies: 'improved-medical-NER'
+  };
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -17,70 +142,122 @@ const corsHeaders = {
 
 // Function to detect if content is a PDF
 function isPDF(content: string): boolean {
-  return content.startsWith('%PDF-');
+  return content.startsWith('%PDF-') || content.includes('%PDF-');
 }
 
-// Simple PDF text extraction - extracts readable text from PDF content
-function extractTextFromPDF(pdfContent: string): string {
-  console.log('Attempting to extract text from PDF...');
+// Enhanced PDF text extraction using proper PDF parsing library
+async function extractTextFromPDF(pdfContent: string): Promise<string> {
+  console.log('🔍 Attempting PDF text extraction with @pdf/pdftext...');
+  
+  try {
+    // Convert string to Uint8Array (PDF bytes)
+    const pdfBytes = new Uint8Array(pdfContent.length);
+    for (let i = 0; i < pdfContent.length; i++) {
+      pdfBytes[i] = pdfContent.charCodeAt(i);
+    }
+    
+    // Use the unpdf library for proper PDF text extraction
+    const pdf = await getDocumentProxy(pdfBytes);
+    const { text } = await extractText(pdf, { mergePages: true });
+    
+    // Clean up the extracted text
+    let extractedText = text
+      .replace(/\s+/g, ' ')  // Normalize whitespace
+      .replace(/\n+/g, '\n')  // Normalize line breaks
+      .trim();
+    
+    console.log(`📄 PDF extraction complete: ${extractedText.length} characters`);
+    console.log(`📝 Extracted text preview:\n${extractedText.substring(0, 1000)}`);
+    
+    if (extractedText.length < 50) {
+      console.log('⚠️ PDF extraction yielded minimal text, might be image-based PDF');
+      throw new Error('Insufficient text extracted from PDF');
+    }
+    
+    return extractedText;
+    
+  } catch (error) {
+    console.error('❌ PDF text extraction error:', error);
+    console.log('🔄 Falling back to basic extraction method...');
+    
+    // Fallback to basic extraction for compatibility
+    return extractTextFromPDFBasic(pdfContent);
+  }
+}
+
+// Fallback basic PDF text extraction (original method)
+function extractTextFromPDFBasic(pdfContent: string): string {
+  console.log('🔍 Using basic PDF text extraction fallback...');
   
   try {
     let extractedText = '';
     
-    // Method 1: Find text in parentheses (common PDF format: (text))
+    // Method 1: Extract text between parentheses (PDF text encoding)
     const parenTextRegex = /\(([^)]+)\)/g;
     let match;
     while ((match = parenTextRegex.exec(pdfContent)) !== null) {
-      extractedText += match[1] + ' ';
+      const text = match[1];
+      // Decode common PDF escape sequences
+      const decodedText = text
+        .replace(/\\n/g, '\n')
+        .replace(/\\r/g, '\r')
+        .replace(/\\t/g, '\t')
+        .replace(/\\\(/g, '(')
+        .replace(/\\\)/g, ')')
+        .replace(/\\\\/g, '\\');
+      extractedText += decodedText + ' ';
     }
     
-    // Method 2: Extract any readable sequences of letters and numbers
-    const readableTextRegex = /[A-Za-z][A-Za-z0-9\s.,;:!?\-()\/]{5,}/g;
-    const readableMatches = pdfContent.match(readableTextRegex);
-    
-    if (readableMatches) {
-      readableMatches.forEach(match => {
-        // Only filter out obvious PDF junk - be very permissive
-        if (!match.match(/^(obj|endobj|stream|endstream|xref|trailer|startxref|FontDescriptor|FontFile)/)) {
-          extractedText += match.trim() + ' ';
-        }
-      });
+    // Method 2: Extract text between square brackets [text]
+    const bracketTextRegex = /\[([^\]]+)\]/g;
+    while ((match = bracketTextRegex.exec(pdfContent)) !== null) {
+      const text = match[1];
+      if (text.length > 2 && /[A-Za-z]/.test(text)) {
+        extractedText += text + ' ';
+      }
     }
     
-    // Method 3: Look for genetic patterns specifically
-    const geneticPatterns = [
-      /rs\d+/gi,  // SNP IDs
-      /[A-Z]{2,}/g,  // Gene names
-      /[ATCG]{2,}/g,  // Genetic sequences
+    // Method 3: Extract medical/lab patterns from raw PDF data
+    const medicalPatterns = [
+      // Lab values: "Glucose 95 mg/dL"
+      /([A-Za-z]{3,20})\s+(\d+\.?\d*)\s+([a-zA-Z\/]+)/g,
+      // Reference ranges: "Normal (70-100)"
+      /Normal\s*\(\s*(\d+\.?\d*)\s*-\s*(\d+\.?\d*)\s*\)/g,
+      // Direct value formats: "25.3 ng/mL"
+      /(\d+\.?\d*)\s+([a-zA-Z\/μ%]+)/g,
+      // Medical terms
+      /\b(cholesterol|glucose|hemoglobin|vitamin|creatinine|sodium|potassium|calcium|iron|ferritin|tsh|t4|t3)\b/gi
     ];
     
-    geneticPatterns.forEach(pattern => {
+    medicalPatterns.forEach(pattern => {
       const matches = pdfContent.match(pattern);
       if (matches) {
         matches.forEach(match => {
-          if (match.length > 2) {
-            extractedText += match + ' ';
-          }
+          extractedText += match + ' ';
         });
       }
     });
     
-    // Basic cleanup - remove excessive whitespace
-    extractedText = extractedText.replace(/\s+/g, ' ').trim();
+    // Clean up and format
+    extractedText = extractedText
+      .replace(/\s+/g, ' ')  // Normalize whitespace
+      .replace(/[^\w\s\.\-\(\)\/\:]/g, ' ')  // Remove PDF artifacts
+      .replace(/\s+/g, ' ')  // Remove extra spaces again
+      .trim();
     
-    console.log(`Extracted text length: ${extractedText.length}`);
-    console.log(`First 1000 chars of extracted text: ${extractedText.substring(0, 1000)}`);
+    console.log(`📄 Basic PDF extraction complete: ${extractedText.length} characters`);
     
+    // Final fallback - return original if still no good extraction
     if (extractedText.length < 20) {
-      console.log('Very little text extracted - returning original content for Gemini');
+      console.log('❌ PDF text extraction insufficient, returning original for AI processing');
       return pdfContent;
     }
     
     return extractedText;
     
   } catch (error) {
-    console.error('PDF text extraction error:', error);
-    console.log('Returning original content for Gemini to attempt parsing...');
+    console.error('❌ Basic PDF text extraction error:', error);
+    console.log('🔄 Returning original content for AI to attempt parsing...');
     return pdfContent;
   }
 }
@@ -720,7 +897,7 @@ function parseGeneticData(content: string): CSVGeneticRow[] {
 
 Deno.serve(async (req) => {
   // This function is now a pure text parser.
-  // It receives raw text, sends it to Gemini, and returns the structured JSON.
+  // It receives raw text, sends it to OpenAI, and returns the structured JSON.
   // It is not responsible for file I/O or database updates.
 
   // Handle preflight requests
@@ -737,7 +914,9 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { fileContent, reportType } = await req.json();
+    const requestBody = await req.json();
+    const { fileContent: originalFileContent, reportType, reportId } = requestBody;
+    let fileContent = originalFileContent;
 
     if (!fileContent || !reportType) {
       return new Response(JSON.stringify({ error: "Missing 'fileContent' or 'reportType' in request body" }), {
@@ -750,11 +929,29 @@ Deno.serve(async (req) => {
     console.log(`Original content length: ${fileContent.length}`);
     console.log(`Content starts with: ${fileContent.substring(0, 50)}`);
     
+    // 🔍 DETECT AND DECODE BASE64 PDFs
+    if (fileContent.startsWith('PDF_BASE64:')) {
+      console.log('🔍 Base64 PDF detected — decoding...');
+      try {
+        const base64Content = fileContent.substring('PDF_BASE64:'.length);
+        const decodedPdf = atob(base64Content);
+        console.log(`📄 Decoded PDF: ${decodedPdf.length} characters`);
+        console.log(`📄 Decoded starts with: ${decodedPdf.substring(0, 20)}`);
+        fileContent = decodedPdf;
+      } catch (decodeError) {
+        console.error('❌ Base64 decode failed:', decodeError);
+        return new Response(JSON.stringify({ error: 'Failed to decode base64 PDF content' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        });
+      }
+    }
+    
     // Check if this is a PDF and extract text if needed
     let processedContent = fileContent;
     if (isPDF(fileContent)) {
       console.log('PDF detected - extracting text...');
-      const extractedText = extractTextFromPDF(fileContent);
+      const extractedText = await extractTextFromPDF(fileContent);
       processedContent = extractedText;
       console.log(`After PDF text extraction: ${processedContent.length} characters`);
       console.log(`Extracted text preview: ${processedContent.substring(0, 500)}`);
@@ -831,26 +1028,23 @@ Deno.serve(async (req) => {
       console.log('Using test sample for debugging');
     }
 
-    // Truncate very large files to stay within Gemini 1.5 Pro's token limits
-    // Gemini 1.5 Pro supports up to 2M tokens, so ~6-8M characters is safe
-    const maxChars = 6000000;  // 6M characters for Gemini 1.5 Pro
+    // Truncate very large files to stay within OpenAI's token limits
+    // GPT-4 supports up to 128K tokens, so ~400K characters is safe
+    const maxChars = 400000;  // 400K characters for GPT-4
     
     if (processedContent.length > maxChars) {
       console.log(`File too large (${processedContent.length} chars), truncating to ${maxChars} chars`);
       processedContent = processedContent.substring(0, maxChars);
     }
 
-    const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
-    if (!geminiApiKey) {
-      console.error('GEMINI_API_KEY not found');
-      return new Response(JSON.stringify({ error: 'Gemini API key not configured' }), {
+    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openaiApiKey) {
+      console.error('OPENAI_API_KEY not found');
+      return new Response(JSON.stringify({ error: 'OpenAI API key not configured' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
       });
     }
-
-    const genAI = new GoogleGenerativeAI(geminiApiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' }); // Use stable model
     
     const systemPrompt = `You are an expert at parsing lab reports and genetic data. Extract ALL biomarkers and genetic markers from the provided text.
 
@@ -938,39 +1132,61 @@ SCAN EVERY LINE for genetic information.` : ''}
       ${processedContent.length > maxChars ? '\n[NOTE: Document was truncated due to size limits]' : ''}
     `;
 
-    console.log('Sending request to Gemini API...');
+    console.log('Sending request to OpenAI API...');
     console.log('File content length:', processedContent.length);
     console.log('First 1000 characters of content:');
     console.log(processedContent.substring(0, 1000));
-    console.log('Prompt being sent to Gemini:');
+    console.log('Prompt being sent to OpenAI:');
     console.log(prompt.substring(0, 2000) + '...');
     
-    const result = await model.generateContent([systemPrompt, prompt]);
-    const response = await result.response;
-    const text = response.text();
-    console.log('Received response from Gemini API.');
-    console.log('Raw Gemini response (first 2000 chars):');
+    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openaiApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.1,
+        max_tokens: 4000
+      })
+    });
+
+    if (!openaiResponse.ok) {
+      const errorText = await openaiResponse.text();
+      console.error('OpenAI API error:', errorText);
+      throw new Error(`OpenAI API error: ${openaiResponse.status} ${errorText}`);
+    }
+
+    const openaiData = await openaiResponse.json();
+    const text = openaiData.choices[0].message.content;
+    console.log('Received response from OpenAI API.');
+    console.log('Raw OpenAI response (first 2000 chars):');
     console.log(text.substring(0, 2000));
 
     let parsedData;
     try {
       const cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim();
-      console.log('Cleaned Gemini response. Attempting to parse...');
+      console.log('Cleaned OpenAI response. Attempting to parse...');
       console.log('--- RAW AI RESPONSE ---');
       console.log(cleanedText);
       console.log('--- END RAW AI RESPONSE ---');
       parsedData = JSON.parse(cleanedText);
     } catch (e: any) {
-      console.error('Error parsing Gemini response JSON:', e);
-      console.error('Original Gemini response text:', text);
-      throw new Error(`Failed to parse Gemini response: ${e.message}`);
+      console.error('Error parsing OpenAI response JSON:', e);
+      console.error('Original OpenAI response text:', text);
+      throw new Error(`Failed to parse OpenAI response: ${e.message}`);
     }
 
-    console.log('Successfully parsed data from Gemini.');
+    console.log('Successfully parsed data from OpenAI.');
     console.log('Parsed data before filtering:', JSON.stringify(parsedData, null, 2));
     
-    // Log what Gemini extracted before filtering
-    console.log('=== GEMINI EXTRACTION RESULTS ===');
+    // Log what OpenAI extracted before filtering
+    console.log('=== OPENAI EXTRACTION RESULTS ===');
     if (parsedData.biomarkers) {
       console.log(`Total biomarkers extracted: ${parsedData.biomarkers.length}`);
       parsedData.biomarkers.forEach((b: any, i: number) => {
@@ -1033,25 +1249,155 @@ SCAN EVERY LINE for genetic information.` : ''}
 
     console.log("Final Filtered Data:", JSON.stringify(filteredData, null, 2));
     
-    // If lab report and no biomarkers extracted, attempt quick regex extraction as fallback
+    // If lab report and no biomarkers extracted, attempt REAL BULLETPROOF extraction with NER
     if ((reportType === 'lab_report') && (!filteredData.biomarkers || filteredData.biomarkers.length === 0)) {
-      console.log('Gemini returned no biomarkers, running fallback regex extraction...');
-      const quickBiomarkers: any[] = [];
-      // Generic regex: e.g., "Glucose 95 mg/dL" or "Glucose: 95 mg/dL"
-      const lineRegex = /([A-Za-z][A-Za-z0-9 \-/()%]{3,40}?)\s*[:]?\s*(-?\d+\.?\d*)\s*([a-zA-Z%\/\.]+)?/g;
-      let match;
-      while ((match = lineRegex.exec(processedContent)) !== null) {
-        const rawName = match[1].trim();
-        const value = parseFloat(match[2]);
-        const unit = match[3] ? match[3] : 'not specified';
-        if (!isNaN(value)) {
-          quickBiomarkers.push({ marker_name: rawName, value, unit });
+      console.log('🔥 OpenAI returned no biomarkers, running REAL BULLETPROOF NER extraction...');
+      console.log('📄 Raw content length:', processedContent.length);
+      console.log('📝 Content sample (first 500 chars):', processedContent.substring(0, 500));
+      
+      // Initialize the REAL bulletproof parser
+      const bulletproofResults = await runBulletproofExtraction(processedContent);
+      
+      if (bulletproofResults.biomarkers && bulletproofResults.biomarkers.length > 0) {
+        filteredData.biomarkers = bulletproofResults.biomarkers;
+        console.log('🎉 BULLETPROOF NER extraction successful!');
+        console.log(`✅ Found ${bulletproofResults.biomarkers.length} biomarkers using ${bulletproofResults.strategies} strategies`);
+        bulletproofResults.biomarkers.forEach((b: any, i: number) => {
+          console.log(`  ${i + 1}. ${b.marker_name}: ${b.value} ${b.unit} [${b.source}] (${b.confidence}% confidence)`);
+        });
+      } else {
+        console.log('💥 BULLETPROOF extraction found NO biomarkers - this PDF may not contain lab results');
+      }
+    }
+
+    // 💾 SAVE TO DATABASE - This is what was missing!
+    console.log('💾 Saving extracted data to database...');
+    
+    // Get user from authorization header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Authorization header required' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      });
+    }
+
+    // Create Supabase client with auth
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: {
+            Authorization: authHeader,
+          },
+        },
+      }
+    );
+
+    // Get current user
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    if (userError || !user) {
+      console.error('Failed to get user:', userError);
+      return new Response(JSON.stringify({ error: 'Authentication failed' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      });
+    }
+
+    console.log(`📋 Saving data for user: ${user.id}`);
+
+    // reportId was already extracted from requestBody above
+    
+    try {
+      // 1. Save biomarkers to database
+      if (filteredData.biomarkers && filteredData.biomarkers.length > 0) {
+        console.log(`💊 Saving ${filteredData.biomarkers.length} biomarkers...`);
+        
+        const biomarkerInserts = filteredData.biomarkers.map((biomarker: any) => ({
+          user_id: user.id,
+          report_id: reportId || null,
+          marker_name: biomarker.marker_name,
+          value: biomarker.value,
+          unit: biomarker.unit || 'not specified',
+          reference_range: biomarker.reference_range || null,
+          comment: biomarker.extraction_method || biomarker.source || null,
+          created_at: new Date().toISOString(),
+        }));
+
+        const { data: savedBiomarkers, error: biomarkerError } = await supabaseClient
+          .from('user_biomarkers')
+          .upsert(biomarkerInserts, {
+            onConflict: 'user_id,marker_name',
+            ignoreDuplicates: false
+          })
+          .select();
+
+        if (biomarkerError) {
+          console.error('❌ Failed to save biomarkers:', biomarkerError);
+          // Don't fail completely, just log the error
+        } else {
+          console.log(`✅ Successfully saved ${savedBiomarkers?.length || 0} biomarkers`);
         }
       }
-      console.log(`Fallback extracted ${quickBiomarkers.length} potential biomarkers`);
-      if (quickBiomarkers.length > 0) {
-        filteredData.biomarkers = quickBiomarkers;
+
+      // 2. Save SNPs to database
+      if (filteredData.snps && filteredData.snps.length > 0) {
+        console.log(`🧬 Saving ${filteredData.snps.length} SNPs...`);
+        
+        const snpInserts = filteredData.snps.map((snp: any) => ({
+          user_id: user.id,
+          report_id: reportId || null,
+          snp_id: snp.snp_id,
+          gene_name: snp.gene_name || 'Unknown',
+          genotype: snp.allele || snp.genotype || 'Unknown',
+          comment: snp.extraction_method || snp.source || null,
+          created_at: new Date().toISOString(),
+        }));
+
+        const { data: savedSnps, error: snpError } = await supabaseClient
+          .from('user_snps')
+          .upsert(snpInserts, {
+            onConflict: 'user_id,snp_id',
+            ignoreDuplicates: false
+          })
+          .select();
+
+        if (snpError) {
+          console.error('❌ Failed to save SNPs:', snpError);
+          // Don't fail completely, just log the error
+        } else {
+          console.log(`✅ Successfully saved ${savedSnps?.length || 0} SNPs`);
+        }
       }
+
+      // 3. Update lab report status if reportId provided
+      if (reportId) {
+        console.log(`📄 Updating report ${reportId} status to 'parsed'...`);
+        
+        const { error: reportUpdateError } = await supabaseClient
+          .from('user_lab_reports')
+          .update({ 
+            status: 'parsed',
+            parsed_data: filteredData,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', reportId)
+          .eq('user_id', user.id);
+
+        if (reportUpdateError) {
+          console.error('❌ Failed to update report status:', reportUpdateError);
+        } else {
+          console.log('✅ Report status updated successfully');
+        }
+      }
+
+      console.log('💾 Database save completed successfully!');
+
+    } catch (saveError) {
+      console.error('❌ Database save failed:', saveError);
+      // Don't fail the entire request if database save fails
+      // The data was still parsed successfully
     }
 
     // Return the successfully parsed and filtered data

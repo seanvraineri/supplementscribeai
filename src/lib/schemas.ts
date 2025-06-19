@@ -13,28 +13,39 @@ export const onboardingSchema = z.object({
   healthGoals: z.array(z.string()).min(1, { message: "Please select at least one health goal." }),
   customHealthGoal: z.string().optional(),
   
-  // Step 2: Lifestyle Assessment (Yes/No Questions)
-  energy_levels: z.string(),
-  effort_fatigue: z.string(),
-  caffeine_effect: z.string(),
-  brain_fog: z.string(),
-  anxiety_level: z.string(),
-  stress_resilience: z.string(),
-  medication_history: z.string(), // New field for ADHD/anxiety medication question
-  sleep_quality: z.string(),
-  sleep_aids: z.string(),
-  bloating: z.string(),
-  digestion_speed: z.string(),
-  anemia_history: z.string(),
-  joint_pain: z.string(),
-  bruising_bleeding: z.string(),
-  belly_fat: z.string(),
+  // Step 2: Lifestyle Assessment (16 Yes/No Questions)
+  energy_levels: z.string().optional(),
+  effort_fatigue: z.string().optional(),
+  caffeine_effect: z.string().optional(),
+  digestive_issues: z.string().optional(),
+  stress_levels: z.string().optional(),
+  sleep_quality: z.string().optional(),
+  mood_changes: z.string().optional(),
+  brain_fog: z.string().optional(),
+  sugar_cravings: z.string().optional(),
+  skin_issues: z.string().optional(),
+  joint_pain: z.string().optional(),
+  immune_system: z.string().optional(),
+  workout_recovery: z.string().optional(),
+  food_sensitivities: z.string().optional(),
+  weight_management: z.string().optional(),
+  medication_history: z.string().optional(),
+  
+  // Keeping old fields for backwards compatibility but they won't be used in new flow
+  anxiety_level: z.string().optional(),
+  stress_resilience: z.string().optional(),
+  sleep_aids: z.string().optional(),
+  bloating: z.string().optional(),
+  digestion_speed: z.string().optional(),
+  anemia_history: z.string().optional(),
+  bruising_bleeding: z.string().optional(),
+  belly_fat: z.string().optional(),
   
   // Step 3: Activity Level
   activity_level: z.string({ required_error: "Please select an activity level." }),
   
   // Step 4: Sleep Hours
-  sleep_hours: z.coerce.number().int().min(4).max(12, "Please enter a valid number of hours (4-12)."),
+  sleep_hours: z.coerce.number().int().min(4, "Please enter a valid number of hours (4-12).").max(12, "Please enter a valid number of hours (4-12)."),
   
   // Step 5: Alcohol Intake
   alcohol_intake: z.string({ required_error: "Please select your alcohol intake." }),
@@ -52,6 +63,14 @@ export const onboardingSchema = z.object({
   // Step 8: Optional Health Data
   known_biomarkers: z.string().optional(),
   known_genetic_variants: z.string().optional(),
+}).superRefine((data, ctx) => {
+  if (data.healthGoals.includes('custom') && (!data.customHealthGoal || data.customHealthGoal.trim().length < 3)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Please enter your custom goal (minimum 3 characters).",
+      path: ["customHealthGoal"],
+    });
+  }
 });
 
 export type OnboardingData = z.infer<typeof onboardingSchema>; 

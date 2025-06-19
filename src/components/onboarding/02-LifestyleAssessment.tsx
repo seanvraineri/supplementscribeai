@@ -3,9 +3,9 @@
 import { useFormContext } from 'react-hook-form';
 import { useState, useEffect } from 'react';
 import { OnboardingData } from '@/lib/schemas';
-import { PremiumButton, ProgressDots } from './shared/DesignSystem';
+import { motion } from 'framer-motion';
 
-const LIFESTYLE_QUESTIONS = [
+export const LIFESTYLE_QUESTIONS = [
   {
     key: 'energy_levels' as keyof OnboardingData,
     question: 'Do you often feel tired or low energy?',
@@ -105,60 +105,51 @@ export function LifestyleAssessment({
   const currentQuestion = LIFESTYLE_QUESTIONS[currentSubStep - 1];
   
   const handleAnswer = (answer: 'yes' | 'no') => {
-    form.setValue(currentQuestion.key, answer, { shouldValidate: true });
+    if (isTransitioning) return;
+
+    form.setValue(currentQuestion.key, answer, { shouldValidate: true, shouldDirty: true });
     
-    // Add smooth transition
     setIsTransitioning(true);
     setTimeout(() => {
-      setIsTransitioning(false);
       onSubStepComplete();
-    }, 200);
+      setIsTransitioning(false);
+    }, 300); // Animation duration
   };
   
   if (!currentQuestion) return null;
   
   return (
-    <div className={`text-center space-y-4 transition-all duration-200 ${
-      isTransitioning ? 'opacity-50 scale-95' : 'opacity-100 scale-100'
-    }`}>
-      <div>
-        <h2 className="text-lg font-bold text-gray-800 mb-2">
-          {currentQuestion.question}
-        </h2>
-        
-        {/* Personalization note */}
-        <div className="bg-blue-50 rounded-lg p-2.5 mb-3">
-          <p className="text-sm text-blue-700 font-medium">
-            💡 {currentQuestion.note}
+    <div className="flex flex-col items-center justify-center w-full">
+        <div className="bg-dark-panel/50 border border-dark-border rounded-lg p-4 mb-6 w-full max-w-md">
+          <p className="text-sm text-dark-secondary text-center">
+            <span className="text-dark-accent font-bold">💡 Tip:</span> {currentQuestion.note}
           </p>
         </div>
-      </div>
       
-      <div className="flex gap-3 justify-center">
-        <PremiumButton
+      <div className="flex gap-4 justify-center">
+        <motion.button
           onClick={() => handleAnswer('yes')}
-          variant="primary"
-          size="md"
-          className="px-10 py-3 text-base font-bold"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="px-12 py-4 text-lg font-bold rounded-lg transition-colors bg-dark-panel border-2 border-dark-border hover:border-dark-accent hover:bg-dark-accent/10 text-dark-primary"
           disabled={isTransitioning}
         >
           Yes
-        </PremiumButton>
+        </motion.button>
         
-        <PremiumButton
+        <motion.button
           onClick={() => handleAnswer('no')}
-          variant="secondary"
-          size="md"
-          className="px-10 py-3 text-base font-bold"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="px-12 py-4 text-lg font-bold rounded-lg transition-colors bg-dark-panel border-2 border-dark-border hover:border-red-500/50 hover:bg-red-500/10 text-dark-primary"
           disabled={isTransitioning}
         >
           No
-        </PremiumButton>
+        </motion.button>
       </div>
       
-      {/* Progress indicator */}
-      <div className="text-xs text-gray-400">
-        {currentSubStep} of {totalSubSteps}
+      <div className="text-xs text-dark-secondary font-mono absolute bottom-20">
+        {currentSubStep} / {totalSubSteps}
       </div>
     </div>
   );
