@@ -42,7 +42,8 @@ import {
   Check,
   Target,
   Shield,
-  Network
+  Network,
+  Send
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { SVGProps } from 'react';
@@ -201,6 +202,13 @@ export default function DashboardPage() {
   const [showShareGraphics, setShowShareGraphics] = useState(false);
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  // Automatically scroll chat to bottom
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [chatMessages]);
 
   const router = useRouter();
 
@@ -2118,123 +2126,239 @@ export default function DashboardPage() {
     </div>
   );
 
-  const renderAIChat = () => (
-    <div className="h-[calc(100vh-8rem)] flex flex-col">
-      {/* Fixed Header */}
-      <div className="flex items-center justify-between mb-6 flex-shrink-0">
-        <div>
-          <h1 className="text-4xl font-bold text-dark-primary tracking-tight">AI Assistant</h1>
-          <p className="text-dark-secondary mt-1">Your personalized health optimization expert.</p>
-        </div>
-        <Button onClick={startNewConversation} variant="outline" className="bg-dark-panel border-dark-border text-dark-secondary hover:bg-dark-border hover:text-dark-primary">
-          New Chat
-        </Button>
+  const renderSettings = () => (
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-4xl font-bold text-dark-primary">Settings</h1>
+        <p className="text-lg text-dark-secondary mt-1">
+          Manage your account settings and preferences.
+        </p>
       </div>
 
-      {/* Main Chat Area - Fixed Height */}
-      <div className="grid lg:grid-cols-12 gap-8 flex-1 min-h-0">
-        {/* Chat History Sidebar */}
-        <div className="lg:col-span-4 flex flex-col">
-          <div className="bg-dark-panel border border-dark-border rounded-lg h-full flex flex-col">
-            <h3 className="font-semibold text-dark-primary p-4 border-b border-dark-border flex-shrink-0">Chat History</h3>
-            <div className="overflow-y-auto p-2 space-y-2 flex-1">
-              {chatHistory.map((conv: any) => (
-                <button
-                  key={conv.id}
-                  onClick={() => loadConversation(conv.id)}
-                  className={`w-full text-left p-3 rounded-md transition-colors ${currentConversationId === conv.id ? 'bg-dark-accent text-white' : 'hover:bg-dark-border'}`}
-                >
-                  <p className="font-semibold truncate">{conv.title}</p>
-                  <p className="text-xs text-dark-secondary">{getTimeAgo(conv.updated_at)}</p>
-                </button>
-              ))}
-            </div>
-          </div>
+      {/* Referral System */}
+      <div className="bg-dark-panel border border-dark-border rounded-xl p-8">
+        <div className="flex items-center gap-3 mb-6">
+          <Network className="h-6 w-6 text-dark-accent" />
+          <h3 className="text-2xl font-semibold text-dark-primary">Refer Friends</h3>
         </div>
+        <p className="text-dark-secondary mb-6">
+          Share SupplementScribe with friends and help them optimize their health too!
+        </p>
         
-        {/* Main Chat Panel */}
-        <div className="lg:col-span-8 flex flex-col">
-          <div className="bg-dark-panel border border-dark-border rounded-lg h-full flex flex-col">
-            {/* Messages Container - Scrollable */}
-            <div ref={chatContainerRef} className="flex-1 p-6 overflow-y-auto min-h-0">
-              {chatMessages.length === 0 && (
-                <div className="text-center text-dark-secondary h-full flex flex-col justify-center items-center">
-                  <div className="w-16 h-16 bg-dark-accent/10 text-dark-accent rounded-full flex items-center justify-center mb-4">
-                    <MessageSquare className="h-8 w-8"/>
-                  </div>
-                  <h3 className="text-lg font-semibold text-dark-primary">AI Health Assistant</h3>
-                  <p>Ask me anything about your health data.</p>
+        {profile?.referral_code ? (
+          <div className="space-y-4">
+            {/* Referral Code */}
+            <div>
+              <label className="text-sm font-medium text-dark-secondary mb-2 block">
+                Your Referral Code
+              </label>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 bg-dark-background border border-dark-border rounded-lg px-4 py-3">
+                  <code className="text-lg font-mono text-dark-accent">{profile.referral_code}</code>
                 </div>
-              )}
-              
-              <div className="space-y-6">
-                {chatMessages.map((msg, index) => (
-                  <div key={index} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    {msg.role === 'assistant' && 
-                      <div className="w-8 h-8 rounded-full bg-dark-accent flex-shrink-0 items-center justify-center flex">
-                        <Sparkles className="h-5 w-5 text-white" />
-                      </div>
-                    }
-                    <div className={`p-4 rounded-lg max-w-2xl ${msg.role === 'user' ? 'bg-dark-accent text-white' : 'bg-gradient-to-br from-pink-500/10 via-blue-500/10 to-cyan-500/10 text-dark-primary'}`}>
-                      {msg.role === 'assistant' ? (
-                        <div className="prose prose-invert prose-sm max-w-none prose-p:text-dark-primary prose-strong:text-dark-accent">
-                          <ReactMarkdown>{msg.content}</ReactMarkdown>
-                        </div>
-                      ) : (
-                        <p>{msg.content}</p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-                
-                {isChatLoading && (
-                  <div className="flex justify-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-dark-accent flex-shrink-0 items-center justify-center flex">
-                      <Sparkles className="h-5 w-5 text-white" />
-                    </div>
-                    <div className="p-4 rounded-lg bg-dark-border text-dark-primary">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-dark-accent rounded-full animate-pulse" />
-                        <div className="w-2 h-2 bg-dark-accent rounded-full animate-pulse delay-75" />
-                        <div className="w-2 h-2 bg-dark-accent rounded-full animate-pulse delay-150" />
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            {/* Fixed Input Area */}
-            <div className="p-4 border-t border-dark-border flex-shrink-0 bg-dark-panel">
-              <form onSubmit={(e) => { e.preventDefault(); sendMessage(chatInput); }} className="flex gap-4">
-                <input
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  placeholder="Ask about your results, supplements, or health..."
-                  className="flex-1 bg-dark-background border border-dark-border rounded-lg px-4 py-3 text-dark-primary placeholder-dark-secondary focus:outline-none focus:ring-2 focus:ring-dark-accent transition-all"
-                  disabled={isChatLoading}
-                />
-                <Button 
-                  type="submit" 
-                  disabled={isChatLoading || !chatInput.trim()} 
-                  className="bg-dark-accent text-white hover:bg-dark-accent/80 px-6 py-3 transition-all disabled:opacity-50"
+                <Button
+                  onClick={copyReferralCode}
+                  variant="outline"
+                  className="px-4 py-3 border-dark-border hover:bg-dark-border"
                 >
-                  {isChatLoading ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                      Sending...
-                    </div>
+                  {copiedReferralCode ? (
+                    <Check className="h-4 w-4 text-green-400" />
                   ) : (
-                    'Send'
+                    'Copy'
                   )}
                 </Button>
-              </form>
+              </div>
+            </div>
+
+            {/* Referral URL */}
+            <div>
+              <label className="text-sm font-medium text-dark-secondary mb-2 block">
+                Your Referral Link
+              </label>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 bg-dark-background border border-dark-border rounded-lg px-4 py-3">
+                  <code className="text-sm text-dark-primary break-all">
+                    {generateReferralUrl(profile.referral_code)}
+                  </code>
+                </div>
+                <Button
+                  onClick={copyReferralUrl}
+                  variant="outline"
+                  className="px-4 py-3 border-dark-border hover:bg-dark-border"
+                >
+                  {copiedReferralUrl ? (
+                    <Check className="h-4 w-4 text-green-400" />
+                  ) : (
+                    'Copy'
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {/* Referral Stats */}
+            <div className="bg-dark-background border border-dark-border rounded-lg p-4 mt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-dark-secondary">People you've referred</p>
+                  <p className="text-2xl font-bold text-dark-accent">{profile.referral_count || 0}</p>
+                </div>
+                <Star className="h-8 w-8 text-dark-accent" />
+              </div>
             </div>
           </div>
+        ) : (
+          <div className="text-center py-8">
+            <div className="bg-dark-background border border-dark-border rounded-lg p-6">
+              <Network className="h-12 w-12 text-dark-accent mx-auto mb-4" />
+              <h4 className="text-lg font-semibold text-dark-primary mb-2">Setting up your referral code...</h4>
+              <p className="text-dark-secondary mb-4">
+                Click the button below to generate your unique referral code.
+              </p>
+              <div className="space-y-3">
+                <Button 
+                  onClick={generateReferralCodeForExistingUser}
+                  className="bg-dark-accent text-white hover:bg-dark-accent/80"
+                >
+                  Generate My Referral Code
+                </Button>
+                <Button 
+                  onClick={() => window.location.reload()} 
+                  variant="outline"
+                  className="border-dark-border text-dark-secondary hover:bg-dark-border"
+                >
+                  Refresh Page
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Account Settings Placeholder */}
+      <div className="bg-dark-panel border border-dark-border rounded-xl p-8">
+        <div className="flex items-center gap-3 mb-4">
+          <Settings className="h-6 w-6 text-dark-secondary" />
+          <h3 className="text-2xl font-semibold text-dark-primary">Account Settings</h3>
         </div>
+        <p className="text-dark-secondary">
+          Manage your account settings, notification preferences, and data privacy options.
+        </p>
+        <p className="text-dark-secondary text-sm mt-2">
+          This feature is coming soon!
+        </p>
       </div>
     </div>
   );
+
+  const renderAIChat = () => {
+    return (
+      <div className="flex flex-col h-[calc(100vh-10rem)]"> {/* Adjusted height */}
+        {/* Fixed Header */}
+        <div className="flex-shrink-0 mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-bold tracking-tight text-dark-primary">AI Assistant</h1>
+              <p className="mt-1 text-dark-secondary">Your personalized health optimization expert.</p>
+            </div>
+            <Button onClick={startNewConversation} variant="outline" className="text-dark-secondary border-dark-border bg-dark-panel hover:bg-dark-border hover:text-dark-primary">
+              New Chat
+            </Button>
+          </div>
+        </div>
+        <div className="flex flex-1 min-h-0 gap-8">
+          <div className="hidden lg:flex lg:flex-col w-1/3 max-w-sm flex-shrink-0">
+            <div className="flex flex-col h-full bg-dark-panel border border-dark-border rounded-lg">
+              <h3 className="flex-shrink-0 p-4 font-semibold border-b border-dark-border text-dark-primary">Chat History</h3>
+              <div className="p-2 space-y-2 overflow-y-auto">
+                {chatHistory.map((conv) => (
+                  <button
+                    key={conv.id}
+                    onClick={() => loadConversation(conv.id)}
+                    className={`w-full p-3 text-left rounded-md transition-colors ${currentConversationId === conv.id ? 'bg-dark-accent text-white' : 'hover:bg-dark-border'}`}
+                  >
+                    <p className="font-semibold truncate">{conv.title}</p>
+                    <p className={`text-xs ${currentConversationId === conv.id ? 'text-white/70' : 'text-dark-secondary'}`}>{getTimeAgo(conv.updated_at)}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-col flex-1 h-full min-w-0">
+            <div className="flex flex-col h-full bg-dark-panel border border-dark-border rounded-lg">
+              {/* Messages Container - This is the scrollable part */}
+              <div ref={chatContainerRef} className="flex-1 p-6 overflow-y-auto">
+                {chatMessages.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-center text-dark-secondary">
+                    <div className="flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-dark-accent/10 text-dark-accent">
+                      <MessageSquare className="w-8 h-8" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-dark-primary">AI Health Assistant</h3>
+                    <p>Ask me anything about your health data.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {chatMessages.map((msg, index) => (
+                      <div key={index} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                        {msg.role === 'assistant' &&
+                          <div className="flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-full bg-dark-accent">
+                            <Sparkles className="w-5 h-5 text-white" />
+                          </div>
+                        }
+                        <div className={`p-4 rounded-lg max-w-2xl ${msg.role === 'user' ? 'bg-dark-accent text-white' : 'bg-dark-background'}`}>
+                          <div className="prose prose-sm prose-invert max-w-none prose-p:my-0 prose-p:text-dark-primary">
+                            <ReactMarkdown>{msg.content}</ReactMarkdown>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {isChatLoading && (
+                      <div className="flex justify-start gap-3">
+                        <div className="flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-full bg-dark-accent">
+                          <Sparkles className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="p-4 rounded-lg bg-dark-border">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-dark-accent animate-pulse" style={{ animationDelay: '0s' }} />
+                            <div className="w-2 h-2 rounded-full bg-dark-accent animate-pulse" style={{ animationDelay: '0.1s' }} />
+                            <div className="w-2 h-2 rounded-full bg-dark-accent animate-pulse" style={{ animationDelay: '0.2s' }} />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="flex-shrink-0 p-4 bg-dark-panel border-t border-dark-border">
+                <form onSubmit={(e) => { e.preventDefault(); if (chatInput.trim()) sendMessage(chatInput); }} className="relative">
+                  <textarea
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        if (chatInput.trim()) sendMessage(chatInput);
+                      }
+                    }}
+                    placeholder="Ask about your results, supplements, or health..."
+                    className="w-full p-3 pr-20 text-white bg-dark-background border-2 border-dark-border rounded-lg resize-none placeholder-dark-secondary focus:outline-none focus:ring-2 focus:ring-dark-accent"
+                    rows={1}
+                    disabled={isChatLoading}
+                  />
+                  <Button
+                    type="submit"
+                    disabled={isChatLoading || !chatInput.trim()}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-2 bg-dark-accent text-white rounded-md hover:bg-dark-accent/90 disabled:opacity-50"
+                  >
+                    <Send className="w-4 h-4" />
+                  </Button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const renderProductChecker = () => (
     <div className="space-y-8">
@@ -2672,130 +2796,6 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
-    </div>
-  );
-
-  const renderSettings = () => (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-4xl font-bold text-dark-primary">Settings</h1>
-        <p className="text-lg text-dark-secondary mt-1">
-          Manage your account settings and preferences.
-        </p>
-      </div>
-
-      {/* Referral System */}
-      <div className="bg-dark-panel border border-dark-border rounded-xl p-8">
-        <div className="flex items-center gap-3 mb-6">
-          <Network className="h-6 w-6 text-dark-accent" />
-          <h3 className="text-2xl font-semibold text-dark-primary">Refer Friends</h3>
-        </div>
-        <p className="text-dark-secondary mb-6">
-          Share SupplementScribe with friends and help them optimize their health too!
-        </p>
-        
-        {profile?.referral_code ? (
-          <div className="space-y-4">
-            {/* Referral Code */}
-            <div>
-              <label className="text-sm font-medium text-dark-secondary mb-2 block">
-                Your Referral Code
-              </label>
-              <div className="flex items-center gap-3">
-                <div className="flex-1 bg-dark-background border border-dark-border rounded-lg px-4 py-3">
-                  <code className="text-lg font-mono text-dark-accent">{profile.referral_code}</code>
-                </div>
-                <Button
-                  onClick={copyReferralCode}
-                  variant="outline"
-                  className="px-4 py-3 border-dark-border hover:bg-dark-border"
-                >
-                  {copiedReferralCode ? (
-                    <Check className="h-4 w-4 text-green-400" />
-                  ) : (
-                    'Copy'
-                  )}
-                </Button>
-              </div>
-            </div>
-
-            {/* Referral URL */}
-            <div>
-              <label className="text-sm font-medium text-dark-secondary mb-2 block">
-                Your Referral Link
-              </label>
-              <div className="flex items-center gap-3">
-                <div className="flex-1 bg-dark-background border border-dark-border rounded-lg px-4 py-3">
-                  <code className="text-sm text-dark-primary break-all">
-                    {generateReferralUrl(profile.referral_code)}
-                  </code>
-                </div>
-                <Button
-                  onClick={copyReferralUrl}
-                  variant="outline"
-                  className="px-4 py-3 border-dark-border hover:bg-dark-border"
-                >
-                  {copiedReferralUrl ? (
-                    <Check className="h-4 w-4 text-green-400" />
-                  ) : (
-                    'Copy'
-                  )}
-                </Button>
-              </div>
-            </div>
-
-            {/* Referral Stats */}
-            <div className="bg-dark-background border border-dark-border rounded-lg p-4 mt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-dark-secondary">People you've referred</p>
-                  <p className="text-2xl font-bold text-dark-accent">{profile.referral_count || 0}</p>
-                </div>
-                <Star className="h-8 w-8 text-dark-accent" />
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="text-center py-8">
-            <div className="bg-dark-background border border-dark-border rounded-lg p-6">
-              <Network className="h-12 w-12 text-dark-accent mx-auto mb-4" />
-              <h4 className="text-lg font-semibold text-dark-primary mb-2">Setting up your referral code...</h4>
-              <p className="text-dark-secondary mb-4">
-                Click the button below to generate your unique referral code.
-              </p>
-              <div className="space-y-3">
-                <Button 
-                  onClick={generateReferralCodeForExistingUser}
-                  className="bg-dark-accent text-white hover:bg-dark-accent/80"
-                >
-                  Generate My Referral Code
-                </Button>
-                <Button 
-                  onClick={() => window.location.reload()} 
-                  variant="outline"
-                  className="border-dark-border text-dark-secondary hover:bg-dark-border"
-                >
-                  Refresh Page
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Account Settings Placeholder */}
-      <div className="bg-dark-panel border border-dark-border rounded-xl p-8">
-        <div className="flex items-center gap-3 mb-4">
-          <Settings className="h-6 w-6 text-dark-secondary" />
-          <h3 className="text-2xl font-semibold text-dark-primary">Account Settings</h3>
-        </div>
-        <p className="text-dark-secondary">
-          Manage your account settings, notification preferences, and data privacy options.
-        </p>
-        <p className="text-dark-secondary text-sm mt-2">
-          This feature is coming soon!
-        </p>
-      </div>
     </div>
   );
 
