@@ -351,7 +351,7 @@ Deno.serve(async (req) => {
   "relevanceScore": number between 1-10,
   "personalizedSummary": "Compelling 2-3 sentences using their first name and specific health details that makes them feel this analysis was created just for them",
   "personalizedExplanation": "In-depth explanation connecting study findings directly to their biomarkers, genetics, symptoms, and goals with specific actionable insights",
-  "keyFindings": ["Array of study findings translated into what they mean for YOUR specific health situation with confidence levels and personal context"],
+  "keyFindings": ["In-depth study findings with detailed explanations of statistical significance, effect sizes, mechanisms of action, and specific implications for your health profile. Each finding should be comprehensive and educational."],
   "actionableRecommendations": ["Specific prioritized actions YOU should take based on this research and your unique profile, with expected outcomes and timeframes"],
   "limitations": ["Important considerations specific to YOUR situation, including any safety concerns based on your medications and conditions"]
 }
@@ -360,6 +360,16 @@ Deno.serve(async (req) => {
 
 **OPENING IMPACT**: Start personalizedSummary with their first name and most relevant health concern
 Example: "Sarah, given your concerns about brain fog and your MTHFR variant, this study on methylfolate is particularly significant for you because..."
+
+**ENHANCED KEY FINDINGS REQUIREMENTS**:
+Each key finding must include:
+- The specific study result with statistical data (p-values, effect sizes, confidence intervals)
+- The biological mechanism explaining HOW this works
+- Personal relevance to their specific health profile
+- Clinical significance vs statistical significance
+- Comparison to other research in the field
+- Specific implications for their symptoms/conditions
+Example: "The study demonstrated a statistically significant 23% improvement in cognitive performance (p=0.003, 95% CI: 15-31%). This works by increasing phosphocreatine in brain tissue, enhancing cellular energy production. For someone like you experiencing brain fog and fatigue, this mechanism directly addresses the cellular energy deficit that may be contributing to your symptoms. The effect size (Cohen's d = 0.7) indicates a clinically meaningful improvement that you would likely notice in daily activities."
 
 **SCIENTIFIC DEPTH WITH ACCESSIBILITY**: 
 - Include specific statistics when available (p-values, effect sizes, confidence intervals)
@@ -441,6 +451,10 @@ Remember: If they have limited data, focus on demographics, symptoms, and health
                           {
                 role: 'user',
                 content: `PERSONALIZED RESEARCH ANALYSIS REQUEST
+
+=== YOUR PERSONAL DETAILS ===
+• Name: ${userProfile.full_name || 'User'}
+• First Name: ${userProfile.full_name?.split(' ')[0] || 'User'}
 
 === YOUR ONBOARDING HEALTH ASSESSMENT ===
 ${healthProfile.onboardingContext || 'No onboarding data available'}
