@@ -133,11 +133,11 @@ Deno.serve(async (req) => {
       { data: medications, error: medicationsError }
     ] = await Promise.all([
       supabase.from('user_profiles').select('*').eq('id', user.id).single(),
-      supabase.from('user_biomarkers').select('*').eq('user_id', user.id),
-      supabase.from('user_snps').select('*').eq('user_id', user.id),
-      supabase.from('user_allergies').select('*').eq('user_id', user.id),
-      supabase.from('user_conditions').select('*').eq('user_id', user.id),
-      supabase.from('user_medications').select('*').eq('user_id', user.id)
+      supabase.from('user_biomarkers').select('*').eq('user_id', user.id).limit(500),
+      supabase.from('user_snps').select('*').eq('user_id', user.id).limit(1000),
+              supabase.from('user_allergies').select('*').eq('user_id', user.id).limit(50),
+              supabase.from('user_conditions').select('*').eq('user_id', user.id).limit(30),
+        supabase.from('user_medications').select('*').eq('user_id', user.id).limit(50)
     ]);
 
     // Log data counts for debugging

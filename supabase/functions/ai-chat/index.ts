@@ -1281,7 +1281,7 @@ Deno.serve(async (req) => {
         supabase.from('user_conditions').select('condition_name').eq('user_id', userId).limit(20),
         supabase.from('user_medications').select('medication_name').eq('user_id', userId).limit(20),
         supabase.from('user_biomarkers').select('marker_name, value, unit, reference_range, comment').eq('user_id', userId).limit(100),
-        supabase.from('supplement_plans').select('plan_details').eq('user_id', userId).order('created_at', { ascending: false }).limit(1).single()
+        supabase.from('supplement_plans').select('plan_details').eq('user_id', userId).order('created_at', { ascending: false }).limit(1).maybeSingle()
       ]);
 
       // --- PARALLEL FETCH: LATEST ANALYSIS + SUPPORTED SNPS ---

@@ -74,17 +74,17 @@ Deno.serve(async (req) => {
       { data: products, error: productsError }
     ] = await Promise.all([
       supabase.from('user_profiles').select('*').eq('id', userId).single(),
-      supabase.from('user_allergies').select('ingredient_name').eq('user_id', userId),
-      supabase.from('user_conditions').select('condition_name').eq('user_id', userId),
-      supabase.from('user_medications').select('medication_name').eq('user_id', userId),
-      supabase.from('user_biomarkers').select('marker_name, value, unit, reference_range').eq('user_id', userId),
-      supabase.from('user_snps').select('*').eq('user_id', userId),
+      supabase.from('user_allergies').select('ingredient_name').eq('user_id', userId).limit(50),
+              supabase.from('user_conditions').select('condition_name').eq('user_id', userId).limit(30),
+        supabase.from('user_medications').select('medication_name').eq('user_id', userId).limit(50),
+      supabase.from('user_biomarkers').select('marker_name, value, unit, reference_range').eq('user_id', userId).limit(500),
+      supabase.from('user_snps').select('*').eq('user_id', userId).limit(1000),
       // FILTER TO ONLY YOUR SUPPLEMENTS
       supabase.from('products').select('id, supplement_name, brand, product_name, product_url, price').eq('brand', 'OK Capsule')
     ]);
 
-    // Check for critical errors
-    const dataFetchError = allergiesError || conditionsError || medicationsError || biomarkersError || snpsError || productsError;
+    // Check for critical errors (including profile error)
+    const dataFetchError = profileError || allergiesError || conditionsError || medicationsError || biomarkersError || snpsError || productsError;
     if (dataFetchError) {
       console.error('Data fetching error:', dataFetchError);
       return new Response(JSON.stringify({ error: 'Failed to fetch health profile or product data.', details: dataFetchError }), {

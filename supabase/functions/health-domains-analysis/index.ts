@@ -65,9 +65,9 @@ Deno.serve(async (req) => {
       { data: medications },
       { data: allergies }
     ] = await Promise.all([
-      supabaseClient.from('user_conditions').select('condition_name').eq('user_id', user.id),
-      supabaseClient.from('user_medications').select('medication_name').eq('user_id', user.id),
-      supabaseClient.from('user_allergies').select('ingredient_name').eq('user_id', user.id)
+              supabaseClient.from('user_conditions').select('condition_name').eq('user_id', user.id).limit(30),
+        supabaseClient.from('user_medications').select('medication_name').eq('user_id', user.id).limit(50),
+      supabaseClient.from('user_allergies').select('ingredient_name').eq('user_id', user.id).limit(50)
     ]);
 
     const domainsAnalysis = createPersonalizedHealthDomainsAnalysis(

@@ -123,11 +123,11 @@ serve(async (req) => {
       { data: okCapsuleProducts, error: productsError }
     ] = await Promise.all([
       supabase.from('user_profiles').select('*').eq('id', user.id).single(),
-      supabase.from('user_biomarkers').select('*').eq('user_id', user.id),
-      supabase.from('user_snps').select('*').eq('user_id', user.id),
-      supabase.from('user_allergies').select('*').eq('user_id', user.id),
-      supabase.from('user_conditions').select('*').eq('user_id', user.id),
-      supabase.from('user_medications').select('*').eq('user_id', user.id),
+      supabase.from('user_biomarkers').select('*').eq('user_id', user.id).limit(500),
+      supabase.from('user_snps').select('*').eq('user_id', user.id).limit(1000),
+              supabase.from('user_allergies').select('*').eq('user_id', user.id).limit(50),
+              supabase.from('user_conditions').select('*').eq('user_id', user.id).limit(30),
+        supabase.from('user_medications').select('*').eq('user_id', user.id).limit(50),
       supabase.from('products').select('supplement_name, brand, product_name, product_url').eq('brand', 'OK Capsule')
     ]);
 

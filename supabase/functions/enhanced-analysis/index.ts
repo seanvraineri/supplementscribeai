@@ -864,12 +864,12 @@ serve(async (req) => {
     console.log('Fetching data for user:', user.id)
     
     const [biomarkersResult, snpsResult, profileResult, conditionsResult, medicationsResult, allergiesResult] = await Promise.all([
-      supabaseClient.from('user_biomarkers').select('*').eq('user_id', user.id),
-      supabaseClient.from('user_snps').select('*').eq('user_id', user.id),
+      supabaseClient.from('user_biomarkers').select('*').eq('user_id', user.id).limit(500),
+      supabaseClient.from('user_snps').select('*').eq('user_id', user.id).limit(1000),
       supabaseClient.from('user_profiles').select('age, sex, goals, conditions, medications, allergies').eq('user_id', user.id).single(),
-      supabaseClient.from('user_conditions').select('*').eq('user_id', user.id),
-      supabaseClient.from('user_medications').select('*').eq('user_id', user.id),
-      supabaseClient.from('user_allergies').select('*').eq('user_id', user.id)
+              supabaseClient.from('user_conditions').select('*').eq('user_id', user.id).limit(30),
+        supabaseClient.from('user_medications').select('*').eq('user_id', user.id).limit(50),
+              supabaseClient.from('user_allergies').select('*').eq('user_id', user.id).limit(50)
     ])
 
     console.log('Data fetched:', {
