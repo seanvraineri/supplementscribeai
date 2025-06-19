@@ -18,7 +18,15 @@ import {
   Users,
   Star,
   ArrowRight,
-  Dna
+  Dna,
+  Search,
+  BarChart3,
+  FlaskConical,
+  Spline,
+  ShieldCheck,
+  BookOpen,
+  ScanLine,
+  Library
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -45,17 +53,14 @@ const comparisonOptions: ComparisonOption[] = [
     priceDetail: '/month + 20+ hours research',
     icon: <AlertTriangle className="w-6 h-6" />,
     gradient: 'from-red-500/20 to-orange-500/20',
-    pros: [
-      'Full control over brands and dosages'
-    ],
+    pros: ['Full control over brands and dosages'],
     cons: [
-      'Wastes $800+/year compared to SupplementScribe',
-      'Overwhelming research burden every month',
-      'High chance of dangerous supplement interactions',
-      'Zero personalization — completely guess-based',
-      'Feels like a part-time job'
+      'No data-driven analysis to guide your choices',
+      'High risk of nutrient interactions or incorrect dosages',
+      'Ignores your personal health goals and symptoms',
+      'Endless research that still results in guesswork',
     ],
-    bottomLine: 'Expensive guesswork that leaves your health to chance.'
+    bottomLine: 'More effort and expense for less precision.',
   },
   {
     id: 'ag1',
@@ -65,17 +70,14 @@ const comparisonOptions: ComparisonOption[] = [
     priceDetail: '/month for celebrity-endorsed',
     icon: <Users className="w-6 h-6" />,
     gradient: 'from-green-500/20 to-emerald-500/20',
-    pros: [
-      'Tastes okay',
-      'Marketed as "complete"'
-    ],
+    pros: ['Tastes okay', 'Good marketing and branding'],
     cons: [
-      'One-size-fits-nobody',
-      'Ignores your genetics, blood levels, and actual needs',
-      'Trace doses of 50+ ingredients — but not enough to matter',
-      'Overpriced basic nutrients with no targeting'
+      '"One-size-fits-all" formula ignores your bio-individuality',
+      'Lacks targeting for your specific health goals',
+      'Proprietary blends can hide ineffective "dusting" of ingredients',
+      'Pays for celebrity endorsements, not a personalized formula',
     ],
-    bottomLine: 'Good marketing. Bad science.'
+    bottomLine: 'A trendy drink, not a targeted health solution.',
   },
   {
     id: 'multivitamin',
@@ -85,53 +87,117 @@ const comparisonOptions: ComparisonOption[] = [
     priceDetail: '/month for drugstore convenience',
     icon: <XCircle className="w-6 h-6" />,
     gradient: 'from-gray-500/20 to-slate-500/20',
-    pros: [
-      'Cheap and available everywhere'
-    ],
+    pros: ['Cheap and available everywhere'],
     cons: [
-      'Synthetic, low-absorption vitamins your body can\'t use',
-      'No genetic targeting = random intake',
-      'Most nutrients excreted, not absorbed',
-      'No insight, no optimization, no progress'
+      'Completely generic with zero personalization',
+      "Often uses low-quality, poorly absorbed nutrient forms",
+      'Fails to address your specific symptoms or objectives',
+      "Can create nutrient imbalances by providing things you don't need",
     ],
-    bottomLine: 'You\'re paying to pee it out.'
+    bottomLine: 'The illusion of health in a pill.',
   },
   {
     id: 'supplementscribe',
     title: 'SupplementScribe',
-    subtitle: '$75/month — personalized nutrition',
+    subtitle: '$75/month — truly personalized nutrition',
     price: '$75',
     priceDetail: '/month for personalized nutrition',
-    icon: <Dna className="w-6 h-6" />,
+    icon: <Brain className="w-6 h-6" />,
     gradient: 'from-blue-500/20 to-cyan-500/20',
     pros: [
-      'Tailored to your unique DNA + biology',
-      'AI scans 40+ SNPs and health markers',
+      'Personalized formula based on our AI Health Assessment',
+      'Analyzes your goals, lifestyle, and symptoms',
+      'Option to add biomarker data for ultimate precision',
       'High-absorption bioavailable forms',
       'Adaptive monthly re-optimization',
-      'Eliminates the guesswork',
       'Saves $800+/year vs DIY',
-      'Actually works.'
+      'Actually works.',
     ],
     cons: [
-      'Requires your health data or DNA test',
-      'Premium quality vs drugstore junk'
+      'Takes ~5 mins to complete the detailed assessment',
+      'Requires brief weekly check-ins to fine-tune your formula.',
     ],
     bottomLine: 'Finally, supplements that make sense for YOUR body — not the label.',
-    isRecommended: true
+    isRecommended: true,
   }
 ];
 
 const features = [
-  { icon: <Target className="w-5 h-5" />, text: '40+ genetic variants analyzed' },
-  { icon: <Brain className="w-5 h-5" />, text: 'AI-powered recommendations' },
-  { icon: <Shield className="w-5 h-5" />, text: '100+ biomarker optimization' },
-  { icon: <Zap className="w-5 h-5" />, text: 'Premium bioavailable forms' },
-  { icon: <TrendingUp className="w-5 h-5" />, text: 'Monthly plan updates' },
-  { icon: <Clock className="w-5 h-5" />, text: 'Daily supplement packs' },
-  { icon: <CheckCircle className="w-5 h-5" />, text: 'Third-party tested' },
-  { icon: <Star className="w-5 h-5" />, text: 'Personalized for you' },
-  { icon: <Dna className="w-5 h-5" />, text: 'Cutting-edge science' }
+  {
+    name: 'Dynamic Health Assessment',
+    description:
+      'Our AI analyzes your goals, lifestyle, and symptoms to build a complete picture of your health needs.',
+    icon: <Search className="w-6 h-6" />,
+  },
+  {
+    name: 'Holistic Symptom Analysis',
+    description:
+      "Go beyond single data points. We analyze how your symptoms connect to guide your personalized formula.",
+    icon: <BarChart3 className="w-6 h-6" />,
+  },
+  {
+    name: 'Personalized Formula Creation',
+    description:
+      'Receive a supplement plan with precise ingredients and dosages tailored to your unique biology.',
+    icon: <FlaskConical className="w-6 h-6" />,
+  },
+  {
+    name: 'Precision Ingredient Matching',
+    description:
+      'Our engine matches your specific needs to a database of thousands of ingredients for optimal results.',
+    icon: <Spline className="w-6 h-6" />,
+  },
+  {
+    name: 'Drug-Nutrient Safety Checks',
+    description:
+      'Automatically screens for potential interactions with medications you may be taking.',
+    icon: <ShieldCheck className="w-6 h-6" />,
+  },
+  {
+    name: 'Evidence-Based Recommendations',
+    description:
+      'Every ingredient is backed by a database of peer-reviewed scientific literature.',
+    icon: <BookOpen className="w-6 h-6" />,
+  },
+  {
+    name: 'Symptom-Driven Adaptation',
+    description:
+      'Your formula evolves over time based on your weekly check-ins and symptom tracking data.',
+    icon: <TrendingUp className="w-6 h-6" />,
+  },
+  {
+    name: 'Product Checker',
+    description:
+      'Upload a product label and our AI will analyze its quality, ingredients, and potential interactions.',
+    icon: <ScanLine className="w-6 h-6" />,
+  },
+  {
+    name: 'Study Buddy',
+    description:
+      'PubMed research personalized for YOU. Science made simple and relevant.',
+    icon: <Library className="w-6 h-6" />,
+  },
+];
+
+const smartReasons = [
+  {
+    icon: <DollarSign className="w-6 h-6" />,
+    title: 'They Stop Wasting Money on Guesswork.',
+    description:
+      'Our AI-driven analysis ensures you only pay for the precise nutrients your body needs, eliminating costly trial-and-error with generic supplements.',
+  },
+  {
+    icon: <BarChart3 className="w-6 h-6" />,
+    title: 'They Make Decisions Based on Data, Not Fads.',
+    description:
+      'Your personalized plan is generated from your unique health assessment and symptom data, not from marketing trends or celebrity endorsements.',
+  },
+  {
+    icon: <TrendingUp className="w-6 h-6" />,
+    title: 'They Get a Plan That Evolves With Them.',
+    description:
+      "Your body's needs change. Through weekly check-ins, your formula adapts to ensure you are always optimized for your current goals and lifestyle.",
+  },
 ];
 
 export default function SupplementComparisonSection() {
@@ -163,7 +229,8 @@ export default function SupplementComparisonSection() {
             <span className="text-dark-accent">Are They Actually Working?</span>
           </h2>
           <p className="text-xl text-dark-secondary max-w-4xl mx-auto leading-relaxed">
-            Most people waste money on generic formulas. Smart people use supplements designed for their body.
+            Most people waste money on generic formulas. Find out what your body
+            *actually* needs with our AI Health Assessment.
           </p>
         </motion.div>
 
@@ -289,7 +356,7 @@ export default function SupplementComparisonSection() {
         >
           <div className="text-center mb-8">
             <p className="text-lg text-dark-secondary">
-              ...and this doesn't even include our AI features
+              And this doesn't even include our AI features...
             </p>
           </div>
           
@@ -298,132 +365,65 @@ export default function SupplementComparisonSection() {
               World's First AI Supplement Platform
             </h3>
             
+            {/* AI Features Grid */}
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-              {[
-                {
-                  icon: <Brain className="w-6 h-6" />,
-                  title: 'Interaction Detection',
-                  description: 'Prevents dangerous combinations',
-                  benefit: 'Never worry about safety again'
-                },
-                {
-                  icon: <TrendingUp className="w-6 h-6" />,
-                  title: 'Adaptive Learning',
-                  description: 'Gets smarter with your data',
-                  benefit: 'Constantly improving results'
-                },
-                {
-                  icon: <Target className="w-6 h-6" />,
-                  title: 'Goal Optimization',
-                  description: 'Tailored to your exact goals',
-                  benefit: '10x faster results'
-                },
-                {
-                  icon: <Zap className="w-6 h-6" />,
-                  title: 'Real-Time Updates',
-                  description: 'Instant plan adjustments',
-                  benefit: 'Always perfectly optimized'
-                },
-                {
-                  icon: <Shield className="w-6 h-6" />,
-                  title: 'Pattern Recognition',
-                  description: 'Spots what you miss',
-                  benefit: 'Catch problems before they start'
-                },
-                {
-                  icon: <Star className="w-6 h-6" />,
-                  title: 'Perfect Timing',
-                  description: 'Optimal absorption windows',
-                  benefit: 'Maximum effectiveness guaranteed'
-                }
-              ].map((feature, index) => (
+              {features.map((feature, index) => (
                 <motion.div
                   key={index}
-                  className="bg-dark-background/50 border border-dark-border rounded-xl p-6 hover:border-dark-accent/50 transition-all duration-300"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.4, delay: index * 0.1 }}
+                  className="bg-dark-panel p-6 rounded-2xl border border-dark-border"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: index * 0.05 }}
                   viewport={{ once: true }}
                 >
                   <div className="flex items-center mb-4">
-                    <div className="p-2 bg-dark-accent/20 rounded-lg text-dark-accent mr-3">
+                    <div className="p-3 bg-dark-accent/10 rounded-lg mr-4 text-dark-accent">
                       {feature.icon}
                     </div>
-                    <h4 className="text-lg font-semibold text-dark-primary">{feature.title}</h4>
+                    <h4 className="text-lg font-semibold text-dark-primary">{feature.name}</h4>
                   </div>
-                  <p className="text-dark-secondary mb-3 text-sm">{feature.description}</p>
-                  <p className="text-dark-accent text-sm font-medium">→ {feature.benefit}</p>
-                </motion.div>
-              ))}
-            </div>
-
-            {/* Special Features Row */}
-            <div className="grid md:grid-cols-2 gap-6">
-              {[
-                {
-                  icon: <CheckCircle className="w-6 h-6" />,
-                  title: 'Study Buddy',
-                  description: 'PubMed research personalized for YOU',
-                  benefit: 'Science made simple and relevant'
-                },
-                {
-                  icon: <AlertTriangle className="w-6 h-6" />,
-                  title: 'Product Checker',
-                  description: 'Instant supplement verification',
-                  benefit: 'Never buy junk again'
-                }
-              ].map((feature, index) => (
-                <motion.div
-                  key={index + 6}
-                  className="bg-dark-background/50 border border-dark-border rounded-xl p-6 hover:border-dark-accent/50 transition-all duration-300"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.4, delay: (index + 6) * 0.1 }}
-                  viewport={{ once: true }}
-                >
-                  <div className="flex items-center mb-4">
-                    <div className="p-2 bg-dark-accent/20 rounded-lg text-dark-accent mr-3">
-                      {feature.icon}
-                    </div>
-                    <h4 className="text-lg font-semibold text-dark-primary">{feature.title}</h4>
-                  </div>
-                  <p className="text-dark-secondary mb-3 text-sm">{feature.description}</p>
-                  <p className="text-dark-accent text-sm font-medium">→ {feature.benefit}</p>
+                  <p className="text-dark-secondary text-sm">{feature.description}</p>
                 </motion.div>
               ))}
             </div>
             
-            <div className="text-center mt-8">
-              <p className="text-lg font-semibold text-dark-accent">
-                This is why people say they "finally feel like themselves again"
+            <div className="text-center mt-12">
+              <p className="text-2xl font-semibold text-dark-accent">
+                Precision nutrition isn't just a concept. It's the feeling of
+                getting your energy back.
               </p>
             </div>
           </div>
         </motion.div>
 
-        {/* Features Grid */}
-        <motion.div 
-          className="mb-12"
+        {/* Why Smart People Choose Section */}
+        <motion.div
+          className="my-24"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
         >
-          <h3 className="text-2xl font-bold text-center mb-8 text-dark-primary">
+          <h3 className="text-4xl md:text-5xl font-bold text-center mb-16 text-dark-primary">
             Why Smart People Choose SupplementScribe
           </h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {features.map((feature, index) => (
+          <div className="grid md:grid-cols-1 lg:grid-cols-3 gap-8">
+            {smartReasons.map((reason, index) => (
               <motion.div
                 key={index}
-                className="flex items-center space-x-3 bg-dark-panel/50 border border-dark-border rounded-xl p-4 hover:border-dark-accent/50 transition-all duration-300"
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.4, delay: index * 0.05 }}
+                className="bg-dark-panel p-8 rounded-2xl border border-dark-border"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
                 viewport={{ once: true }}
               >
-                <div className="text-dark-accent">{feature.icon}</div>
-                <span className="text-sm font-medium text-dark-primary">{feature.text}</span>
+                <div className="p-3 bg-dark-accent/10 rounded-lg mr-4 text-dark-accent inline-block mb-4">
+                  {reason.icon}
+                </div>
+                <h4 className="text-xl font-semibold text-dark-primary mb-3">
+                  {reason.title}
+                </h4>
+                <p className="text-dark-secondary">{reason.description}</p>
               </motion.div>
             ))}
           </div>

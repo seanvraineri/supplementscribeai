@@ -248,28 +248,29 @@ export default function ForEveryonePage() {
                 persona: "The Medication-Resistant",
                 name: "Lisa, 29",
                 problem: "Three different anxiety medications over 18 months, still anxious with weight gain and brain fog",
-                discovery: "MTHFR C677T variant meant her body couldn't properly process folate for neurotransmitter production",
-                solution: "Methylfolate, magnesium glycinate, and targeted B-vitamins alongside her medication",
-                result: "Anxiety significantly reduced, brain fog cleared, lost the medication weight",
-                quote: "For the first time in years, I feel like myself again. My doctor was amazed at my progress."
+                solution: "Our AI Health Assessment identified key symptoms related to methylation and stress pathways. A targeted plan with specific B-vitamins and magnesium gave her brain the foundational support it needed.",
+                outcome: "Reduced anxiety, better mood, and lost the medication-related weight"
               },
               {
-                persona: "The Busy Parent",
-                name: "Sarah, 34",
-                problem: "Exhausted despite 'eating healthy' and taking a multivitamin, irritable with kids",
-                discovery: "COMT slow variant meant she was overstimulated by normal amounts of dopamine and norepinephrine",
-                solution: "Specific magnesium form and B-vitamin ratios to support neurotransmitter balance",
-                result: "Energy levels improved within 2 weeks, more patient and present with family",
-                quote: "I finally have energy to play with my kids after work instead of just surviving"
+                persona: "The Tired Professional",
+                name: "Mark, 42",
+                problem: "Drinks 4 cups of coffee a day but still feels exhausted by 3 PM, struggling with motivation",
+                solution: "His assessment highlighted markers for low energy production. The AI recommended CoQ10 for cellular energy and a specific, highly-absorbable form of B12, often needed by people with his profile.",
+                outcome: "Stable energy throughout the day, improved focus, and better workouts"
               },
               {
-                persona: "The College Student", 
-                name: "Marcus, 20",
-                problem: "Poor focus during exams, relying on energy drinks and considering ADHD medication",
-                discovery: "Genetic variants affecting caffeine metabolism and B-vitamin utilization",
-                solution: "Targeted nootropic stack based on his genetic profile, optimized caffeine timing",
-                result: "Better concentration without stimulants, improved grades, better sleep",
-                quote: "I can actually focus in lectures now without crashing later or feeling anxious"
+                persona: "The Overwhelmed Parent",
+                name: "Emily, 34",
+                problem: "Juggling work and two kids, constantly feeling stressed, irritable, and not sleeping well",
+                solution: "Her health assessment pinpointed high stress and poor sleep patterns. The AI also noted a potential for slower caffeine metabolism based on her reported jitters, suggesting her afternoon coffee was affecting her sleep.",
+                outcome: "Better stress resilience, deeper sleep, and more patience with her kids"
+              },
+              {
+                persona: "The Health-Conscious but Confused",
+                name: "David, 55",
+                problem: "Spends $150/month on supplements from the health food store but isn't sure if they're working",
+                solution: "David was taking many supplements but still felt off. Our AI analyzed his intake and compared it to the needs identified in his assessment. It found he was taking the wrong form of 3 key nutrients and getting too much of 2 others, creating imbalances.",
+                outcome: "Switched to a simpler, more effective plan for less money and feels better than ever"
               }
             ].map((story, index) => (
               <motion.div
@@ -280,39 +281,25 @@ export default function ForEveryonePage() {
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 viewport={{ once: true }}
               >
-                <div className="grid md:grid-cols-2 gap-8 items-center">
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className="text-xl font-bold text-dark-primary">{story.persona}</h3>
+                  <span className="text-sm text-dark-secondary">{story.name}</span>
+                </div>
+                <div className="space-y-4">
                   <div>
-                    <div className="inline-block bg-dark-accent/10 text-dark-accent px-4 py-2 rounded-full text-sm font-medium mb-4">
-                      {story.persona}
-                    </div>
-                    <h3 className="text-2xl font-bold mb-4">{story.name}</h3>
-                    <div className="space-y-4">
-                      <div>
-                        <h4 className="font-semibold text-red-400 mb-2">The Problem:</h4>
-                        <p className="text-dark-secondary text-sm">{story.problem}</p>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-yellow-400 mb-2">What We Found:</h4>
-                        <p className="text-dark-secondary text-sm">{story.discovery}</p>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-green-400 mb-2">Simple Solution:</h4>
-                        <p className="text-dark-secondary text-sm">{story.solution}</p>
-                      </div>
-                    </div>
+                    <h4 className="font-semibold text-red-400 mb-2">The Challenge:</h4>
+                    <p className="text-dark-secondary text-sm">{story.problem}</p>
                   </div>
-                  <div className="bg-dark-background border border-dark-border rounded-xl p-6">
-                    <div className="flex items-center mb-4">
-                      <CheckCircle className="w-6 h-6 text-green-400 mr-3" />
+                  <div>
+                    <h4 className="font-semibold text-yellow-400 mb-2">Our Approach:</h4>
+                    <p className="text-dark-secondary text-sm">{story.solution}</p>
+                  </div>
+                  <div className="bg-dark-background border border-dark-border rounded-lg p-4">
+                    <div className="flex items-center mb-2">
+                      <CheckCircle className="w-5 h-5 text-green-400 mr-2" />
                       <span className="font-semibold text-green-400">Result</span>
                     </div>
-                    <p className="text-dark-secondary mb-4 text-sm">{story.result}</p>
-                    <blockquote className="text-dark-accent italic border-l-4 border-dark-accent pl-4 text-sm">
-                      "{story.quote}"
-                    </blockquote>
-                    <p className="text-xs text-dark-secondary mt-3 opacity-70">
-                      * Individual results may vary. Always consult healthcare providers.
-                    </p>
+                    <p className="text-dark-secondary text-sm">{story.outcome}</p>
                   </div>
                 </div>
               </motion.div>

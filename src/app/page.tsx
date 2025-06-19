@@ -1,12 +1,15 @@
 'use client'
 
 import { motion, Variants } from 'framer-motion';
-import { CheckCircle, ChevronsRight, ChevronDown, LogIn, Database, Users, Brain, Dna, HeartHandshake, Microscope } from 'lucide-react';
+import { CheckCircle, ChevronsRight, ChevronDown, LogIn, Database, Users, Brain, Dna, HeartHandshake, Microscope, Search, FlaskConical, TrendingUp } from 'lucide-react';
 import { Disclosure } from '@headlessui/react';
 import Link from 'next/link';
 import { SVGProps } from 'react';
 import BackgroundAnimation from '@/components/BackgroundAnimation';
 import SupplementComparisonSection from '@/components/SupplementComparisonSection';
+import { AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { useEffect, useState } from 'react';
 
 // Re-using the dark, animated gradient from the dashboard for a consistent theme
 const DashboardGradient = () => (
@@ -97,8 +100,24 @@ const ShipIcon = (props: SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
+const headlines = [
+  'Stop Guessing.',
+  'Start Knowing.',
+  // 'Your Personalized Supplement Plan.',
+  // 'Delivered to your door monthly.',
+];
+
 export default function HomePage() {
-  const headline = ["This", "Isn't", "Wellness.", "This", "is", "Precision."];
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIndex((prevIndex) => (prevIndex + 1) % headlines.length);
+    }, 3000); // Change headline every 3 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
   const subheadline = ["Your", "biology", "is", "unique.", "Your", "supplement", "plan", "should", "be", "too."];
 
   const FADE_IN_ANIMATION_VARIANTS: Variants = {
@@ -107,10 +126,33 @@ export default function HomePage() {
   };
 
   const faqItems = [
-    { question: "How does SupplementScribe personalize my plan?", answer: "We use a sophisticated AI engine to analyze your blood biomarker data, genetic test results, and health questionnaires. This allows us to identify your unique nutritional needs and potential deficiencies, creating a supplement plan that is precisely tailored to your biology." },
-    { question: "Is my health data secure?", answer: "Absolutely. We use end-to-end encryption and follow HIPAA best practices to ensure your personal and health data is stored securely and remains confidential. We never sell your data." },
-    { question: "Can I use my own doctor's lab results?", answer: "Yes. You can securely upload recent lab results from your doctor or other testing services. Our platform can parse and analyze standard PDF lab reports to integrate into your health profile." },
-    { question: "What if my needs change?", answer: "Your biology isn't static, and your plan shouldn't be either. We recommend re-analyzing your data every 3-6 months. Your subscription includes monthly plan updates based on your ongoing tracking and any new data you provide." }
+    {
+      question: 'What data does the AI Health Assessment use to create my plan?',
+      answer:
+        'Your personalized plan is primarily built from your answers in our AI Health Assessment, which covers your health goals, lifestyle factors, and specific symptoms. For even deeper personalization, you have the option to manually enter data from your own lab tests, but it is not required.',
+    },
+    {
+      question:
+        'How can the AI understand my biology without a DNA or blood test?',
+      answer:
+        "Our AI is built on a sophisticated model trained on vast datasets from scientific literature. This data links specific symptoms and lifestyle factors (which we gather from your assessment) to known biomarker levels and common genetic variants. By analyzing the unique patterns in your answers, our AI can infer your likely biological needs. It's similar to how an experienced doctor can deduce a great deal about your health by asking the right questions—our AI does this at a massive scale, making precision nutrition accessible without expensive upfront tests.",
+    },
+    {
+      question: 'How does my supplement plan adapt over time?',
+      answer:
+        'Your plan is dynamic. Through our daily symptom tracker, our AI continuously monitors your progress and feedback. This allows us to make intelligent adjustments to your formula over time, ensuring it\'s always optimized for your current state of health and evolving goals.',
+    },
+    {
+      question:
+        'What is the difference between SupplementScribe and a standard multivitamin?',
+      answer:
+        'A standard multivitamin is a generic, one-size-fits-all product that ignores your unique biology. SupplementScribe uses AI to create a formula with precise dosages tailored specifically to you. It\'s the difference between a generic guess and a precision instrument.',
+    },
+    {
+      question: 'How are your supplements sourced and tested?',
+      answer:
+        "We source only the highest-quality, bioavailable ingredients from trusted suppliers. Every batch is third-party tested for purity and potency to ensure you're getting exactly what's on the label, with no contaminants or fillers. Your health and safety are our highest priority.",
+    },
   ];
 
   const testimonials = [
@@ -144,41 +186,37 @@ export default function HomePage() {
             },
           }}
         >
-          <motion.h1 
-            className="text-5xl md:text-8xl font-bold tracking-tight mb-6 text-dark-primary"
-            variants={{
-              hidden: {},
-              show: {},
-            }}
-          >
-            {headline.map((word, i) => (
-              <motion.span key={i} variants={FADE_IN_ANIMATION_VARIANTS} className={`inline-block ${i !== headline.length - 1 ? 'mr-4' : ''}`}>
-                {word}
-              </motion.span>
-            ))}
-          </motion.h1>
-          <motion.p 
-            className="text-lg md:text-xl text-dark-secondary mb-10 max-w-2xl mx-auto"
-             variants={{
-              hidden: {},
-              show: {},
-            }}
-          >
-             {subheadline.map((word, i) => (
-              <motion.span key={i} variants={FADE_IN_ANIMATION_VARIANTS} className={`inline-block ${i !== subheadline.length - 1 ? 'mr-2' : ''}`}>
-                {word}
-              </motion.span>
-            ))}
-          </motion.p>
-          <motion.div variants={FADE_IN_ANIMATION_VARIANTS}>
-            <Link href="/auth/signup">
-              <button className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-dark-background bg-dark-accent rounded-full overflow-hidden transition-all duration-300 transform hover:scale-105">
-                <span className="relative flex items-center">
-                  Start My Plan <ChevronsRight className="ml-2 h-5 w-5" />
-                </span>
-              </button>
+          <div className="flex justify-center">
+            <AnimatePresence mode="wait">
+              <motion.h1
+                key={headlines[index]}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.5 }}
+                className="text-center text-6xl font-bold tracking-tighter text-white sm:text-8xl"
+              >
+                {headlines[index]}
+              </motion.h1>
+            </AnimatePresence>
+          </div>
+          <p className="mx-auto mt-6 max-w-xl text-center text-lg leading-8 text-slate-400">
+            Take our AI Health Assessment to get a supplement plan personalized
+            to your unique goals, lifestyle, and biology.
+          </p>
+
+          <div className="flex justify-center">
+            <Link href="/onboarding">
+              <Button
+                variant="default"
+                className="mt-8 bg-[#0080F6] hover:bg-[#0080F6]/90"
+                size="lg"
+              >
+                Find My Perfect Formula{' '}
+                <ChevronsRight className="ml-2 h-5 w-5" />
+              </Button>
             </Link>
-          </motion.div>
+          </div>
         </motion.div>
       </section>
 
@@ -249,48 +287,121 @@ export default function HomePage() {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-32 bg-dark-background/50 backdrop-blur-lg border-t border-b border-dark-border">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-20">
-            <motion.h2 
-              className="text-4xl font-bold tracking-tight text-dark-primary"
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              viewport={{ once: true }}
-            >
+      <section className="py-24 bg-dark-background">
+        <div className="container mx-auto px-6 max-w-6xl">
+          <div className="text-center mb-16">
+            <h2 className="text-5xl font-bold text-white mb-4">
               The Future of Personal Health
-            </motion.h2>
-            <motion.p 
-              className="text-lg text-dark-secondary mt-4 max-w-2xl mx-auto"
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              viewport={{ once: true }}
-            >
-              We translate your unique biological data into a supplement plan that is precisely yours, in three simple steps.
-            </motion.p>
+            </h2>
+            <p className="text-lg text-gray-400 max-w-3xl mx-auto">
+              Your personalized supplement plan is just a few minutes away.
+              Here's how our AI finds your perfect formula.
+            </p>
           </div>
+          <div className="grid md:grid-cols-3 gap-12 text-center">
+            {/* Step 1 */}
+            <div className="flex flex-col items-center">
+              <div className="p-4 bg-blue-500/10 rounded-xl mb-4 inline-block">
+                <Search className="w-8 h-8 text-blue-400" />
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-2">
+                1. Take Your AI Health Assessment
+              </h3>
+              <p className="text-gray-400">
+                Our smart assessment analyzes your goals, lifestyle, and
+                symptoms in about 5 minutes. Optionally, add your biomarker
+                data for even greater precision.
+              </p>
+            </div>
+            {/* Step 2 */}
+            <div className="flex flex-col items-center">
+              <div className="p-4 bg-blue-500/10 rounded-xl mb-4 inline-block">
+                <FlaskConical className="w-8 h-8 text-blue-400" />
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-2">
+                2. Review Your Personalized Plan
+              </h3>
+              <p className="text-gray-400">
+                Our AI instantly creates your custom supplement formula, backed
+                by scientific evidence. See the exact ingredients and dosages
+                chosen for you and why.
+              </p>
+            </div>
+            {/* Step 3 */}
+            <div className="flex flex-col items-center">
+              <div className="p-4 bg-blue-500/10 rounded-xl mb-4 inline-block">
+                <TrendingUp className="w-8 h-8 text-blue-400" />
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-2">
+                3. Feel the Difference & Adapt
+              </h3>
+              <p className="text-gray-400">
+                Receive your personalized daily packs. Use our daily symptom
+                tracker to monitor your progress, and watch as our AI adapts
+                your formula to keep you perfectly optimized.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* For Everyone Section */}
+      <section className="py-24 bg-dark-panel">
+        <div className="container mx-auto px-6 max-w-6xl">
+          <motion.div 
+            className="text-center mb-12"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-3xl font-bold mb-4 text-dark-primary">For Everyone</h2>
+            <p className="text-dark-secondary max-w-2xl mx-auto">
+              How everyday people benefit from personalized nutrition without being health experts
+            </p>
+          </motion.div>
           
-          <div className="grid md:grid-cols-3 gap-12 text-dark-primary">
+          <div className="grid md:grid-cols-3 gap-8">
             {[
-              { icon: <AnalyzeIcon />, title: "1. Analyze Data", description: "Securely upload your lab results or connect your health accounts. Our AI analyzes your biomarkers and genetic data." },
-              { icon: <PlanIcon />, title: "2. Get Your Plan", description: "Receive a personalized supplement plan based on your unique needs, with clear explanations for each recommendation." },
-              { icon: <ShipIcon />, title: "3. Ship & Track", description: "Your personalized daily supplement packs are shipped to your door. Track your progress and adapt your plan over time." }
-            ].map((item, i) => (
-              <motion.div 
-                key={i} 
-                className="text-center"
+              {
+                title: "How It Works",
+                description: "Understanding the science behind personalized nutrition and why your biology matters",
+                href: "/how-it-works",
+                icon: <Dna className="w-8 h-8 text-dark-accent" />
+              },
+              {
+                title: "For Everyone",
+                description: "How everyday people benefit from personalized nutrition without being health experts",
+                href: "/for-everyone", 
+                icon: <HeartHandshake className="w-8 h-8 text-dark-accent" />
+              },
+              {
+                title: "The Science",
+                description: "Research evidence and genetic variations that influence your nutritional needs",
+                href: "/science",
+                icon: <Microscope className="w-8 h-8 text-dark-accent" />
+              }
+            ].map((item, index) => (
+              <motion.div
+                key={index}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: i * 0.1 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
                 viewport={{ once: true }}
               >
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-dark-panel rounded-2xl mb-6 border border-dark-border shadow-md text-dark-accent">
-                  {item.icon}
-                </div>
-                <h3 className="text-2xl font-bold mb-3">{item.title}</h3>
-                <p className="text-dark-secondary">{item.description}</p>
+                <Link href={item.href}>
+                  <div className="group bg-dark-panel border border-dark-border rounded-2xl p-8 text-center hover:border-dark-accent transition-all duration-300 cursor-pointer h-full">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-dark-accent/10 rounded-2xl mb-6">
+                      {item.icon}
+                    </div>
+                    <h3 className="text-xl font-bold mb-4 text-dark-primary group-hover:text-dark-accent transition-colors">
+                      {item.title}
+                    </h3>
+                    <p className="text-dark-secondary leading-relaxed">
+                      {item.description}
+                    </p>
+                  </div>
+                </Link>
               </motion.div>
             ))}
           </div>

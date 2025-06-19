@@ -56,7 +56,8 @@ export default function SciencePage() {
               The Science Behind Personalization
             </h1>
             <p className="text-xl text-dark-secondary max-w-3xl mx-auto leading-relaxed">
-              Understanding how genetic variations and biomarkers influence your unique nutritional needs and mental health
+              Understanding how genetics and biomarkers influence our AI's unique
+              nutritional recommendations for your mental health
             </p>
           </motion.div>
         </div>
@@ -93,7 +94,7 @@ export default function SciencePage() {
               {
                 icon: <Activity className="w-8 h-8" />,
                 title: "Biomarker Analysis",
-                description: "Using blood markers to assess current nutritional status and metabolic function."
+                description: "Our AI can infer biomarker status from your health assessment or use your optional lab data."
               },
               {
                 icon: <BookOpen className="w-8 h-8" />,
@@ -206,7 +207,8 @@ export default function SciencePage() {
           >
             <h2 className="text-4xl font-bold mb-6">Key Genetic Variations</h2>
             <p className="text-xl text-dark-secondary max-w-4xl mx-auto leading-relaxed">
-              Common genetic differences that significantly impact nutritional needs and mental health
+              Our AI understands how these common genetic differences can impact
+              nutritional needs and mental health
             </p>
           </motion.div>
 
@@ -633,9 +635,12 @@ export default function SciencePage() {
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl font-bold mb-6">Explore Your Genetic Profile</h2>
+            <h2 className="text-4xl font-bold mb-6">
+              Ready to Use the Future of Health?
+            </h2>
             <p className="text-xl text-dark-secondary mb-8 max-w-2xl mx-auto">
-              Discover how the latest science in personalized nutrition applies to your unique biology and mental health
+              Our AI-powered health assessment is the first step towards a truly
+              personalized supplement plan.
             </p>
             <Link href="/auth/signup">
               <button className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-dark-background bg-dark-accent rounded-full overflow-hidden transition-all duration-300 transform hover:scale-105">
