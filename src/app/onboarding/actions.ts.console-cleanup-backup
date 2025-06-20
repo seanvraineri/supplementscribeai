@@ -5,12 +5,11 @@ import { onboardingSchema } from '@/lib/schemas';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { generateReferralCode } from '@/lib/referral-utils';
-import { logger } from '@/lib/logger';
 
 // Function to send family invitation emails
 async function sendFamilyInviteEmails(familyMembers: any[], adminName: string, adminId: string) {
   try {
-    logger.step('Sending family invitation emails', { memberCount: familyMembers.length });
+    console.log('📧 Sending family invitation emails...');
     
     const invitePromises = familyMembers.map(async (member) => {
       const inviteUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/auth/signup?family_admin_id=${adminId}`;
@@ -86,14 +85,14 @@ async function sendFamilyInviteEmails(familyMembers: any[], adminName: string, a
         });
 
         if (!emailResponse.ok) {
-          logger.error(`Failed to send invite to ${member.email}`, { error: await emailResponse.text() });
+          console.error(`Failed to send invite to ${member.email}:`, await emailResponse.text());
           return { success: false, email: member.email, error: 'Failed to send' };
         } else {
-          logger.success(`Invite sent successfully to ${member.email}`);
+          console.log(`✅ Invite sent successfully to ${member.email}`);
           return { success: true, email: member.email };
         }
       } else {
-        logger.error('No session token for sending emails');
+        console.error('No session token for sending emails');
         return { success: false, email: member.email, error: 'No auth token' };
       }
     });
@@ -102,18 +101,18 @@ async function sendFamilyInviteEmails(familyMembers: any[], adminName: string, a
     const successful = results.filter(r => r.success).length;
     const failed = results.filter(r => !r.success).length;
     
-    logger.info(`Family invites sent: ${successful} successful, ${failed} failed`);
+    console.log(`📧 Family invites sent: ${successful} successful, ${failed} failed`);
     return { successful, failed, results };
     
   } catch (error) {
-    logger.error('Error sending family invitation emails', error instanceof Error ? error : { message: String(error) });
+    console.error('❌ Error sending family invitation emails:', error);
     return { successful: 0, failed: familyMembers.length, error };
   }
 }
 
 export async function saveOnboardingData(formData: unknown, familySetupData?: any) {
   try {
-    logger.step('Saving onboarding data');
+    console.log('📝 Saving onboarding data...');
     const supabase = await createClient();
     
     const {
@@ -130,7 +129,7 @@ export async function saveOnboardingData(formData: unknown, familySetupData?: an
     const result = onboardingSchema.safeParse(formData);
 
     if (!result.success) {
-      logger.error('Form validation failed', { errors: result.error.flatten() });
+      console.error('Form validation failed:', result.error.flatten());
       return { success: false, error: 'Invalid form data provided.' };
     }
 
@@ -207,7 +206,7 @@ export async function saveOnboardingData(formData: unknown, familySetupData?: an
       // so we'll need to pass this from the client if needed
       // For now, we'll handle this in a future update
     } catch (error) {
-      logger.debug('No referral code found');
+      console.log('No referral code found');
     }
 
     // Handle family setup data
@@ -218,11 +217,11 @@ export async function saveOnboardingData(formData: unknown, familySetupData?: an
       // This user is the family admin
       familyAdminId = user.id;
       familySize = familySetupData.familySize;
-      logger.info(`Setting up family admin with ${familySize} total members`);
+      console.log(`👨‍👩‍👧‍👦 Setting up family admin with ${familySize} total members`);
     } else if (familySetupData?.familyAdminId) {
       // This user is joining an existing family
       familyAdminId = familySetupData.familyAdminId;
-      logger.info(`Joining family with admin ID: ${familyAdminId}`);
+      console.log(`👨‍👩‍👧‍👦 Joining family with admin ID: ${familyAdminId}`);
     }
     
     // Upsert Profile Data with new fields
@@ -277,7 +276,7 @@ export async function saveOnboardingData(formData: unknown, familySetupData?: an
       .upsert(profileData, { onConflict: 'id' });
 
     if (profileError) {
-      logger.error('Error upserting profile', profileError);
+      console.error('Error upserting profile:', profileError);
       return { success: false, error: 'Failed to save profile information.' };
     }
     
@@ -287,7 +286,7 @@ export async function saveOnboardingData(formData: unknown, familySetupData?: an
     const { error: deleteMedicationsError } = await supabase.from('user_medications').delete().eq('user_id', user.id);
 
     if (deleteAllergiesError || deleteConditionsError || deleteMedicationsError) {
-      logger.error('Error clearing old data', { deleteAllergiesError, deleteConditionsError, deleteMedicationsError });
+      console.error('Error clearing old data:', { deleteAllergiesError, deleteConditionsError, deleteMedicationsError });
       return { success: false, error: 'Failed to clear existing health profile data.' };
     }
 
@@ -297,7 +296,7 @@ export async function saveOnboardingData(formData: unknown, familySetupData?: an
       if (allergyInserts.length > 0) {
         const { error: allergyError } = await supabase.from('user_allergies').insert(allergyInserts);
         if (allergyError) {
-          logger.error('Error inserting allergies', allergyError);
+          console.error('Error inserting allergies:', allergyError);
           return { success: false, error: 'Failed to save allergy information.' };
         }
       }
@@ -309,7 +308,7 @@ export async function saveOnboardingData(formData: unknown, familySetupData?: an
       if (conditionInserts.length > 0) {
         const { error: conditionError } = await supabase.from('user_conditions').insert(conditionInserts);
         if (conditionError) {
-          logger.error('Error inserting conditions', conditionError);
+          console.error('Error inserting conditions:', conditionError);
           return { success: false, error: 'Failed to save medical condition information.' };
         }
       }
@@ -321,14 +320,14 @@ export async function saveOnboardingData(formData: unknown, familySetupData?: an
       if (medicationInserts.length > 0) {
         const { error: medicationError } = await supabase.from('user_medications').insert(medicationInserts);
         if (medicationError) {
-          logger.error('Error inserting medications', medicationError);
+          console.error('Error inserting medications:', medicationError);
           return { success: false, error: 'Failed to save medication information.' };
         }
       }
     }
 
     // ✅ SUCCESS: Generate supplement plan immediately
-    logger.success('Frictionless onboarding complete! Generating supplement plan');
+    console.log('🎉 Frictionless onboarding complete! Generating supplement plan...');
     
     try {
       // Get user session token for authenticated edge function call
@@ -346,22 +345,22 @@ export async function saveOnboardingData(formData: unknown, familySetupData?: an
         });
 
         if (!planResponse.ok) {
-          logger.error('Failed to generate plan', { error: await planResponse.text() });
+          console.error('Failed to generate plan:', await planResponse.text());
           // Don't fail the onboarding if plan generation fails
         } else {
-          logger.success('Supplement plan generated successfully');
+          console.log('✅ Supplement plan generated successfully');
         }
       } else {
-        logger.error('No session token available for plan generation');
+        console.error('No session token available for plan generation');
       }
     } catch (planError) {
-      logger.error('Error generating plan', planError instanceof Error ? planError : { message: String(planError) });
+      console.error('Error generating plan:', planError);
       // Don't fail the onboarding if plan generation fails
     }
 
     // 🎯 SEND FAMILY INVITES if this is a family admin
     if (familySetupData?.isAdmin && familySetupData?.familyMembers?.length > 0) {
-      logger.step('Sending family invitation emails');
+      console.log('👨‍👩‍👧‍👦 Sending family invitation emails...');
       try {
         const inviteResults = await sendFamilyInviteEmails(
           familySetupData.familyMembers,
@@ -370,14 +369,14 @@ export async function saveOnboardingData(formData: unknown, familySetupData?: an
         );
         
         if (inviteResults.successful > 0) {
-          logger.success(`Successfully sent ${inviteResults.successful} family invitations`);
+          console.log(`✅ Successfully sent ${inviteResults.successful} family invitations`);
         }
         
         if (inviteResults.failed > 0) {
-          logger.warn(`Failed to send ${inviteResults.failed} family invitations`);
+          console.warn(`⚠️ Failed to send ${inviteResults.failed} family invitations`);
         }
       } catch (inviteError) {
-        logger.error('Error sending family invitations', inviteError instanceof Error ? inviteError : { message: String(inviteError) });
+        console.error('❌ Error sending family invitations:', inviteError);
         // Don't fail the onboarding if invite sending fails
       }
     }
@@ -391,7 +390,7 @@ export async function saveOnboardingData(formData: unknown, familySetupData?: an
     };
 
   } catch (error: any) {
-    logger.error('Error in saveOnboardingData', error instanceof Error ? error : { message: String(error) });
+    console.error('Error in saveOnboardingData:', error);
     return {
       success: false,
       error: error.message || 'An unexpected error occurred.',

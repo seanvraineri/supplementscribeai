@@ -50,17 +50,20 @@ export const onboardingSchema = z.object({
   // Step 5: Alcohol Intake
   alcohol_intake: z.string({ required_error: "Please select your alcohol intake." }),
   
-  // Step 6: Health Profile (Allergies, Conditions, Medications)
+  // Step 6: Dietary Preference
+  dietary_preference: z.string({ required_error: "Please select your dietary preference." }),
+  
+  // Step 7: Health Profile (Allergies, Conditions, Medications)
   allergies: z.array(z.object({ value: z.string().min(1, "Please enter an allergy or remove this field.") })).optional(),
   conditions: z.array(z.object({ value: z.string().min(1, "Please enter a condition or remove this field.") })).optional(),
   medications: z.array(z.object({ value: z.string().min(1, "Please enter a medication or remove this field.") })).optional(),
   
-  // Step 7: Primary Health Concern
+  // Step 8: Primary Health Concern
   primary_health_concern: z.string()
     .min(10, { message: "Please describe your main health concern in at least 10 characters." })
     .max(500, { message: "Please keep your concern under 500 characters." }),
   
-  // Step 8: Optional Health Data
+  // Step 9: Optional Health Data
   known_biomarkers: z.string().optional(),
   known_genetic_variants: z.string().optional(),
 }).superRefine((data, ctx) => {

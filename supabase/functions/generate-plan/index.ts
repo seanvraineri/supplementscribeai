@@ -1,4 +1,5 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { checkRateLimit, getRateLimitHeaders } from '../rate-limiter/index.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -31,6 +32,31 @@ const SUPPLEMENT_INTERACTIONS: Record<string, string[]> = {
   'Chromium': ['Zinc'],
 };
 
+// Critical supplement contraindications - conditions where supplements should be avoided
+const SUPPLEMENT_CONTRAINDICATIONS: Record<string, {
+  avoid_conditions: string[];
+  warning_signs: string[];
+  safety_note: string;
+}> = {
+  'L-Glutamine': {
+    avoid_conditions: [
+      'cancer', 'tumor', 'malignancy', 'oncology', 'chemotherapy',
+      'liver disease', 'cirrhosis', 'hepatic encephalopathy', 'liver failure',
+      'kidney disease', 'renal failure', 'dialysis', 'chronic kidney disease',
+      'seizure', 'epilepsy', 'seizure disorder',
+      'bipolar', 'schizophrenia', 'psychosis', 'mania'
+    ],
+    warning_signs: [
+      'history of cancer or tumors',
+      'liver problems or confusion/brain fog with liver issues', 
+      'kidney problems or reduced kidney function',
+      'seizure history or neurological instability',
+      'bipolar disorder or schizophrenia (especially if unstable)'
+    ],
+    safety_note: 'L-Glutamine should be avoided in cancer history, liver/kidney disease, seizure disorders, and unstable psychiatric conditions due to potential safety risks.'
+  }
+};
+
 Deno.serve(async (req) => {
   // Handle preflight requests
   if (req.method === 'OPTIONS') {
@@ -58,6 +84,21 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'User not found' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 404,
+      });
+    }
+
+    // Rate limiting: 10 plan generations per 5 minutes per user
+    const rateLimit = checkRateLimit(`generate-plan:${user.id}`, 10, 5);
+    if (!rateLimit.allowed) {
+      return new Response(JSON.stringify({ 
+        error: 'Rate limit exceeded. Please wait before generating another plan.' 
+      }), {
+        headers: { 
+          ...corsHeaders, 
+          ...getRateLimitHeaders(rateLimit.remainingRequests, rateLimit.resetTime),
+          'Content-Type': 'application/json' 
+        },
+        status: 429,
       });
     }
 
@@ -183,7 +224,7 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'o3',
         messages: [
           {
             role: 'system',
@@ -194,8 +235,7 @@ Deno.serve(async (req) => {
             content: prompt
           }
         ],
-        max_tokens: 4000,
-        temperature: 0.1, // Lower temperature for more consistent results
+                  max_completion_tokens: 4000,
       }),
     });
 
@@ -511,9 +551,10 @@ PERSONALIZATION TIER: ${tier}
 
   // Optional manual biomarker input (Step 8 - user-entered text)
   if (profile.known_biomarkers && profile.known_biomarkers.trim()) {
-    prompt += `\n🔬 USER-ENTERED BIOMARKER CONCERNS (Step 8 - Optional):\n`;
+    prompt += `\n🚨 CRITICAL USER-ENTERED BIOMARKER DATA:\n`;
     prompt += `"${profile.known_biomarkers}"\n`;
-    prompt += `⚠️ IMPORTANT: Address these specific biomarker concerns they manually entered.\n`;
+    prompt += `🔴 MANDATORY: Treat any out-of-range values as HIGH PRIORITY requiring targeted supplements.\n`;
+    prompt += `📊 Parse specific values - use Berberine for cholesterol/glucose, Omega-3 for inflammation, etc.\n`;
   }
 
   // Optional manual genetic variant input (Step 8 - user-entered text)
@@ -548,6 +589,24 @@ PERSONALIZATION TIER: ${tier}
     
     if (conditionAnalysis.multi_condition_guidance) {
       prompt += `\n🔗 MULTI-CONDITION SYNERGIES:\n${conditionAnalysis.multi_condition_guidance}\n`;
+    }
+
+    // 🚨 CRITICAL SUPPLEMENT CONTRAINDICATIONS CHECK
+    prompt += `\n=== 🚨 CRITICAL SUPPLEMENT SAFETY CONTRAINDICATIONS ===\n`;
+    
+    // Check for L-Glutamine contraindications
+    const hasGlutamineContraindication = healthHistory.conditions.some((condition: string) => 
+      SUPPLEMENT_CONTRAINDICATIONS['L-Glutamine'].avoid_conditions.some((avoid: string) => 
+        condition.toLowerCase().includes(avoid.toLowerCase())
+      )
+    );
+    
+    if (hasGlutamineContraindication) {
+      prompt += `🚫 L-GLUTAMINE CONTRAINDICATED: Patient has medical conditions that make L-Glutamine unsafe.\n`;
+      prompt += `⚠️ NEVER recommend L-Glutamine due to: ${healthHistory.conditions.join(', ')}\n`;
+      prompt += `Safety Note: ${SUPPLEMENT_CONTRAINDICATIONS['L-Glutamine'].safety_note}\n`;
+    } else {
+      prompt += `✅ No major contraindications detected for available supplements.\n`;
     }
   }
   if (healthHistory.medications.length > 0) {
@@ -632,15 +691,41 @@ PERSONALIZATION TIER: ${tier}
     }
   }
 
+  // 🚨 ADD CRITICAL "BIG 3" MANDATORY CHECKS
   prompt += `
+
+🚨🚨🚨 CRITICAL "BIG 3" MANDATORY CHECKS - DO NOT MISS THESE! 🚨🚨🚨
+
+Before creating your recommendations, you MUST check for these three critical situations:
+
+1. **MTHFR VARIANTS & FAILED PSYCH MEDS** - If they have ANY of these red flags:
+   - MTHFR variants (rs1801133, rs1801131) = genetic methylation issues
+   - Brain fog + fatigue + anxiety/depression + poor sleep = STRONG MTHFR signs  
+   - Failed ADHD/anxiety medications (medication_history = 'yes') = MAJOR methylation red flag
+   - You MUST include "Methyl B-Complex" - this is absolutely non-negotiable
+   - NEVER miss this - it's life-changing for MTHFR variants and failed psych meds
+
+2. **VITAMIN D DEFICIENCY** - If they have vitamin D < 30 ng/mL OR symptoms suggesting deficiency:
+   - Depression/mood issues + fatigue + immune problems + bone/joint pain = vitamin D deficiency signs
+   - You MUST include "Vitamin D" or "D Complex" - this is essential
+   - Most people are deficient - don't miss this critical nutrient
+
+3. **MAGNESIUM DEFICIENCY** - If they have symptoms suggesting magnesium deficiency:
+   - Poor sleep + anxiety/stress + muscle tension + headaches + sugar cravings = magnesium deficiency signs
+   - You MUST include "Magnesium" - this is foundational for most people
+   - Magnesium deficiency is epidemic - be very liberal with this recommendation
+
+⚠️ THESE ARE THE BIG 3 THAT MOST PEOPLE NEED - DO NOT MISS THEM WHEN THE SIGNS ARE THERE!
 
 🎯 ULTIMATE PERSONALIZATION REQUIREMENTS:
 
 1. **EXACTLY 6 SUPPLEMENTS** - Count them before responding
 2. **ZERO INTERACTIONS** - No supplements that interfere with each other
-3. **HOLISTIC APPROACH** - Work together synergistically
-4. **MAXIMUM PERSONALIZATION** - Based on all available data
-5. **YOUR CATALOG ONLY** - Use only the supplements listed above
+3. **SAFETY FIRST** - Never recommend contraindicated supplements (check L-Glutamine warnings above)
+4. **HOLISTIC APPROACH** - Work together synergistically
+5. **MAXIMUM PERSONALIZATION** - Based on all available data
+6. **YOUR CATALOG ONLY** - Use only the supplements listed above
+7. **BIG 3 PRIORITY** - Never miss MTHFR, Vitamin D, or Magnesium when indicated
 
 🎯 PRIORITIZATION HIERARCHY (MANDATORY ORDER):
 1. 🚨 PRIMARY HEALTH CONCERN - Address their stated main concern FIRST
@@ -743,6 +828,7 @@ Provide EXACTLY 6 recommendations in this JSON format:
 - For severe deficiencies: use higher therapeutic doses
 - For maintenance: use standard preventive doses
 - NEVER use vague terms like "as directed" - be specific!
+- FIXED-DOSE PACKS: Do NOT suggest dosage adjustments (e.g., "reduce to 300mg if loose stools"). Instead suggest timing/food recommendations.
 
 CRITICAL: Provide ONLY the JSON response. Count your recommendations - must be exactly 6. Make every explanation uniquely personal to THIS individual.`;
 

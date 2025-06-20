@@ -43,8 +43,7 @@ import {
   Target,
   Shield,
   Network,
-  Send,
-  Apple
+  Send
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { SVGProps } from 'react';
@@ -70,7 +69,7 @@ import ShareGraphics from '@/components/ShareGraphics';
 
 const supabase = createClient();
 
-type TabType = 'dashboard' | 'supplement-plan' | 'diet-groceries' | 'analysis' | 'tracking' | 'ai-chat' | 'product-checker' | 'study-buddy' | 'settings';
+type TabType = 'dashboard' | 'supplement-plan' | 'analysis' | 'tracking' | 'ai-chat' | 'product-checker' | 'study-buddy' | 'settings';
 
 const MindIcon = (props: SVGProps<SVGSVGElement>) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" {...props}>
@@ -125,8 +124,6 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [isGenerating, setIsGenerating] = useState(false);
   const [plan, setPlan] = useState<any>(null);
-  const [dietPlan, setDietPlan] = useState<any>(null);
-  const [isGeneratingDiet, setIsGeneratingDiet] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   // REMOVED: uploadedFiles state (legacy file upload functionality)
@@ -351,20 +348,15 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    let isMounted = true;
-    
     const fetchUserData = async () => {
       try {
         setIsLoading(true);
         const { data: { user }, error: userError } = await supabase.auth.getUser();
         if (userError || !user) {
-          if (!isMounted) return; // Component unmounted
           console.error('Authentication error:', userError);
           router.push('/login');
           return;
         }
-        
-        if (!isMounted) return; // Component unmounted
         setUser(user);
 
         // Fetch user profile with error handling
@@ -377,15 +369,14 @@ export default function DashboardPage() {
           
           if (profileError) {
             console.warn('Profile fetch error:', profileError);
-                  } else {
-          if (!isMounted) return;
-          setProfile(profileData);
-          
-          // Generate referral code for existing users who don't have one
-          if (profileData && !profileData.referral_code) {
-            generateReferralCodeForExistingUser();
+          } else {
+            setProfile(profileData);
+            
+            // Generate referral code for existing users who don't have one
+            if (profileData && !profileData.referral_code) {
+              generateReferralCodeForExistingUser();
+            }
           }
-        }
         } catch (error) {
           console.warn('Profile fetch failed:', error);
         }
@@ -467,7 +458,6 @@ export default function DashboardPage() {
             biomarkers: biomarkers?.length || 0,
             snps: mappedSnps?.length || 0
           };
-          if (!isMounted) return;
           setExtractedData(extractedCounts);
           setBiomarkersData(biomarkers || []);
           setSnpsData(mappedSnps || []);
@@ -495,60 +485,27 @@ export default function DashboardPage() {
               console.warn('Plan fetch error:', planError);
             }
           } else if (planData) {
-            if (!isMounted) return;
             setPlan(planData.plan_details);
           }
         } catch (error) {
           console.warn('Plan fetch failed:', error);
         }
 
-        // Fetch existing diet plan with error handling
-        try {
-          const { data: dietPlanData, error: dietPlanError } = await supabase
-            .from('diet_plans')
-            .select('plan_details')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .single();
-
-          if (dietPlanError) {
-            if (dietPlanError.code !== 'PGRST116') { // Not found error is expected
-              console.warn('Diet plan fetch error:', dietPlanError);
-            }
-          } else if (dietPlanData) {
-            if (!isMounted) return;
-            setDietPlan(dietPlanData.plan_details);
-          }
-        } catch (error) {
-          console.warn('Diet plan fetch failed:', error);
-        }
-
       } catch (error) {
         console.error('Critical error in fetchUserData:', error);
         // Don't redirect on data fetch errors, just log them
       } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+        setIsLoading(false);
       }
     };
 
     fetchUserData();
-    
-    // Cleanup function
-    return () => {
-      isMounted = false;
-    };
   }, [router]);
 
   // Load health domains analysis
   useEffect(() => {
-    let isMounted = true;
-    const abortController = new AbortController();
-    
     const loadHealthDomains = async () => {
-      if (!user || !isMounted) return;
+      if (!user) return;
       
       setDomainsLoading(true);
       setDomainsError(null);
@@ -562,8 +519,6 @@ export default function DashboardPage() {
           },
         });
 
-        if (!isMounted) return; // Component unmounted
-        
         if (error) {
           console.error('Health domains analysis error:', error);
           setDomainsError(error.message || 'Failed to analyze health domains');
@@ -573,23 +528,14 @@ export default function DashboardPage() {
         console.log('Health domains data received:', data);
         setDomainsData(data);
       } catch (error: any) {
-        if (!isMounted || error.name === 'AbortError') return;
         console.error('Health domains analysis error:', error);
         setDomainsError(error.message || 'Failed to analyze health domains');
       } finally {
-        if (isMounted) {
-          setDomainsLoading(false);
-        }
+        setDomainsLoading(false);
       }
     };
 
     loadHealthDomains();
-    
-    // Cleanup function
-    return () => {
-      isMounted = false;
-      abortController.abort();
-    };
   }, [user]);
 
   useEffect(() => {
@@ -627,38 +573,6 @@ export default function DashboardPage() {
       alert(`An error occurred while generating your plan: ${error.message}`);
     } finally {
       setIsGenerating(false);
-    }
-  };
-
-  const generateDietPlan = async () => {
-    if (!user) return;
-
-    setIsGeneratingDiet(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      const { data, error } = await supabase.functions.invoke('generate-diet-plan', {
-        headers: {
-          Authorization: `Bearer ${session?.access_token}`,
-        },
-      });
-
-      if (error) {
-        throw new Error(error.message || 'Failed to generate diet plan');
-      }
-
-      if (data.success) {
-        setDietPlan(data.plan);
-        setActiveTab('diet-groceries'); // Switch to diet plan tab
-      } else {
-        console.error('Failed to generate diet plan:', data.error);
-        alert(`Failed to generate diet plan: ${data.error}`);
-      }
-    } catch (error: any) {
-      console.error('Error generating diet plan:', error);
-      alert(`An error occurred while generating your diet plan: ${error.message}`);
-    } finally {
-      setIsGeneratingDiet(false);
     }
   };
 
@@ -928,7 +842,6 @@ export default function DashboardPage() {
   const sidebarItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'supplement-plan', label: 'Supplement Plan', icon: Pill },
-    { id: 'diet-groceries', label: 'Diet & Groceries', icon: Apple },
     { id: 'analysis', label: 'Comprehensive Analysis', icon: BarChart3 },
     { id: 'tracking', label: 'Tracking', icon: Activity },
     { id: 'ai-chat', label: 'AI Chat', icon: MessageSquare },
@@ -1033,46 +946,6 @@ export default function DashboardPage() {
                     className="w-full text-xs py-1"
                   >
                     {isGenerating ? 'Generating...' : 'Generate'}
-                  </Button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Diet Plan Panel - Compact */}
-          <div className="bg-dark-panel rounded-xl p-3 border border-dark-border">
-            <div className="flex items-center gap-2 mb-2">
-              <Apple className="h-4 w-4 text-dark-secondary" />
-              <h3 className="text-sm font-semibold text-dark-primary">Whole Food Diet Plan</h3>
-            </div>
-            <div className="py-1">
-              {dietPlan ? (
-                <div className="space-y-2 text-center">
-                  <div className="w-8 h-8 bg-green-900/50 rounded-full mx-auto flex items-center justify-center">
-                    <CheckCircle className="h-4 w-4 text-green-400" />
-                  </div>
-                  <p className="text-dark-secondary text-xs">Diet ready</p>
-                  <Button 
-                    onClick={() => setActiveTab('diet-groceries')}
-                    size="sm"
-                    className="w-full bg-dark-accent text-white hover:bg-dark-accent/80 rounded-lg text-xs py-1"
-                  >
-                    View Diet
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-2 text-center">
-                  <div className="w-8 h-8 bg-dark-border rounded-full mx-auto flex items-center justify-center">
-                    <Apple className="h-4 w-4 text-dark-accent" />
-                  </div>
-                  <p className="text-dark-secondary text-xs">No diet yet</p>
-                  <Button 
-                    onClick={generateDietPlan} 
-                    disabled={isGeneratingDiet}
-                    size="sm"
-                    className="w-full text-xs py-1"
-                  >
-                    {isGeneratingDiet ? 'Generating...' : 'Generate'}
                   </Button>
                 </div>
               )}
@@ -1245,168 +1118,6 @@ export default function DashboardPage() {
           </p>
           <Button onClick={generatePlan} disabled={isGenerating} className="bg-dark-accent text-white hover:bg-dark-accent/80">
             {isGenerating ? 'Generating...' : 'Generate AI Plan'}
-          </Button>
-        </div>
-      )}
-    </div>
-  );
-
-  const renderDietGroceries = () => (
-    <div className="space-y-8">
-      {/* Hero Header */}
-      <div className="relative bg-dark-panel border border-dark-border rounded-xl p-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold text-dark-primary mb-2">
-              Your Personalized Whole Food Diet Plan
-            </h1>
-            <p className="text-lg text-dark-secondary">
-              Traditional nutrition principles with grocery list & meal suggestions
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button 
-              onClick={generateDietPlan} 
-              disabled={isGeneratingDiet}
-              className="bg-dark-accent text-white hover:bg-dark-accent/80 transition-all duration-300"
-            >
-              {isGeneratingDiet ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  Regenerating...
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <Apple className="h-4 w-4" />
-                  Regenerate Diet Plan
-                </div>
-              )}
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {dietPlan ? (
-        <div className="space-y-8">
-          {/* General Notes Section */}
-          {dietPlan.general_notes && (
-            <div className="bg-dark-panel rounded-xl p-6 border border-dark-border">
-              <h3 className="text-lg font-semibold text-dark-accent mb-3 flex items-center gap-2">
-                <Heart className="h-5 w-5" />
-                Your Personalized Nutrition Journey
-              </h3>
-              <p className="text-dark-primary leading-relaxed">{dietPlan.general_notes}</p>
-            </div>
-          )}
-
-          {/* Grocery List Section */}
-          <div className="bg-dark-panel rounded-xl p-6 border border-dark-border">
-            <h2 className="text-2xl font-bold text-dark-primary mb-6 flex items-center gap-2">
-              <Apple className="h-6 w-6 text-dark-accent" />
-              Your Personalized Grocery List
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {dietPlan.grocery_list && Object.entries(dietPlan.grocery_list).map(([category, items]: [string, any]) => (
-                <motion.div 
-                  key={category}
-                  className="bg-dark-background/50 rounded-lg p-4 border border-dark-border"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                >
-                  <h3 className="text-lg font-semibold text-dark-accent mb-3 capitalize">
-                    {category.replace('_', ' ')}
-                  </h3>
-                  <div className="space-y-3">
-                    {Array.isArray(items) && items.map((item: any, index: number) => (
-                      <div key={index} className="bg-dark-panel rounded-lg p-3 border border-dark-border">
-                        <h4 className="font-semibold text-dark-primary text-sm mb-1">{item.item}</h4>
-                        <p className="text-dark-secondary text-xs leading-relaxed">{item.reason}</p>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-
-          {/* Meal Suggestions Section */}
-          <div className="bg-dark-panel rounded-xl p-6 border border-dark-border">
-            <h2 className="text-2xl font-bold text-dark-primary mb-6 flex items-center gap-2">
-              <Leaf className="h-6 w-6 text-dark-accent" />
-              Your 20 Personalized Meal Suggestions
-            </h2>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {dietPlan.meal_suggestions && Object.entries(dietPlan.meal_suggestions).map(([mealType, meals]: [string, any]) => (
-                <motion.div 
-                  key={mealType}
-                  className="bg-dark-background/50 rounded-lg p-4 border border-dark-border"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                >
-                  <h3 className="text-xl font-semibold text-dark-accent mb-4 capitalize flex items-center gap-2">
-                    {mealType === 'breakfast' && <Star className="h-5 w-5" />}
-                    {mealType === 'lunch' && <Target className="h-5 w-5" />}
-                    {mealType === 'dinner' && <Heart className="h-5 w-5" />}
-                    {mealType === 'snacks' && <Zap className="h-5 w-5" />}
-                    {mealType} ({Array.isArray(meals) ? meals.length : 0})
-                  </h3>
-                  <div className="space-y-4">
-                    {Array.isArray(meals) && meals.map((meal: any, index: number) => (
-                      <motion.div 
-                        key={index} 
-                        className="bg-dark-panel rounded-lg p-4 border border-dark-border"
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.3 + index * 0.05 }}
-                      >
-                        <h4 className="font-bold text-dark-primary mb-2">{meal.name}</h4>
-                        <div className="mb-3">
-                          <p className="text-dark-secondary text-sm mb-1">Ingredients:</p>
-                          <div className="flex flex-wrap gap-1">
-                            {Array.isArray(meal.ingredients) && meal.ingredients.map((ingredient: string, i: number) => (
-                              <span key={i} className="bg-dark-accent/20 text-dark-accent px-2 py-1 rounded text-xs">
-                                {ingredient}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                        <div className="bg-dark-background/50 rounded-lg p-3 border-l-4 border-dark-accent">
-                          <p className="text-dark-secondary text-sm">
-                            <span className="font-semibold text-dark-accent">Why this works for you:</span> {meal.benefits}
-                          </p>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-
-          {/* Contraindications Section */}
-          {dietPlan.contraindications && (
-            <div className="bg-dark-panel rounded-xl p-6 border border-dark-border border-l-4 border-l-yellow-500">
-              <h3 className="text-lg font-semibold text-yellow-400 mb-3 flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5" />
-                Important Safety Considerations
-              </h3>
-              <p className="text-dark-primary leading-relaxed">{dietPlan.contraindications}</p>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="text-center py-20 bg-dark-panel border border-dark-border rounded-lg">
-          <Apple className="h-12 w-12 text-dark-secondary mx-auto mb-4" />
-          <h3 className="text-xl font-medium text-dark-primary mb-2">No Diet Plan Generated</h3>
-          <p className="text-dark-secondary mb-4">
-            Generate your personalized whole food nutrition plan to get started.
-          </p>
-          <Button onClick={generateDietPlan} disabled={isGeneratingDiet} className="bg-dark-accent text-white hover:bg-dark-accent/80">
-            {isGeneratingDiet ? 'Generating...' : 'Generate Diet Plan'}
           </Button>
         </div>
       )}
@@ -3094,8 +2805,6 @@ export default function DashboardPage() {
         return renderDashboardContent();
       case 'supplement-plan':
         return renderSupplementPlan();
-      case 'diet-groceries':
-        return renderDietGroceries();
       case 'analysis':
         return renderEnhancedAnalysis();
       case 'tracking':

@@ -1,5 +1,6 @@
 // ⚡ SPEED OPTIMIZATION: Using GPT-4.1 nano for 3-5x faster responses while maintaining full personalization
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { checkRateLimit, getRateLimitHeaders } from '../rate-limiter/index.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -1181,6 +1182,21 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Rate limiting: 50 chat messages per 5 minutes per user
+    const rateLimit = checkRateLimit(`ai-chat:${user.id}`, 50, 5);
+    if (!rateLimit.allowed) {
+      return new Response(JSON.stringify({ 
+        error: 'Rate limit exceeded. Please wait before sending another message.' 
+      }), {
+        headers: { 
+          ...corsHeaders, 
+          ...getRateLimitHeaders(rateLimit.remainingRequests, rateLimit.resetTime),
+          'Content-Type': 'application/json' 
+        },
+        status: 429,
+      });
+    }
+
     const { message, conversation_id, genetic_file_content } = await req.json();
     const userId = user.id;
 
@@ -1599,8 +1615,7 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         model: 'gpt-4.1-nano',
         messages: messages,
-        max_tokens: maxTokens,
-        temperature: personalityProfile.communicationStyle === 'scientific' ? 0.1 : 0.2,
+                  max_completion_tokens: maxTokens,
         stream: false,
         presence_penalty: 0.1,
         frequency_penalty: 0.1,

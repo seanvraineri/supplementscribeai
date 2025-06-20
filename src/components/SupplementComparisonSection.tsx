@@ -396,6 +396,142 @@ export default function SupplementComparisonSection() {
           </div>
         </motion.div>
 
+        {/* AI vs Human Consultant Comparison - Accurate to SupplementScribe */}
+        <motion.div 
+          className="mb-24"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          viewport={{ once: true }}
+        >
+          <div className="text-center mb-16">
+            <h3 className="text-4xl font-bold text-dark-primary mb-4">
+              AI Health Analysis vs Traditional Health Consultant
+            </h3>
+            <p className="text-xl text-dark-secondary">
+              Why our AI-powered supplement personalization beats expensive consultations
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            {/* Traditional Health Consultant */}
+            <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-8">
+              <div className="flex items-center mb-6">
+                <div className="p-3 bg-red-500/20 rounded-xl mr-4">
+                  <Clock className="w-6 h-6 text-red-400" />
+                </div>
+                <div>
+                  <h4 className="text-2xl font-bold text-dark-primary">Health Consultant</h4>
+                  <p className="text-red-400 font-semibold">$300-500 per session</p>
+                </div>
+              </div>
+              
+              <div className="space-y-4 text-dark-secondary">
+                <div className="flex items-start">
+                  <XCircle className="w-5 h-5 text-red-400 mt-0.5 mr-3 flex-shrink-0" />
+                  <span>26-day average wait for appointment scheduling</span>
+                </div>
+                <div className="flex items-start">
+                  <XCircle className="w-5 h-5 text-red-400 mt-0.5 mr-3 flex-shrink-0" />
+                  <span>60-minute session with basic questionnaire</span>
+                </div>
+                <div className="flex items-start">
+                  <XCircle className="w-5 h-5 text-red-400 mt-0.5 mr-3 flex-shrink-0" />
+                  <span>Generic supplement recommendations</span>
+                </div>
+                <div className="flex items-start">
+                  <XCircle className="w-5 h-5 text-red-400 mt-0.5 mr-3 flex-shrink-0" />
+                  <span>You research and buy supplements separately</span>
+                </div>
+                <div className="flex items-start">
+                  <XCircle className="w-5 h-5 text-red-400 mt-0.5 mr-3 flex-shrink-0" />
+                  <span>No ongoing tracking or plan adjustments</span>
+                </div>
+                <div className="flex items-start">
+                  <XCircle className="w-5 h-5 text-red-400 mt-0.5 mr-3 flex-shrink-0" />
+                  <span>Pay again for follow-up consultations</span>
+                </div>
+              </div>
+
+              <div className="mt-6 p-4 bg-red-500/20 rounded-lg">
+                <p className="text-red-300 font-semibold">Total Cost: $500+ consultation + $100+ monthly supplements</p>
+              </div>
+            </div>
+
+            {/* SupplementScribe AI */}
+            <div className="bg-dark-accent/10 border border-dark-accent rounded-2xl p-8 relative">
+              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-dark-accent text-dark-background px-4 py-1 rounded-full text-sm font-bold">
+                BETTER • FASTER • CHEAPER
+              </div>
+              
+              <div className="flex items-center mb-6">
+                <div className="p-3 bg-dark-accent/20 rounded-xl mr-4">
+                  <Brain className="w-6 h-6 text-dark-accent" />
+                </div>
+                <div>
+                  <h4 className="text-2xl font-bold text-dark-primary">SupplementScribe AI</h4>
+                  <p className="text-dark-accent font-semibold">$75/month (everything included)</p>
+                </div>
+              </div>
+              
+              <div className="space-y-4 text-dark-secondary">
+                <div className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 mr-3 flex-shrink-0" />
+                  <span><strong className="text-dark-primary">5-minute AI Health Assessment</strong> - comprehensive lifestyle and symptom analysis</span>
+                </div>
+                <div className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 mr-3 flex-shrink-0" />
+                  <span><strong className="text-dark-primary">Instant personalized plan</strong> - custom formula with exact dosages</span>
+                </div>
+                <div className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 mr-3 flex-shrink-0" />
+                  <span><strong className="text-dark-primary">Monthly supplement delivery</strong> - 6 targeted supplements in daily packs</span>
+                </div>
+                <div className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 mr-3 flex-shrink-0" />
+                  <span><strong className="text-dark-primary">Optional biomarker integration</strong> - input your lab results for precision targeting</span>
+                </div>
+                <div className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 mr-3 flex-shrink-0" />
+                  <span><strong className="text-dark-primary">Daily progress tracking</strong> - plan adapts based on your daily symptom feedback</span>
+                </div>
+                <div className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 mr-3 flex-shrink-0" />
+                  <span><strong className="text-dark-primary">AI Study Buddy</strong> - personalized research summaries from PubMed</span>
+                </div>
+              </div>
+
+              <div className="mt-6 p-4 bg-dark-accent/20 rounded-lg">
+                <p className="text-dark-accent font-semibold">Complete Solution: $75/month (AI analysis + 6 supplements + delivery + ongoing optimization)</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Accurate Comparison Stats */}
+          <div className="mt-16 text-center">
+            <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+              <div className="bg-dark-panel/50 rounded-2xl p-6 border border-dark-border">
+                <div className="text-3xl font-bold text-green-400 mb-2">Instant Results</div>
+                <p className="text-dark-secondary">5-minute assessment vs 26-day wait + 60-minute session</p>
+              </div>
+              <div className="bg-dark-panel/50 rounded-2xl p-6 border border-dark-border">
+                <div className="text-3xl font-bold text-dark-accent mb-2">87% Savings</div>
+                <p className="text-dark-secondary">$75/month vs $600+ (consultation + supplements)</p>
+              </div>
+              <div className="bg-dark-panel/50 rounded-2xl p-6 border border-dark-border">
+                <div className="text-3xl font-bold text-purple-400 mb-2">Always Adapting</div>
+                <p className="text-dark-secondary">Daily optimization vs static one-time recommendations</p>
+              </div>
+            </div>
+            
+            <div className="mt-12 max-w-4xl mx-auto">
+              <p className="text-lg text-dark-secondary leading-relaxed">
+                <strong className="text-dark-primary">Stop paying consultant prices for generic advice.</strong> Our AI analyzes your unique health goals, lifestyle, and symptoms to create a personalized supplement plan that actually adapts to your progress. Get precision nutrition delivered to your door for less than you'd spend on coffee.
+              </p>
+            </div>
+          </div>
+        </motion.div>
+
         {/* Why Smart People Choose Section */}
         <motion.div
           className="my-24"

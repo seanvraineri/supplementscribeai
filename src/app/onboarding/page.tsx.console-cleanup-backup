@@ -11,7 +11,6 @@ import { LifestyleAssessment, LIFESTYLE_QUESTIONS } from '@/components/onboardin
 import { ActivityLevelStep } from '@/components/onboarding/03-ActivityLevelStep';
 import { SleepHoursStep } from '@/components/onboarding/04-SleepHoursStep';
 import { AlcoholStep } from '@/components/onboarding/05-AlcoholStep';
-import { DietaryPreferenceStep } from '@/components/onboarding/06-DietaryPreferenceStep';
 import { HealthProfileStep } from '@/components/onboarding/06-HealthProfileStep';
 import { PrimaryConcernStep } from '@/components/onboarding/07-PrimaryConcernStep';
 import { OptionalDataStep } from '@/components/onboarding/08-OptionalDataStep';
@@ -25,11 +24,10 @@ import { Form } from '@/components/ui/form';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, Sparkles, Brain, Heart, FileText, User, ChevronLeft, ChevronRight, Users } from 'lucide-react';
-import { logger } from '@/lib/logger';
 
 // Fallback health score creation function
 async function createFallbackHealthScore(supabase: any, userId: string, onboardingData: any) {
-  logger.step('Creating fallback health score');
+  console.log('🔄 Creating fallback health score...');
   
   // Simple scoring based on onboarding data
   let score = 75; // Start with average
@@ -99,11 +97,11 @@ async function createFallbackHealthScore(supabase: any, userId: string, onboardi
     .insert(fallbackData);
   
   if (error) {
-    logger.error('Failed to save fallback health score', error);
+    console.error('❌ Failed to save fallback health score:', error);
     throw error;
   }
   
-  logger.success('Fallback health score saved successfully');
+  console.log('✅ Fallback health score saved successfully');
   return fallbackData;
 }
 
@@ -137,10 +135,6 @@ const STEP_INFO = [
   {
     title: "Alcohol Consumption",
     subtitle: "This affects supplement absorption and recommendations"
-  },
-  {
-    title: "Dietary Preference",
-    subtitle: "This helps us tailor your nutrition plan to your dietary needs"
   },
   {
     title: "Health Profile",
@@ -222,7 +216,7 @@ export default function OnboardingPage() {
       if (familyData) {
         const parsed = JSON.parse(familyData);
         setFamilySetup(parsed);
-        logger.info('Family setup detected', { isAdmin: parsed.isAdmin, memberCount: parsed.familyMembers?.length });
+        console.log('👨‍👩‍👧‍👦 Family setup detected:', parsed);
         
         // Update processing steps to include family setup if applicable
         if (parsed.isAdmin) {
@@ -253,11 +247,11 @@ export default function OnboardingPage() {
       if (familyJoinData) {
         const parsed = JSON.parse(familyJoinData);
         setFamilySetup(parsed);
-        logger.info('Family join detected', { familyAdminId: parsed.familyAdminId });
+        console.log('👨‍👩‍👧‍👦 Family join detected:', parsed);
       }
-          } catch (error) {
-        logger.debug('No family setup data found');
-      }
+    } catch (error) {
+      console.log('No family setup data found');
+    }
   }, []);
 
   const updateProcessingStep = (stepId: string, completed: boolean = false, active: boolean = true) => {
@@ -286,7 +280,6 @@ export default function OnboardingPage() {
       activity_level: undefined,
       sleep_hours: '' as any,
       alcohol_intake: undefined,
-      dietary_preference: undefined,
       // New 16 lifestyle questions
       energy_levels: undefined,
       effort_fatigue: undefined,
@@ -325,12 +318,11 @@ export default function OnboardingPage() {
     { id: 3, component: ActivityLevelStep, title: 'Activity Level', fields: ['activity_level'] },
     { id: 4, component: SleepHoursStep, title: 'Sleep Hours', fields: ['sleep_hours'] },
     { id: 5, component: AlcoholStep, title: 'Alcohol Intake', fields: ['alcohol_intake'] },
-    { id: 6, component: DietaryPreferenceStep, title: 'Dietary Preference', fields: ['dietary_preference'] },
-    { id: 7, component: HealthProfileStep, title: 'Health Profile', fields: ['allergies', 'conditions', 'medications'] },
-    { id: 8, component: PrimaryConcernStep, title: 'Primary Concern', fields: ['primary_health_concern'] },
-    { id: 9, component: OptionalDataStep, title: 'Optional Data', fields: ['known_biomarkers', 'known_genetic_variants'] },
-    { id: 10, component: PersonalDetailsStep, title: 'Personal Details', fields: ['fullName', 'age', 'gender', 'height_ft', 'height_in', 'weight_lbs'] },
-    { id: 11, component: ReviewStep, title: 'Review & Submit', fields: [] }
+    { id: 6, component: HealthProfileStep, title: 'Health Profile', fields: ['allergies', 'conditions', 'medications'] },
+    { id: 7, component: PrimaryConcernStep, title: 'Primary Concern', fields: ['primary_health_concern'] },
+    { id: 8, component: OptionalDataStep, title: 'Optional Data', fields: ['known_biomarkers', 'known_genetic_variants'] },
+    { id: 9, component: PersonalDetailsStep, title: 'Personal Details', fields: ['fullName', 'age', 'gender', 'height_ft', 'height_in', 'weight_lbs'] },
+    { id: 10, component: ReviewStep, title: 'Review & Submit', fields: [] }
   ];
 
   const totalSteps = steps.length;
@@ -362,7 +354,7 @@ export default function OnboardingPage() {
     setIsSubmitting(true);
     
     try {
-      logger.info('Starting onboarding submission', { hasHealthGoals: data.healthGoals?.length > 0 });
+      console.log('Submitting frictionless onboarding data:', data);
       
       // Step 1: Save Profile
       updateProcessingStep('profile', false, true);
@@ -381,7 +373,7 @@ export default function OnboardingPage() {
       const result = await saveOnboardingData(data, familySetup);
       
       if (result?.error) {
-        logger.error('Onboarding submission failed', { error: result.error });
+        console.error('Onboarding error:', result.error);
         alert(`Error saving profile: ${result.error}`);
         setIsSubmitting(false); // Reset on error
         return;
@@ -399,26 +391,26 @@ export default function OnboardingPage() {
       while (!healthScoreGenerated && healthScoreAttempts < maxHealthScoreAttempts) {
         try {
           healthScoreAttempts++;
-          logger.step(`Health score generation attempt ${healthScoreAttempts}/${maxHealthScoreAttempts}`);
+          console.log(`🎯 Health score generation attempt ${healthScoreAttempts}/${maxHealthScoreAttempts}...`);
           
           const { createClient } = await import('@/lib/supabase/client');
           const supabase = createClient();
           const { data: { session } } = await supabase.auth.getSession();
           
           if (!session) {
-            logger.warn('No session found for health score generation');
+            console.warn('❌ No session found for health score generation');
             // Try to refresh session
             const { data: { session: refreshedSession } } = await supabase.auth.refreshSession();
             if (!refreshedSession) {
               throw new Error('Unable to authenticate for health score generation');
             }
-            logger.success('Session refreshed successfully');
+            console.log('✅ Session refreshed successfully');
           }
           
           const currentSession = session || (await supabase.auth.getSession()).data.session;
           
           if (currentSession) {
-            logger.step('Calling health score function');
+            console.log('🎯 Calling health score function...');
             const healthScoreResponse = await supabase.functions.invoke('health-score', {
               headers: {
                 Authorization: `Bearer ${currentSession.access_token}`,
@@ -426,7 +418,7 @@ export default function OnboardingPage() {
             });
             
             if (healthScoreResponse.error) {
-              logger.error(`Health score generation failed (attempt ${healthScoreAttempts})`, healthScoreResponse.error);
+              console.error(`❌ Health score generation failed (attempt ${healthScoreAttempts}):`, healthScoreResponse.error);
               
                              // Check if it's a retryable error
                const errorMessage = healthScoreResponse.error?.message || '';
@@ -441,31 +433,31 @@ export default function OnboardingPage() {
                  errorMessage.includes('429');
                
                if (!isRetryableError || healthScoreAttempts >= maxHealthScoreAttempts) {
-                 logger.warn('Health score generation failed permanently, creating fallback score');
+                 console.warn('❌ Health score generation failed permanently, creating fallback score...');
                  const { data: { user } } = await supabase.auth.getUser();
                  if (user) {
                    await createFallbackHealthScore(supabase, user.id, data);
                    healthScoreGenerated = true;
-                   logger.success('Fallback health score created successfully');
+                   console.log('✅ Fallback health score created successfully!');
                  } else {
                    throw new Error('No user found for fallback health score creation');
                  }
                } else {
-                 logger.info(`Retryable error detected, waiting before retry ${healthScoreAttempts + 1}`);
+                 console.log(`⏳ Retryable error detected, waiting before retry ${healthScoreAttempts + 1}...`);
                  await new Promise(resolve => setTimeout(resolve, 2000 * healthScoreAttempts)); // Exponential backoff
                }
              } else if (healthScoreResponse.data) {
-               logger.success('Health score generated and saved successfully');
-               logger.debug('Health score data received', { hasData: !!healthScoreResponse.data });
+               console.log('✅ Health score generated and saved successfully!');
+               console.log('Health score data:', healthScoreResponse.data);
                healthScoreGenerated = true;
              } else {
-               logger.warn('Health score response was empty, treating as error');
+               console.warn('❌ Health score response was empty, treating as error');
                if (healthScoreAttempts >= maxHealthScoreAttempts) {
                  const { data: { user } } = await supabase.auth.getUser();
                  if (user) {
                    await createFallbackHealthScore(supabase, user.id, data);
                    healthScoreGenerated = true;
-                   logger.success('Fallback health score created after empty response');
+                   console.log('✅ Fallback health score created after empty response!');
                  } else {
                    throw new Error('No user found for fallback health score creation');
                  }
@@ -475,10 +467,10 @@ export default function OnboardingPage() {
             throw new Error('No valid session available after refresh attempt');
           }
         } catch (error) {
-          logger.error(`Health score generation error (attempt ${healthScoreAttempts})`, error instanceof Error ? error : { message: String(error) });
+          console.error(`❌ Health score generation error (attempt ${healthScoreAttempts}):`, error);
           
           if (healthScoreAttempts >= maxHealthScoreAttempts) {
-            logger.warn('All health score attempts failed, creating emergency fallback');
+                         console.warn('❌ All health score attempts failed, creating emergency fallback...');
              try {
                const { createClient } = await import('@/lib/supabase/client');
                const supabase = createClient();
@@ -486,18 +478,18 @@ export default function OnboardingPage() {
                if (user) {
                  await createFallbackHealthScore(supabase, user.id, data);
                  healthScoreGenerated = true;
-                 logger.success('Emergency fallback health score created');
+                 console.log('✅ Emergency fallback health score created!');
                } else {
                  throw new Error('No user found for emergency fallback health score creation');
                }
              } catch (fallbackError) {
-               logger.error('Even fallback health score creation failed', fallbackError instanceof Error ? fallbackError : { message: String(fallbackError) });
+               console.error('❌ Even fallback health score creation failed:', fallbackError);
                // Continue without health score - don't block onboarding
                healthScoreGenerated = true; // Set to true to exit loop
-               logger.warn('Continuing onboarding without health score - user can generate it later from dashboard');
+               console.log('⚠️ Continuing onboarding without health score - user can generate it later from dashboard');
              }
           } else {
-            logger.info(`Waiting before retry ${healthScoreAttempts + 1}`);
+            console.log(`⏳ Waiting before retry ${healthScoreAttempts + 1}...`);
             await new Promise(resolve => setTimeout(resolve, 1000 * healthScoreAttempts)); // Exponential backoff
           }
         }
@@ -508,16 +500,16 @@ export default function OnboardingPage() {
       
       if (familySetup?.isAdmin) {
         updateProcessingStep('family-setup', false, true);
-        logger.step('Setting up family invite links');
+        console.log('👨‍👩‍👧‍👦 Setting up family invite links...');
         
         try {
           // Store family member data for dashboard access
           // The actual invite link generation will happen in the dashboard
-          logger.success('Family setup prepared - invite links will be available in dashboard');
+          console.log('✅ Family setup prepared - invite links will be available in dashboard');
           await new Promise(resolve => setTimeout(resolve, 1500));
           updateProcessingStep('family-setup', true, false);
         } catch (familyError) {
-          logger.error('Family setup error', familyError instanceof Error ? familyError : { message: String(familyError) });
+          console.error('❌ Family setup error:', familyError);
           // Don't fail onboarding for family setup issues
           updateProcessingStep('family-setup', true, false);
         }
@@ -534,10 +526,10 @@ export default function OnboardingPage() {
         localStorage.removeItem('familyJoin');
       }
       
-      logger.success('Frictionless onboarding completed successfully');
+      console.log('✅ Frictionless onboarding completed successfully!');
       router.push('/dashboard');
     } catch (error) {
-      logger.error('Error submitting onboarding', error instanceof Error ? error : { message: String(error) });
+      console.error('Error submitting onboarding:', error);
       alert('An error occurred while saving your information. Please try again.');
       setIsSubmitting(false); // Reset on error
     }
@@ -634,16 +626,14 @@ export default function OnboardingPage() {
       case 5:
         return <AlcoholStep onNext={handleNext} />;
       case 6:
-        return <DietaryPreferenceStep onNext={handleNext} />;
-      case 7:
         return <HealthProfileStep />;
-      case 8:
+      case 7:
         return <PrimaryConcernStep />;
-      case 9:
+      case 8:
         return <OptionalDataStep />;
-      case 10:
+      case 9:
         return <PersonalDetailsStep />;
-      case 11:
+      case 10:
         return <ReviewStep />;
       default:
         return null;
@@ -655,7 +645,7 @@ export default function OnboardingPage() {
 
   const getNextLabel = () => {
     if (isLastStep) return form.formState.isSubmitting ? 'Creating Plan...' : 'Submit & Create My Plan';
-    if ([1, 6, 7, 8, 9, 10].includes(step)) return 'Continue';
+    if ([1, 6, 7, 8, 9].includes(step)) return 'Continue';
     return 'Next';
   }
 
@@ -690,7 +680,7 @@ export default function OnboardingPage() {
               nextLabel={getNextLabel()}
               nextDisabled={form.formState.isSubmitting}
               isLastStep={isLastStep}
-              showNextButton={!isSubmitting && ![2, 3, 4, 5, 6].includes(step)}
+              showNextButton={!isSubmitting && ![2, 3, 4, 5].includes(step)}
             >
               <AnimatePresence mode="wait">
                 {isSubmitting ? (

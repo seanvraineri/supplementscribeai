@@ -209,7 +209,7 @@ export default function HomePage() {
             <Link href="/onboarding">
               <Button
                 variant="default"
-                className="mt-8 bg-[#0080F6] hover:bg-[#0080F6]/90"
+                className="mt-8 bg-dark-accent hover:bg-dark-accent/90"
                 size="lg"
               >
                 Find My Perfect Formula{' '}

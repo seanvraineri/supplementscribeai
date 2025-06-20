@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { checkRateLimit, getRateLimitHeaders } from '../rate-limiter/index.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -32,6 +33,21 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 401,
+      });
+    }
+
+    // Rate limiting: 20 health score calculations per 5 minutes per user
+    const rateLimit = checkRateLimit(`health-score:${user.id}`, 20, 5);
+    if (!rateLimit.allowed) {
+      return new Response(JSON.stringify({ 
+        error: 'Rate limit exceeded. Please wait before requesting another health score.' 
+      }), {
+        headers: { 
+          ...corsHeaders, 
+          ...getRateLimitHeaders(rateLimit.remainingRequests, rateLimit.resetTime),
+          'Content-Type': 'application/json' 
+        },
+        status: 429,
       });
     }
 
@@ -162,17 +178,16 @@ SCORING CATEGORIES (based on onboarding data):
 - Age and demographic factors
 - Known health issues
 
-SCORING GUIDELINES (BE REALISTIC):
-- 85-100: Exceptional health (0-2 lifestyle issues max)
-- 75-84: Good health (3-4 lifestyle issues)
-- 65-74: Fair health (5-6 lifestyle issues) 
-- 55-64: Poor health (7-8 lifestyle issues)
-- 45-54: Very poor health (9+ lifestyle issues)
-- Below 45: Critical health concerns (12+ issues)
+SCORING GUIDELINES (ENCOURAGING & RETENTION-FOCUSED):
+- 90-100: Exceptional health (0-2 areas for optimization)
+- 80-89: Great health (3-5 areas for optimization) 
+- 70-79: Good health (6-8 areas for optimization)
+- 60-69: Fair health (9-11 areas for optimization)
+- 50-59: Needs attention (12+ areas for optimization)
 
-Count "yes" answers to lifestyle questions as negative factors (they indicate problems).
-Count "no" answers as positive factors (they indicate absence of problems).
-Most users will score 60-75. Only give high scores (80+) to users with genuinely few issues.
+Count "yes" answers as areas for optimization, not problems.
+Count "no" answers as health strengths to celebrate.
+Most users will score 75-85. Focus on progress potential and encouragement.
 
 SPECIFIC HOLISTIC RECOMMENDATION MAPPING (use these for their "yes" answers):
 - Digestive issues → "Eat 1 cup fermented vegetables daily + chew each bite 30 times + avoid eating 3 hours before bed"
@@ -199,7 +214,6 @@ Make recommendations ULTRA-SPECIFIC with exact dosages, timing, and protocols ba
           }
         ],
         max_tokens: 1500,
-        temperature: 0.3,
       }),
     });
 
@@ -330,10 +344,10 @@ ${profile.age && profile.age > 40 ? `At ${profile.age} years old, age-related fa
 Total Health Issues: ${lifestyleIssues.length}/16 (Higher count = more concerning)
 Total Positive Factors: ${lifestyleStrengths.length}/16
 
-${lifestyleIssues.length > 8 ? `🚨 CRITICAL: ${profile.first_name || 'User'} has ${lifestyleIssues.length} significant health issues - this requires immediate lifestyle intervention.` : 
-  lifestyleIssues.length > 5 ? `⚠️ CONCERNING: ${profile.first_name || 'User'} has ${lifestyleIssues.length} health issues that need targeted attention.` :
-  lifestyleIssues.length > 2 ? `📋 MODERATE: ${profile.first_name || 'User'} has ${lifestyleIssues.length} issues - good foundation but room for improvement.` :
-  `✅ EXCELLENT: ${profile.first_name || 'User'} has minimal health issues - focus on optimization.`}
+${lifestyleIssues.length > 10 ? `💪 FOCUS AREAS: ${profile.first_name || 'User'} has ${lifestyleIssues.length} areas to optimize - great opportunity for transformation!` : 
+  lifestyleIssues.length > 6 ? `✨ ROOM FOR GROWTH: ${profile.first_name || 'User'} has ${lifestyleIssues.length} areas to enhance - you're ahead of most people!` :
+  lifestyleIssues.length > 3 ? `🌟 SOLID FOUNDATION: ${profile.first_name || 'User'} has ${lifestyleIssues.length} areas to fine-tune - excellent baseline health!` :
+  `🏆 OUTSTANDING: ${profile.first_name || 'User'} has minimal areas for improvement - you're in the top tier!`}
 
 === SPECIFIC ISSUES IDENTIFIED ===
 ${lifestyleIssues.length > 0 ? lifestyleIssues.map(issue => `• ${issue}`).join('\n') : '• No significant lifestyle issues reported'}
@@ -354,10 +368,10 @@ ${profile.health_goals?.length > 0 ? profile.health_goals.join(', ') : 'Not spec
 • User-Entered Genetic Variants: ${profile.known_genetic_variants || 'None provided'}
 
 **PERSONALIZED SCORING FOR ${profile.first_name?.toUpperCase() || 'THIS USER'}:**
-- Current issue count (${lifestyleIssues.length}) suggests realistic score should be: ${
-  lifestyleIssues.length > 8 ? '45-60' : 
-  lifestyleIssues.length > 5 ? '60-70' :
-  lifestyleIssues.length > 2 ? '70-80' : '80-90'
+- Current issue count (${lifestyleIssues.length}) suggests encouraging score should be: ${
+  lifestyleIssues.length > 10 ? '65-75' : 
+  lifestyleIssues.length > 6 ? '75-82' :
+  lifestyleIssues.length > 3 ? '80-88' : '85-95'
 }
 - Age factor (${profile.age}): ${profile.age && profile.age > 50 ? 'Reduce score by 5-10 points' : profile.age && profile.age < 25 ? 'Can add 5 points' : 'Neutral factor'}
 - Primary concern severity: ${profile.primary_health_concern ? 'Significant concern requiring attention' : 'No major specific concern'}
@@ -366,7 +380,8 @@ ${profile.health_goals?.length > 0 ? profile.health_goals.join(', ') : 'Not spec
 1. **Lifestyle Habits (25 points)**: Sleep, activity, alcohol, caffeine, stress
 2. **Symptom Burden (25 points)**: Count of "yes" answers (problems) - more issues = lower score
 3. **Physical Wellness (25 points)**: Recovery, immune function, weight management, energy
-4. **Risk Factors (25 points)**: Age, conditions, medications, primary concern severity
+4. **Risk Factors (25 points):**
+   - Age, conditions, medications, primary concern severity
 
 **KEY CONSIDERATIONS:**
 - ${lifestyleIssues.length} out of 16 lifestyle issues identified (higher count = lower score)
@@ -375,12 +390,12 @@ ${profile.health_goals?.length > 0 ? profile.health_goals.join(', ') : 'Not spec
 - Age factor: ${profile.age ? (profile.age > 50 ? 'Older adult' : profile.age > 30 ? 'Middle-aged adult' : 'Young adult') : 'Unknown'}
 - Activity level: ${profile.activity_level || 'Unknown'}
 
-BE REALISTIC: Do not give inflated scores. ${profile.first_name || 'This person'} has real health challenges that need honest assessment.`;
+FOCUS ON ENCOURAGEMENT: Give scores that motivate users to take action. ${profile.first_name || 'This person'} has real potential for optimization and growth.`;
 }
 
 function createFallbackHealthScore(profile: any): any {
   // Simple fallback scoring if AI parsing fails
-  let score = 75; // Start with average
+  let score = 85; // Start higher (was 75)
   
   // Count lifestyle issues (Yes answers) and build specific holistic recommendations
   const issueMapping = {
@@ -421,7 +436,7 @@ function createFallbackHealthScore(profile: any): any {
   const issueCount = userIssues.length;
   
   // Adjust score based on issues
-  score -= issueCount * 3; // Subtract 3 points per issue
+  score -= issueCount * 1.5; // Reduce penalty (was 3 points per issue)
   
   // Age adjustment
   if (profile?.age > 50) score -= 5;
@@ -431,17 +446,17 @@ function createFallbackHealthScore(profile: any): any {
   if (profile?.activity_level === 'very_active') score += 5;
   if (profile?.activity_level === 'sedentary') score -= 5;
   
-  score = Math.max(30, Math.min(95, score)); // Keep within reasonable bounds
+  score = Math.max(50, Math.min(95, score)); // Keep within reasonable bounds
   
   return {
     healthScore: score,
     scoreBreakdown: {
-      lifestyleHabits: Math.max(10, 20 - Math.floor(issueCount * 0.8)),
-      symptomBurden: Math.max(10, 25 - issueCount),
-      physicalWellness: Math.max(15, 22 - Math.floor(issueCount * 0.5)),
-      riskFactors: Math.max(15, 20 - (profile?.age > 50 ? 3 : 0))
+      lifestyleHabits: Math.max(15, 25 - Math.floor(issueCount * 0.6)),
+      symptomBurden: Math.max(15, 25 - Math.floor(issueCount * 0.8)),
+      physicalWellness: Math.max(18, 25 - Math.floor(issueCount * 0.4)),
+      riskFactors: Math.max(18, 25 - (profile?.age > 50 ? 2 : 0))
     },
-    summary: `Health score of ${score} based on ${issueCount} identified lifestyle concerns. ${issueCount > 8 ? 'Multiple areas need attention for optimal wellness.' : issueCount > 4 ? 'Several areas can be improved with targeted interventions.' : 'Good foundation with room for optimization.'}`,
+    summary: `Health score of ${score} based on ${issueCount} areas for optimization. ${issueCount > 8 ? 'Great opportunity for transformation with targeted improvements.' : issueCount > 4 ? 'Solid foundation with several areas to enhance.' : 'Excellent baseline health with minimal areas for fine-tuning.'}`,
     strengths: strengths.length > 0 ? strengths.slice(0, 4) : ["Completed comprehensive health assessment"],
     concerns: concerns.length > 0 ? concerns.slice(0, 4) : ["No major lifestyle concerns identified"],
     topRecommendations: recommendations.length > 0 ? recommendations.slice(0, 6) : [
@@ -452,6 +467,6 @@ function createFallbackHealthScore(profile: any): any {
       "Eliminate all processed foods and refined sugars from your diet",
       "Do 5-minute cold exposure (cold shower finish) every morning"
     ],
-    scoreExplanation: `Score calculated based on ${issueCount} lifestyle issues from your 16-question assessment, activity level (${profile?.activity_level || 'unknown'}), and age factors. Each identified issue reduces your score, while positive lifestyle factors increase it.`
+    scoreExplanation: `Score calculated based on ${issueCount} lifestyle areas for optimization from your 16-question assessment, activity level (${profile?.activity_level || 'unknown'}), and age factors. Each area identified provides opportunity for improvement, while positive lifestyle factors increase your score.`
   };
 } 

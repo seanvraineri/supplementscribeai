@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { checkRateLimit, getRateLimitHeaders } from '../rate-limiter/index.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -44,6 +45,21 @@ serve(async (req) => {
     }
 
     console.log(`User authenticated: ${user.id}`)
+
+    // Rate limiting: 15 comprehensive analysis requests per 5 minutes per user
+    const rateLimit = checkRateLimit(`comprehensive-analysis:${user.id}`, 15, 5);
+    if (!rateLimit.allowed) {
+      return new Response(JSON.stringify({ 
+        error: 'Rate limit exceeded. Please wait before requesting another analysis.' 
+      }), {
+        headers: { 
+          ...corsHeaders, 
+          ...getRateLimitHeaders(rateLimit.remainingRequests, rateLimit.resetTime),
+          'Content-Type': 'application/json' 
+        },
+        status: 429,
+      });
+    }
 
     // Read pre-computed analysis from database
     console.log('Fetching stored analysis...')
