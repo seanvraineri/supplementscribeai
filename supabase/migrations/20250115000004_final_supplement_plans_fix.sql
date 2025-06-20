@@ -22,11 +22,11 @@ ALTER TABLE public.supplement_plans ALTER COLUMN user_id SET NOT NULL;
 ALTER TABLE public.supplement_plans ENABLE ROW LEVEL SECURITY;
 
 -- Step 5: Create ONE comprehensive policy that works
-CREATE POLICY "supplement_plans_comprehensive_policy" ON public.supplement_plans
+CREATE POLICY "supplement_plans_secure_policy" ON public.supplement_plans
 FOR ALL 
 TO authenticated
-USING (auth.uid() = user_id OR auth.uid() IS NOT NULL)
-WITH CHECK (auth.uid() = user_id OR auth.uid() IS NOT NULL);
+USING (auth.uid() = user_id)
+WITH CHECK (auth.uid() = user_id);
 
 -- Step 6: Grant proper permissions
 GRANT ALL ON public.supplement_plans TO authenticated;
