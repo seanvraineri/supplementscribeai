@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { checkRateLimit, getRateLimitHeaders } from '../rate-limiter/index.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,7 +12,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    console.log('🔬 Starting health domains analysis...');
+    console.log('🔬 Starting AI-powered health domains analysis...');
     
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -36,50 +37,130 @@ Deno.serve(async (req) => {
 
     console.log('✅ User authenticated:', user.id);
 
-    const { data: profile, error: profileError } = await supabaseClient
-      .from('user_profiles')
-      .select(`
+    // 🚧 RATE LIMITING: 5 health domain analyses per hour per user
+    const rateLimit = checkRateLimit(`health-domains-analysis:${user.id}`, 5, 60);
+    if (!rateLimit.allowed) {
+      return new Response(JSON.stringify({
+        error: 'Rate limit exceeded. Please wait before generating another health domains analysis.'
+      }), {
+        status: 429,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+          ...getRateLimitHeaders(rateLimit.remainingRequests, rateLimit.resetTime),
+        },
+      });
+    }
+
+    // 🔍 CHECK FOR EXISTING RECENT ANALYSIS (within last 24 hours)
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { data: existingAnalysis } = await supabaseClient
+      .from('user_health_domains_analysis')
+      .select('*')
+      .eq('user_id', user.id)
+      .gte('created_at', twentyFourHoursAgo)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (existingAnalysis && existingAnalysis.length > 0) {
+      console.log('📋 Returning existing recent health domains analysis');
+      return new Response(JSON.stringify(existingAnalysis[0].analysis_data), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // 🔍 FETCH COMPREHENSIVE USER DATA (following generate-plan pattern exactly)
+    console.log('📋 Fetching comprehensive user health data...');
+    const [
+      { data: profile, error: profileError },
+      { data: allergies, error: allergiesError },
+      { data: conditions, error: conditionsError },
+      { data: medications, error: medicationsError },
+      { data: biomarkers, error: biomarkersError },
+      { data: rawSnps, error: snpsError },
+      { data: supplementPlan, error: planError },
+      { data: symptomPatterns, error: patternsError }
+    ] = await Promise.all([
+      supabaseClient.from('user_profiles').select(`
         full_name, age, gender, weight_lbs, height_total_inches, health_goals, activity_level, sleep_hours,
         primary_health_concern, known_biomarkers, known_genetic_variants, alcohol_intake,
         energy_levels, effort_fatigue, caffeine_effect, digestive_issues, stress_levels, 
         sleep_quality, mood_changes, brain_fog, sugar_cravings, skin_issues, joint_pain,
         immune_system, workout_recovery, food_sensitivities, weight_management, 
-        medication_history
-      `)
-      .eq('id', user.id)
-      .single();
+        medication_history, anxiety_level, stress_resilience, bloating
+      `).eq('id', user.id).single(),
+      supabaseClient.from('user_allergies').select('ingredient_name').eq('user_id', user.id),
+      supabaseClient.from('user_conditions').select('condition_name').eq('user_id', user.id),
+      supabaseClient.from('user_medications').select('medication_name').eq('user_id', user.id),
+      supabaseClient.from('user_biomarkers').select('*').eq('user_id', user.id).limit(500),
+      supabaseClient.from('user_snps').select('*').eq('user_id', user.id).limit(1000),
+      supabaseClient.from('supplement_plans').select('plan_details').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1),
+      supabaseClient.from('user_symptom_patterns').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(10)
+    ]);
 
     if (profileError || !profile) {
       console.error('❌ Profile error:', profileError);
-      return new Response(JSON.stringify({ error: 'Profile not found' }), {
+      return new Response(JSON.stringify({ error: 'Profile not found. Please complete onboarding first.' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 404,
       });
     }
 
-    console.log('📋 Profile loaded for user');
+    console.log('📊 Data fetched successfully');
 
-    // Fetch additional health data for safety checks
-    const [
-      { data: conditions },
-      { data: medications },
-      { data: allergies }
-    ] = await Promise.all([
-              supabaseClient.from('user_conditions').select('condition_name').eq('user_id', user.id).limit(30),
-        supabaseClient.from('user_medications').select('medication_name').eq('user_id', user.id).limit(50),
-      supabaseClient.from('user_allergies').select('ingredient_name').eq('user_id', user.id).limit(50)
-    ]);
+    // 🧬 ENRICH SNP DATA (following generate-plan pattern)
+    let enrichedSnps: any[] = [];
+    if (rawSnps && rawSnps.length > 0) {
+      const snpIds = [...new Set(rawSnps.map((snp: any) => snp.supported_snp_id).filter(Boolean))];
+      if (snpIds.length > 0) {
+        const { data: supportedSnps } = await supabaseClient
+          .from('supported_snps')
+          .select('id, rsid, gene')
+          .in('id', snpIds);
 
-    const domainsAnalysis = createPersonalizedHealthDomainsAnalysis(
-      profile, 
-      conditions || [], 
-      medications || [], 
-      allergies || []
-    );
+        enrichedSnps = rawSnps.map((userSnp: any) => ({
+          ...userSnp,
+          supported_snps: supportedSnps?.find((s: any) => s.id === userSnp.supported_snp_id)
+        })).filter((snp: any) => snp.supported_snps);
+      }
+    }
 
-    console.log('🎉 Health domains analysis completed successfully');
+    // 🤖 GENERATE AI-POWERED HEALTH DOMAINS ANALYSIS
+    console.log('🤖 Generating AI-powered health domains analysis with o3...');
+    
+    const analysisData = await generateAIHealthDomainsAnalysis({
+      profile: profile || {},
+      allergies: allergies || [],
+      conditions: conditions || [],
+      medications: medications || [],
+      biomarkers: biomarkers || [],
+      snps: enrichedSnps || [],
+      supplementPlan: supplementPlan?.[0]?.plan_details || null,
+      symptomPatterns: symptomPatterns || []
+    });
 
-    return new Response(JSON.stringify(domainsAnalysis), {
+    // 💾 STORE ANALYSIS RESULTS
+    console.log('💾 Storing health domains analysis results...');
+    const { data: storedAnalysis, error: storeError } = await supabaseClient
+      .from('user_health_domains_analysis')
+      .insert({
+        user_id: user.id,
+        analysis_data: analysisData
+      })
+      .select()
+      .single();
+
+    if (storeError) {
+      console.error('❌ Failed to store analysis:', storeError);
+      // Return the analysis even if storage fails
+      return new Response(JSON.stringify(analysisData), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    console.log('✅ Health domains analysis completed and stored successfully');
+
+    return new Response(JSON.stringify(analysisData), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
@@ -94,375 +175,269 @@ Deno.serve(async (req) => {
   }
 });
 
-function createPersonalizedHealthDomainsAnalysis(profile: any, conditions: any[], medications: any[], allergies: any[]): any {
-  // Analyze specific user responses
-  const userIssues = {
-    metabolic: {
-      energyLevels: profile?.energy_levels === 'yes',
-      effortFatigue: profile?.effort_fatigue === 'yes', 
-      sugarCravings: profile?.sugar_cravings === 'yes',
-      weightManagement: profile?.weight_management === 'yes',
-      caffeineEffect: profile?.caffeine_effect === 'yes'
-    },
-    cognitive: {
-      brainFog: profile?.brain_fog === 'yes',
-      moodChanges: profile?.mood_changes === 'yes',
-      stressLevels: profile?.stress_levels === 'yes',
-      sleepQuality: profile?.sleep_quality === 'yes'
-    },
-    inflammation: {
-      jointPain: profile?.joint_pain === 'yes',
-      skinIssues: profile?.skin_issues === 'yes',
-      immuneSystem: profile?.immune_system === 'yes',
-      workoutRecovery: profile?.workout_recovery === 'yes'
-    },
-    gut: {
-      digestiveIssues: profile?.digestive_issues === 'yes',
-      foodSensitivities: profile?.food_sensitivities === 'yes'
-    }
-  };
-
-  // 🔥 ENHANCED: Extract ALL personal details for hyper-personalization
+async function generateAIHealthDomainsAnalysis(userData: any) {
+  const { profile, allergies, conditions, medications, biomarkers, snps, supplementPlan, symptomPatterns } = userData;
+  
+  // 🧬 EXTRACT USER CONTEXT FOR HYPER-PERSONALIZATION
   const firstName = profile?.full_name?.split(' ')[0] || 'there';
   const age = profile?.age || 30;
   const gender = profile?.gender || 'not specified';
   const weight = profile?.weight_lbs;
   const height = profile?.height_total_inches;
-  const activityLevel = profile?.activity_level || 'moderate';
-  const sleepHours = profile?.sleep_hours || 7;
+  const bmi = weight && height ? (weight / Math.pow(height / 12, 2) * 703).toFixed(1) : null;
   const goals = profile?.health_goals || [];
   const primaryConcern = profile?.primary_health_concern || '';
-  const knownBiomarkers = profile?.known_biomarkers || '';
-  const knownGenetics = profile?.known_genetic_variants || '';
+
+  // 🔬 BUILD COMPREHENSIVE HEALTH CONTEXT
+  let healthContext = `=== COMPREHENSIVE HEALTH PROFILE FOR ${firstName.toUpperCase()} ===\n\n`;
   
-  // Calculate personal health metrics
-  const totalIssues = Object.values(userIssues).flatMap(domain => Object.values(domain)).filter(Boolean).length;
-  const bmi = weight && height ? (weight / Math.pow(height / 12, 2) * 703).toFixed(1) : null;
+  // Personal Details
+  healthContext += `🧑 PERSONAL PROFILE:\n`;
+  healthContext += `• Name: ${firstName}\n`;
+  healthContext += `• Age: ${age} years old\n`;
+  healthContext += `• Gender: ${gender}\n`;
+  healthContext += `• BMI: ${bmi || 'Not available'}\n`;
+  healthContext += `• Primary Health Concern: "${primaryConcern}"\n`;
+  healthContext += `• Health Goals: ${goals.join(', ') || 'General wellness'}\n\n`;
 
-  // Create goal-specific messaging
-  const goalMessages = {
-    weight_loss: "Lose Weight Sustainably",
-    muscle_gain: "Build Lean Muscle Mass", 
-    energy: "Boost Energy Levels Naturally",
-    sleep: "Improve Sleep Quality",
-    stress: "Manage Stress Effectively",
-    digestion: "Optimize Digestive Health",
-    digestive_health: "Optimize Digestive Health",
-    immunity: "Strengthen Immune Function",
-    skin: "Improve Skin Health",
-    mood: "Stabilize Mood Naturally",
-    focus: "Enhance Mental Clarity",
-    weight_management: "Manage Weight Sustainably",
-    longevity_wellness: "Enhance Longevity and Wellness"
-  };
+  // Lifestyle Assessment (16 questions)
+  healthContext += `🎯 LIFESTYLE ASSESSMENT RESPONSES:\n`;
+  const lifestyleQuestions = [
+    { key: 'energy_levels', question: 'Often feels tired or low energy', response: profile?.energy_levels },
+    { key: 'effort_fatigue', question: 'Physical activity feels more difficult than it should', response: profile?.effort_fatigue },
+    { key: 'caffeine_effect', question: 'Relies on caffeine to get through the day', response: profile?.caffeine_effect },
+    { key: 'digestive_issues', question: 'Experiences digestive discomfort regularly', response: profile?.digestive_issues },
+    { key: 'stress_levels', question: 'Feels stressed or anxious frequently', response: profile?.stress_levels },
+    { key: 'sleep_quality', question: 'Has trouble falling asleep or staying asleep', response: profile?.sleep_quality },
+    { key: 'mood_changes', question: 'Experiences mood swings or emotional instability', response: profile?.mood_changes },
+    { key: 'brain_fog', question: 'Has difficulty concentrating or mental clarity issues', response: profile?.brain_fog },
+    { key: 'sugar_cravings', question: 'Craves sugary or processed foods regularly', response: profile?.sugar_cravings },
+    { key: 'skin_issues', question: 'Has ongoing skin problems or breakouts', response: profile?.skin_issues },
+    { key: 'joint_pain', question: 'Experiences joint pain or stiffness', response: profile?.joint_pain },
+    { key: 'immune_system', question: 'Gets sick frequently or has trouble fighting off illness', response: profile?.immune_system },
+    { key: 'workout_recovery', question: 'Takes longer than expected to recover from exercise', response: profile?.workout_recovery },
+    { key: 'food_sensitivities', question: 'Suspects certain foods cause negative reactions', response: profile?.food_sensitivities },
+    { key: 'weight_management', question: 'Struggles with maintaining or losing weight', response: profile?.weight_management },
+    { key: 'medication_history', question: 'Currently takes or has history with ADHD/anxiety medications', response: profile?.medication_history }
+  ];
 
-  const userGoalText = goals.length > 0 
-    ? goals.map((goal: string) => goalMessages[goal as keyof typeof goalMessages] || goal.replace(/_/g, ' ')).join(', ')
-    : 'optimize overall wellness';
+  const positiveResponses = lifestyleQuestions.filter(q => q.response === 'yes');
+  const totalIssues = positiveResponses.length;
 
-  return {
-    userProfile: {
-      name: firstName,
-      personalHealthStory: `${firstName} is a ${age}-year-old ${gender}${bmi ? ` with BMI ${bmi}` : ''} whose primary concern is "${primaryConcern}". They have ${totalIssues}/16 lifestyle issues${conditions.length > 0 ? ` and manage ${conditions.map(c => c.condition_name).join(', ')}` : ''}${medications.length > 0 ? ` while taking ${medications.length} medication(s)` : ''}.`,
-      goals: goals,
-      goalDescription: userGoalText,
-      primaryConcern: primaryConcern,
-      totalIssueCount: totalIssues,
-      riskLevel: totalIssues > 8 ? 'HIGH PRIORITY' : totalIssues > 4 ? 'MODERATE ATTENTION' : 'OPTIMIZATION FOCUS'
+  healthContext += `Total Issues Identified: ${totalIssues}/16\n`;
+  positiveResponses.forEach(q => {
+    healthContext += `• ✅ YES: ${q.question}\n`;
+  });
+  healthContext += `\n`;
+
+  // Medical Information
+  if (conditions.length > 0) {
+    healthContext += `🏥 MEDICAL CONDITIONS:\n`;
+    conditions.forEach((c: any) => healthContext += `• ${c.condition_name}\n`);
+    healthContext += `\n`;
+  }
+
+  if (medications.length > 0) {
+    healthContext += `💊 CURRENT MEDICATIONS:\n`;
+    medications.forEach((m: any) => healthContext += `• ${m.medication_name}\n`);
+    healthContext += `\n`;
+  }
+
+  if (allergies.length > 0) {
+    healthContext += `⚠️ ALLERGIES & SENSITIVITIES:\n`;
+    allergies.forEach((a: any) => healthContext += `• ${a.ingredient_name}\n`);
+    healthContext += `\n`;
+  }
+
+  // AI-Detected Symptom Patterns (CRITICAL for consistency)
+  if (symptomPatterns && symptomPatterns.length > 0) {
+    healthContext += `🧬 AI-DETECTED ROOT CAUSE PATTERNS (${symptomPatterns.length} patterns):\n`;
+    symptomPatterns.forEach((pattern: any) => {
+      const symptoms = Array.isArray(pattern.symptoms_involved) ? pattern.symptoms_involved.join(' + ') : pattern.symptoms_involved;
+      const recommendations = Array.isArray(pattern.recommendations) ? pattern.recommendations.join(', ') : pattern.recommendations;
+      healthContext += `• ${pattern.pattern_name} (${pattern.confidence_score}% confidence)\n`;
+      healthContext += `  └─ Symptoms: ${symptoms}\n`;
+      healthContext += `  └─ Root Cause: ${pattern.explanation}\n`;
+      healthContext += `  └─ Recommendations: ${recommendations}\n`;
+    });
+    healthContext += `\n`;
+  }
+
+  // Biomarker Data
+  if (biomarkers.length > 0) {
+    healthContext += `🔬 LABORATORY BIOMARKERS (${biomarkers.length} markers):\n`;
+    biomarkers.slice(0, 20).forEach((b: any) => {
+      healthContext += `• ${b.marker_name}: ${b.value} ${b.unit || ''} (Ref: ${b.reference_range || 'N/A'})\n`;
+    });
+    if (biomarkers.length > 20) {
+      healthContext += `... and ${biomarkers.length - 20} more biomarkers\n`;
+    }
+    healthContext += `\n`;
+  }
+
+  // Genetic Data
+  if (snps.length > 0) {
+    healthContext += `🧬 GENETIC VARIANTS (${snps.length} SNPs):\n`;
+    snps.slice(0, 15).forEach((snp: any) => {
+      const rsid = snp.supported_snps?.rsid || snp.snp_id || 'Unknown';
+      const gene = snp.supported_snps?.gene || snp.gene_name || 'Unknown';
+      healthContext += `• ${rsid} (${gene}): ${snp.genotype}\n`;
+    });
+    if (snps.length > 15) {
+      healthContext += `... and ${snps.length - 15} more genetic variants\n`;
+    }
+    healthContext += `\n`;
+  }
+
+  // Current Supplement Plan Context
+  if (supplementPlan) {
+    healthContext += `💊 CURRENT SUPPLEMENT PROTOCOL:\n`;
+    if (supplementPlan.recommendations && supplementPlan.recommendations.length > 0) {
+      supplementPlan.recommendations.forEach((supp: any, idx: number) => {
+        healthContext += `${idx + 1}. ${supp.name}: ${supp.dosage} (${supp.timing})\n`;
+      });
+    }
+    healthContext += `\n`;
+  }
+
+  // 🤖 GENERATE AI ANALYSIS WITH O3
+  const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+  if (!openaiApiKey) {
+    throw new Error('OpenAI API key not configured');
+  }
+
+  const prompt = `${healthContext}
+
+=== AI HEALTH DOMAINS ANALYSIS TASK ===
+
+You are an expert functional medicine practitioner and health analyst specializing in personalized health optimization. Your task is to create a comprehensive health domains analysis for ${firstName} that will be displayed in their health dashboard.
+
+CRITICAL REQUIREMENTS:
+1. This must be EXTREMELY PERSONALIZED using ${firstName}'s exact data above
+2. Reference their SPECIFIC symptoms, biomarkers, genetics, and AI-detected patterns
+3. Use their EXACT NAME (${firstName}) throughout for personalization
+4. Connect everything to their SPECIFIC GOALS: ${goals.join(', ') || 'general wellness'}
+5. Consider their AGE (${age}), GENDER (${gender}), and HEALTH CONTEXT
+6. Be CONSISTENT with their AI-detected symptom patterns if available
+7. Provide ACTIONABLE, SPECIFIC recommendations not generic advice
+
+ANALYSIS STRUCTURE:
+Analyze across these 5 health domains with DEEP PERSONALIZATION:
+
+1. METABOLOMIC ANALYSIS (Energy Production & Glucose Metabolism)
+2. LIPIDOMIC ANALYSIS (Cell Membrane Health & Essential Fatty Acids) 
+3. INFLAMMATION ANALYSIS (Inflammatory Pathways & Immune Response)
+4. COGNITIVE ANALYSIS (Brain Function & Neurotransmitter Balance)
+5. GUT & MICROBIOME ANALYSIS (Digestive Health & Microbiome Balance)
+
+For EACH domain, provide:
+- WHY THIS MATTERS: Explain the science in compelling terms
+- PERSONALIZED INSIGHTS: Use ${firstName}'s specific data and symptoms
+- SPECIFIC FINDINGS: Reference their exact biomarkers, symptoms, genetics
+- TARGETED RECOMMENDATIONS: 3-4 specific, actionable protocols
+- GOAL ALIGNMENT: How this directly supports their goals: ${goals.join(', ') || 'wellness'}
+
+ADDITIONAL SECTIONS:
+- CROSS-DOMAIN CONNECTIONS: How their specific issues connect across domains
+- PRIORITY PROTOCOLS: Top 3 most important interventions for ${firstName}
+- SAFETY NOTES: Considerations for their conditions/medications
+
+TONE: Professional but engaging, like a world-class functional medicine doctor who deeply understands ${firstName}'s unique health profile.
+
+OUTPUT FORMAT: Return a valid JSON object with this exact structure:
+
+{
+  "userProfile": {
+    "name": "${firstName}",
+    "personalHealthStory": "Brief compelling narrative about ${firstName}'s health situation",
+    "goals": [array of their goals],
+    "goalDescription": "Description of what they want to achieve",
+    "primaryConcern": "${primaryConcern}",
+    "totalIssueCount": ${totalIssues},
+    "riskLevel": "HIGH PRIORITY/MODERATE ATTENTION/OPTIMIZATION FOCUS"
+  },
+  "domains": {
+    "metabolomic": {
+      "title": "Metabolomic Analysis",
+      "subtitle": "Energy Production & Glucose Metabolism", 
+      "significance": "Why this analysis matters explanation",
+      "insights": [array of 3-4 personalized insights using ${firstName}'s data],
+      "personalizedFindings": [array of 2-3 specific findings about ${firstName}],
+      "recommendations": [array of 3-4 specific actionable protocols for ${firstName}],
+      "goalAlignment": "How this supports ${firstName}'s specific goals"
     },
-    domains: {
-      metabolomic: {
-        title: "Metabolomic Analysis",
-        subtitle: "Energy Production & Glucose Metabolism",
-        significance: `WHY THIS ANALYSIS MATTERS: This reveals how your body creates energy at the cellular level - the difference between feeling energized all day versus crashing at 3pm. Your metabolic profile determines whether you burn fat efficiently, maintain stable blood sugar, and avoid diabetes and heart disease. We analyze the same biomarkers used in cutting-edge longevity research to optimize your mitochondrial function and metabolic flexibility.`,
-        insights: [
-          userIssues.metabolic.energyLevels 
-            ? `${firstName}, your low energy levels at age ${age} suggest mitochondrial dysfunction - specifically, your cells aren't efficiently converting glucose and fatty acids into ATP. ${gender === 'female' && age > 40 ? 'This is particularly common in women due to declining estrogen affecting mitochondrial biogenesis.' : gender === 'male' && age > 40 ? 'This often correlates with declining testosterone in men over 40.' : 'At your age, this indicates lifestyle factors are impacting cellular energy production.'}`
-            : `${firstName}, your stable energy levels at age ${age} indicate healthy mitochondrial biogenesis and efficient oxidative phosphorylation pathways - this is excellent for a ${gender} in this age range.`,
-          userIssues.metabolic.sugarCravings 
-            ? `${firstName}, your sugar cravings combined with ${userIssues.metabolic.energyLevels ? 'low energy' : 'other symptoms'} indicate chromium deficiency and insulin resistance patterns. ${weight && bmi && parseFloat(bmi) > 25 ? `Your BMI of ${bmi} supports this metabolic dysfunction pattern.` : 'Despite normal weight, your body is struggling with glucose regulation.'}`
-            : `${firstName}, absence of sugar cravings suggests healthy insulin sensitivity and stable glucose homeostasis - maintain this protective metabolic state.`,
-          userIssues.metabolic.caffeineEffect 
-            ? `${firstName}, your caffeine dependence suggests adenosine receptor upregulation and HPA axis dysregulation. ${sleepHours < 7 ? `Your ${sleepHours} hours of sleep is likely contributing to this caffeine dependency cycle.` : 'Despite adequate sleep, your circadian cortisol rhythm appears disrupted.'}`
-            : `${firstName}, your healthy relationship with caffeine indicates balanced adenosine-dopamine pathways and optimal circadian biology.`,
-          userIssues.metabolic.effortFatigue 
-            ? `${firstName}, exercise intolerance at your ${activityLevel} activity level indicates poor metabolic flexibility - your body struggles to switch between energy systems during physical stress.`
-            : `${firstName}, good exercise tolerance suggests healthy lactate buffering capacity and efficient mitochondrial adaptation.`
-        ],
-        personalizedFindings: userIssues.metabolic.energyLevels || userIssues.metabolic.sugarCravings ? [
-          `${firstName}, at age ${age}, your energy crashes likely occur during circadian cortisol dips (2-4pm) when glucose utilization naturally decreases. ${gender === 'female' ? 'Women often experience more pronounced afternoon energy dips due to hormonal fluctuations.' : 'Men typically maintain steadier energy if metabolically healthy.'}`,
-          userIssues.metabolic.weightManagement 
-            ? `${firstName}, your weight challenges stem from metabolic inflexibility - your body preferentially burns glucose instead of mobilizing stored fat. ${bmi && parseFloat(bmi) > 25 ? `With a BMI of ${bmi}, this metabolic dysfunction is creating a cycle of weight gain and energy instability.` : 'Despite normal weight, your metabolism needs optimization.'}`
-            : `${firstName}, your metabolic symptoms are primarily mitochondrial rather than weight-related, suggesting cellular energy production issues.`
-        ] : [
-          `${firstName}, your metabolic profile shows excellent fuel partitioning at age ${age} - focus on optimization rather than correction.`,
-          `${firstName}, your body demonstrates healthy metabolic flexibility between glucose and fat oxidation, which is protective against age-related decline.`
-        ],
-        recommendations: userIssues.metabolic.energyLevels || userIssues.metabolic.sugarCravings ? [
-          `${firstName}, implement Zone 2 cardio: ${age > 50 ? '15-20 minutes' : '20-25 minutes'} at ${Math.round((220 - age) * 0.65)}-${Math.round((220 - age) * 0.70)} BPM, 3x/week to rebuild your fat-burning mitochondria specifically for your age and fitness level.`,
-          `${firstName}, practice 16:8 time-restricted eating with eating window ${age > 50 ? '8am-4pm' : '10am-6pm'} to align with your age-specific circadian insulin sensitivity patterns.`,
-          `${firstName}, perform 20 Hindu squats every 90 minutes during work hours to activate GLUT4 translocation - this is particularly effective for your ${activityLevel} activity level.`,
-          knownBiomarkers 
-            ? `${firstName}, based on your biomarker data "${knownBiomarkers.substring(0, 50)}...", consider targeted supplementation with berberine 500mg before your two largest meals.`
-            : `${firstName}, take 10-minute walks immediately post-meal to enhance glucose disposal rate and activate muscle glucose uptake pathways.`
-        ] : [
-          `${firstName}, maintain metabolic flexibility with weekly 24-hour fasts to upregulate autophagy and enhance ketone production at your optimal metabolic state.`,
-          `${firstName}, add cold exposure therapy: ${gender === 'male' ? '2-3 minutes' : '1-2 minutes'} at 50-60°F water to activate brown adipose tissue based on your gender-specific cold tolerance.`,
-          `${firstName}, practice nasal breathing during all exercise to optimize oxygen delivery and maintain aerobic metabolism during your ${activityLevel} activities.`,
-          `${firstName}, implement morning sunlight exposure within 30 minutes of waking to optimize your circadian cortisol rhythm at age ${age}.`
-        ],
-        goalAlignment: (() => {
-          if (goals.includes('weight_loss')) {
-            return `🎯 ${firstName.toUpperCase()}'S WEIGHT LOSS GOAL: These metabolic protocols will shift your body into a fat-burning state by improving insulin sensitivity, enhancing lipolysis, and optimizing mitochondrial fat oxidation capacity specifically for a ${age}-year-old ${gender}.`;
-          } else if (goals.includes('energy')) {
-            return `🎯 ${firstName.toUpperCase()}'S ENERGY GOAL: These interventions target the root causes of your fatigue by enhancing mitochondrial ATP production, stabilizing blood glucose, and optimizing cellular energy metabolism for your specific age and lifestyle.`;
-          } else if (goals.includes('muscle_gain')) {
-            return `🎯 ${firstName.toUpperCase()}'S MUSCLE GAIN GOAL: Better metabolic flexibility will enhance nutrient partitioning, improve protein synthesis signaling, and optimize recovery between training sessions for your ${activityLevel} activity level.`;
-          } else {
-            return `🎯 ${firstName.toUpperCase()}'S GOALS: Metabolic optimization supports your goals to ${userGoalText} by enhancing cellular energy production, improving nutrient utilization, and optimizing hormonal signaling pathways specifically for your ${age}-year-old ${gender} physiology.`;
-          }
-        })()
-      },
-      lipidomic: {
-        title: "Lipidomic Analysis", 
-        subtitle: "Cell Membrane Health & Essential Fatty Acids",
-        significance: `WHY THIS ANALYSIS MATTERS: Every cell in your body is surrounded by a membrane made of fats - and the quality of these fats determines everything from brain function to inflammation levels. This analysis reveals whether your cell membranes are flexible and healthy (leading to clear thinking and smooth skin) or rigid and damaged (causing brain fog and joint pain). We use the same membrane science that elite athletes and biohackers rely on for peak performance.`,
-        insights: [
-          userIssues.inflammation.skinIssues || userIssues.cognitive.brainFog
-            ? "Your symptoms indicate compromised cell membrane fluidity due to elevated omega-6/omega-3 ratios and lipid peroxidation from oxidative stress"
-            : "Your cellular health suggests optimal membrane phospholipid composition and healthy fatty acid incorporation",
-          userIssues.inflammation.jointPain 
-            ? "Joint inflammation reflects altered arachidonic acid metabolism and elevated pro-inflammatory eicosanoid production from membrane phospholipids"
-            : "Healthy joints indicate balanced prostaglandin synthesis and optimal membrane-derived inflammatory mediators",
-          "Cell membrane composition directly determines ion channel function, neurotransmitter receptor sensitivity, and cellular signaling cascades",
-          userIssues.cognitive.moodChanges 
-            ? "Mood instability often results from altered brain membrane DHA content affecting serotonin receptor function and synaptic plasticity"
-            : "Stable mood suggests healthy brain phospholipid composition supporting optimal neurotransmitter function"
-        ],
-        personalizedFindings: userIssues.inflammation.skinIssues || userIssues.cognitive.brainFog ? [
-          `${firstName}, your symptoms suggest excessive consumption of omega-6 linoleic acid from processed foods, creating inflammatory membrane environments`,
-          "Your cell membranes likely have reduced fluidity and compromised cholesterol-to-phospholipid ratios affecting cellular function"
-        ] : [
-          "Your cellular health markers indicate optimal membrane composition with healthy fatty acid incorporation",
-          "Your phospholipid profiles appear well-balanced supporting efficient cellular communication"
-        ],
-        recommendations: userIssues.inflammation.skinIssues || userIssues.cognitive.brainFog ? [
-          `Consume 2 grams EPA/DHA daily from wild-caught fatty fish (sardines, mackerel, anchovies) to restore optimal omega-3 index above 8%`,
-          `Eliminate all seed oils (canola, soybean, corn, sunflower) and replace with saturated fats (grass-fed butter, coconut oil) to reduce membrane oxidation`,
-          `Take 1 tablespoon freshly ground flaxseed daily for ALA conversion to EPA, but only if you have healthy FADS1/FADS2 gene variants`,
-          `Consume phosphatidylserine-rich foods (organ meats, egg yolks) or 100mg PS supplement to support membrane integrity and cognitive function`
-        ] : [
-          `Maintain optimal fatty acid status with 1-2 servings wild-caught fish weekly and daily mixed nuts (walnuts, pecans, macadamias)`,
-          `Include membrane-protective antioxidants: astaxanthin from salmon, vitamin E from sunflower seeds, and CoQ10 from organ meats`,
-          `Practice intermittent fasting to activate autophagy and cellular membrane renewal processes`,
-          `Consume choline-rich foods (egg yolks, liver) to support phosphatidylcholine synthesis for healthy membrane structure`
-        ],
-        goalAlignment: (() => {
-          if (goals.includes('skin')) {
-            return `🎯 SKIN HEALTH GOAL: Optimizing membrane lipid composition will reduce inflammatory cytokine production, enhance skin barrier function, and improve cellular repair mechanisms.`;
-          } else if (goals.includes('focus') || userIssues.cognitive.brainFog) {
-            return `🎯 MENTAL CLARITY GOAL: Restoring brain membrane DHA content will enhance synaptic plasticity, improve neurotransmitter receptor function, and optimize cognitive processing speed.`;
-          } else if (goals.includes('mood')) {
-            return `🎯 MOOD GOAL: Balanced membrane fatty acids support optimal serotonin and dopamine receptor sensitivity, improving emotional regulation and stress resilience.`;
-          } else {
-            return `🎯 YOUR GOALS: Healthy cell membranes support your goals to ${userGoalText} by optimizing cellular communication, reducing inflammation, and enhancing tissue repair mechanisms.`;
-          }
-        })()
-      },
-      inflammation: {
-        title: "Inflammation Analysis",
-        subtitle: "Inflammatory Pathways & Immune Response",
-        significance: `WHY THIS ANALYSIS MATTERS: Inflammation is your body's internal fire - a little bit heals injuries, but too much destroys your organs from the inside out. Chronic inflammation is the root cause of heart disease, diabetes, arthritis, depression, and even cancer. This analysis measures your inflammatory status using the same biomarkers that predict disease risk decades in advance, then provides targeted interventions to cool the fire and extend your healthspan.`,
-        insights: [
-          userIssues.inflammation.jointPain || userIssues.inflammation.skinIssues 
-            ? "Your inflammatory symptoms indicate elevated NF-κB signaling, increased TNF-α and IL-6 production, and compromised resolution pathways"
-            : "Absence of inflammatory symptoms suggests balanced cytokine production and healthy specialized pro-resolving mediator (SPM) synthesis",
-          userIssues.inflammation.immuneSystem 
-            ? "Frequent illness indicates either Th1/Th2 imbalance, compromised regulatory T-cell function, or chronic low-grade inflammation suppressing immune surveillance"
-            : "Good immune function suggests optimal innate and adaptive immune coordination with healthy inflammatory resolution",
-          userIssues.inflammation.workoutRecovery 
-            ? "Poor recovery indicates elevated muscle damage markers (CK, LDH), impaired protein synthesis signaling, and delayed inflammatory resolution post-exercise"
-            : "Good recovery suggests efficient inflammatory resolution, optimal protein synthesis rates, and healthy tissue remodeling",
-          "Inflammation resolution is an active process requiring specialized lipid mediators (resolvins, protectins, maresins) derived from omega-3 fatty acids"
-        ],
-        personalizedFindings: userIssues.inflammation.jointPain || userIssues.inflammation.skinIssues ? [
-          `${firstName}, your inflammatory patterns likely worsen with high-glycemic foods, sleep deprivation, and psychological stress due to HPA axis activation`,
-          "Your body is probably producing excess arachidonic acid-derived inflammatory mediators while lacking resolution-promoting compounds"
-        ] : [
-          "Your inflammatory control indicates excellent cytokine balance and efficient resolution pathway activation",
-          "Your immune system demonstrates healthy surveillance capacity without excessive inflammatory burden"
-        ],
-        recommendations: userIssues.inflammation.jointPain || userIssues.inflammation.skinIssues ? [
-          `Practice Wim Hof breathing: 30 deep breaths + breath hold for 90 seconds, 3 rounds daily to activate anti-inflammatory vagus nerve signaling`,
-          `Implement contrast hydrotherapy: alternate 3 minutes hot sauna (160-180°F) with 1 minute cold plunge (50-60°F) for 3 cycles to modulate inflammatory cytokines`,
-          `Consume 1 tsp turmeric + black pepper + fat daily to inhibit NF-κB activation and enhance curcumin bioavailability via piperine`,
-          `Practice forest bathing (shinrin-yoku): 2+ hours weekly in nature to reduce cortisol, lower inflammatory markers, and activate NK cell function`
-        ] : [
-          `Maintain anti-inflammatory status with weekly heat shock protein activation via sauna (15-20 minutes at 160°F)`,
-          `Include polyphenol-rich foods: 1 cup mixed berries daily for anthocyanins and resveratrol to support inflammatory resolution`,
-          `Practice meditation: 10-15 minutes daily to reduce inflammatory gene expression and activate parasympathetic recovery`,
-          `Optimize sleep architecture: 7-9 hours with room temperature 65-68°F to support overnight inflammatory resolution and tissue repair`
-        ],
-        goalAlignment: (() => {
-          if (goals.includes('immunity')) {
-            return `🎯 IMMUNE HEALTH GOAL: Balancing inflammatory pathways will optimize immune surveillance, enhance pathogen resistance, and improve vaccine responsiveness.`;
-          } else if (goals.includes('muscle_gain') || userIssues.inflammation.workoutRecovery) {
-            return `🎯 MUSCLE GAIN GOAL: Optimizing inflammatory resolution will accelerate muscle protein synthesis, reduce exercise-induced damage, and enhance training adaptations.`;
-          } else if (goals.includes('skin')) {
-            return `🎯 SKIN HEALTH GOAL: Reducing systemic inflammation will decrease inflammatory skin conditions, enhance collagen synthesis, and improve skin barrier function.`;
-          } else if (goals.includes('stress')) {
-            return `🎯 STRESS MANAGEMENT GOAL: Anti-inflammatory protocols will break the stress-inflammation cycle, improve HPA axis function, and enhance stress resilience.`;
-          } else {
-            return `🎯 YOUR GOALS: Controlling inflammation supports your goals to ${userGoalText} by reducing chronic disease risk, optimizing tissue repair, and enhancing longevity pathways.`;
-          }
-        })()
-      },
-      cognitive: {
-        title: "Cognitive Analysis",
-        subtitle: "Brain Function & Neurotransmitter Balance",
-        significance: `WHY THIS ANALYSIS MATTERS: Your brain health determines your quality of life - from daily focus and mood stability to long-term memory and decision-making ability. This analysis evaluates the same neurotransmitter pathways and stress markers that neuroscientists use to predict cognitive decline. We identify whether your brain is aging faster than your chronological age and provide evidence-based protocols to enhance mental clarity and protect against dementia.`,
-        insights: [
-          userIssues.cognitive.brainFog 
-            ? "Brain fog typically results from neuroinflammation, compromised blood-brain barrier integrity, or altered neurotransmitter synthesis and clearance"
-            : "Clear thinking indicates healthy cerebral blood flow, optimal neurotransmitter balance, and intact blood-brain barrier function",
-          userIssues.cognitive.moodChanges 
-            ? "Mood instability suggests altered serotonin-dopamine ratios, compromised GABA signaling, or dysregulated HPA axis affecting limbic system function"
-            : "Stable mood indicates balanced neurotransmitter synthesis, healthy synaptic plasticity, and optimal stress hormone regulation",
-          userIssues.cognitive.sleepQuality 
-            ? `Poor sleep disrupts glymphatic clearance of brain metabolites, impairs memory consolidation, and reduces BDNF-mediated neuroplasticity`
-            : "Good sleep quality supports glymphatic detoxification, memory consolidation, and growth hormone-mediated brain repair",
-          userIssues.cognitive.stressLevels 
-            ? "Chronic stress elevates cortisol, which damages hippocampal neurons, impairs prefrontal cortex function, and disrupts neurogenesis"
-            : "Well-managed stress levels protect brain structure, maintain cognitive reserve, and support healthy neuroplasticity"
-        ],
-        personalizedFindings: userIssues.cognitive.brainFog || userIssues.cognitive.moodChanges ? [
-          `${firstName}, your cognitive symptoms likely peak during afternoon cortisol dips and improve with stable blood glucose and adequate protein intake`,
-          userIssues.cognitive.sleepQuality 
-            ? "Your sleep issues are amplifying cognitive dysfunction by impairing overnight brain detoxification and neurotransmitter restoration"
-            : "Your cognitive symptoms appear independent of sleep, suggesting neurotransmitter imbalances or blood-brain barrier dysfunction"
-        ] : [
-          "Your cognitive function indicates optimal brain health with healthy neurotransmitter synthesis and synaptic efficiency",
-          "Your brain demonstrates excellent stress resilience and cognitive reserve capacity"
-        ],
-        recommendations: userIssues.cognitive.brainFog || userIssues.cognitive.moodChanges ? [
-          `Practice Lion's Breath pranayama: 10 cycles of forceful exhale through mouth with tongue out to activate vagus nerve and reduce stress hormones`,
-          `Consume 1-2 cups wild blueberries daily for anthocyanins that cross blood-brain barrier and enhance BDNF expression for neuroplasticity`,
-          `Implement blue light blocking: amber glasses 2 hours before bed to optimize melatonin production and circadian rhythm regulation`,
-          `Practice cognitive load training: learn new complex skill (language, instrument, dance) 30 minutes daily to stimulate neurogenesis and synaptic plasticity`
-        ] : [
-          `Maintain cognitive health with intermittent cognitive challenges: puzzles, reading complex material, learning new skills to preserve cognitive reserve`,
-          `Include brain-derived neurotrophic foods: dark chocolate (85%+ cacao), green tea, and grass-fed organ meats for cognitive enhancement`,
-          `Practice mindfulness meditation: 15-20 minutes daily to enhance prefrontal cortex function and emotional regulation`,
-          `Optimize circadian biology: consistent sleep-wake times within 30 minutes daily to maintain optimal neurotransmitter cycling`
-        ],
-        goalAlignment: (() => {
-          if (goals.includes('focus')) {
-            return `🎯 MENTAL CLARITY GOAL: These cognitive protocols will enhance prefrontal cortex function, improve working memory capacity, and optimize attention networks for sustained focus.`;
-          } else if (goals.includes('mood')) {
-            return `🎯 MOOD GOAL: Optimizing neurotransmitter balance will improve emotional regulation, enhance stress resilience, and support healthy mood stability.`;
-          } else if (goals.includes('sleep')) {
-            return `🎯 SLEEP GOAL: Enhancing cognitive health will improve sleep quality by reducing racing thoughts, optimizing circadian rhythms, and promoting relaxation.`;
-          } else if (goals.includes('stress')) {
-            return `🎯 STRESS MANAGEMENT GOAL: These brain health protocols will enhance stress resilience, improve emotional regulation, and optimize HPA axis function.`;
-          } else {
-            return `🎯 YOUR GOALS: Optimizing cognitive function supports your goals to ${userGoalText} by enhancing decision-making, improving motivation, and supporting mental performance.`;
-          }
-        })()
-      },
-      gutMicrobiome: {
-        title: "Gut & Microbiome Analysis",
-        subtitle: "Digestive Health & Microbiome Balance",
-        significance: `WHY THIS ANALYSIS MATTERS: Your gut contains trillions of bacteria that act like a second brain, controlling 70% of your immune system and producing most of your happiness hormones. An unhealthy gut microbiome is linked to depression, autoimmune diseases, obesity, and even Alzheimer's. This analysis uses the same microbiome science that's revolutionizing medicine to optimize your gut bacteria for better mood, immunity, and overall health.`,
-        insights: [
-          userIssues.gut.digestiveIssues 
-            ? "Digestive symptoms typically indicate dysbiosis (altered microbiome diversity), compromised intestinal barrier function, or insufficient digestive enzyme production"
-            : "Good digestion suggests healthy microbiome diversity, intact intestinal barrier, and optimal digestive enzyme activity",
-          userIssues.gut.foodSensitivities 
-            ? "Food sensitivities often develop from increased intestinal permeability allowing undigested proteins to trigger immune responses and inflammatory cascades"
-            : "Absence of food sensitivities suggests healthy intestinal barrier integrity and balanced immune tolerance mechanisms",
-          "Your gut microbiome produces 95% of serotonin, synthesizes B vitamins and vitamin K, and regulates 70% of immune function through gut-associated lymphoid tissue",
-          "The gut-brain axis communicates via vagus nerve, microbial metabolites (SCFAs), and neurotransmitter production affecting mood, cognition, and stress response"
-        ],
-        personalizedFindings: userIssues.gut.digestiveIssues || userIssues.gut.foodSensitivities ? [
-          `${firstName}, your gut symptoms likely worsen with stress, antibiotics, NSAIDs, or high-sugar foods that feed pathogenic bacteria and compromise barrier function`,
-          "Your microbiome probably has reduced diversity with overgrowth of inflammatory species and insufficient beneficial bacteria for optimal metabolite production"
-        ] : [
-          "Your digestive health indicates excellent microbiome diversity with healthy short-chain fatty acid production and optimal barrier function",
-          "Your gut-brain axis appears well-functioning with healthy vagal tone and balanced neurotransmitter production"
-        ],
-        recommendations: userIssues.gut.digestiveIssues || userIssues.gut.foodSensitivities ? [
-          `Consume 30+ different plant foods weekly to maximize microbiome diversity and provide varied prebiotic fibers for beneficial bacteria`,
-          `Practice intermittent fasting 16:8 to allow migrating motor complex activation for gut cleaning and bacterial overgrowth prevention`,
-          `Include fermented foods daily: rotate between kefir, sauerkraut, kimchi, miso to introduce diverse probiotic strains and metabolites`,
-          `Implement gut-healing protocol: bone broth with glycine and glutamine 3x weekly to support intestinal barrier repair and tight junction integrity`
-        ] : [
-          `Maintain microbiome health with seasonal variety: rotate fermented foods and prebiotic sources to support bacterial diversity`,
-          `Include postbiotic foods: aged cheeses, sourdough bread, and fermented vegetables for beneficial bacterial metabolites`,
-          `Practice mindful eating: thorough chewing and relaxed meal environment to optimize digestive enzyme release and vagal stimulation`,
-          `Support beneficial bacteria with resistant starch: cooled potatoes, green bananas, or potato starch to feed butyrate-producing species`
-        ],
-        goalAlignment: (() => {
-          if (goals.includes('digestion')) {
-            return `🎯 DIGESTIVE HEALTH GOAL: Optimizing gut microbiome will eliminate digestive discomfort, enhance nutrient absorption, and restore healthy bowel function.`;
-          } else if (goals.includes('immunity')) {
-            return `🎯 IMMUNE HEALTH GOAL: Balancing gut microbiome will strengthen immune surveillance, improve pathogen resistance, and reduce autoimmune risk.`;
-          } else if (goals.includes('mood') || userIssues.cognitive.moodChanges) {
-            return `🎯 MOOD GOAL: Gut health optimization will enhance serotonin production, improve gut-brain communication, and support emotional regulation.`;
-          } else if (goals.includes('weight_loss')) {
-            return `🎯 WEIGHT LOSS GOAL: Healthy gut microbiome will improve metabolism, reduce inflammation, and optimize nutrient utilization for sustainable weight management.`;
-          } else {
-            return `🎯 YOUR GOALS: Maintaining gut health supports your goals to ${userGoalText} by optimizing nutrient absorption, immune function, and gut-brain axis communication.`;
-          }
-        })()
-      }
-    },
-    crossDomainConnections: [
-      userIssues.gut.digestiveIssues && (userIssues.cognitive.brainFog || userIssues.cognitive.moodChanges)
-        ? `${firstName}, your gut dysbiosis is directly affecting brain function through the vagus nerve and bacterial metabolite production - restoring microbiome balance will improve mental clarity and mood, supporting your goals to ${userGoalText}`
-        : "Your gut-brain axis appears healthy, supporting stable mood and cognition through optimal neurotransmitter production",
-      userIssues.metabolic.sugarCravings && userIssues.cognitive.brainFog 
-        ? `Your blood glucose instability is creating neuroinflammation and compromising blood-brain barrier integrity - stabilizing metabolism will clear brain fog and support your ${goals.includes('focus') ? 'mental clarity goals' : 'overall wellness goals'}`
-        : "Your metabolic and cognitive systems demonstrate healthy coordination with stable glucose delivery to brain tissue",
-      userIssues.inflammation.jointPain && userIssues.cognitive.moodChanges
-        ? `Systemic inflammation is activating microglia in your brain and disrupting neurotransmitter synthesis - anti-inflammatory protocols will improve both joint comfort and mood stability, supporting your goals to ${userGoalText}`
-        : "Your inflammatory control supports both physical comfort and emotional stability through balanced cytokine production"
-    ],
-    priorityProtocols: (() => {
-      const protocols = [];
-      
-      if (userIssues.metabolic.energyLevels || userIssues.metabolic.sugarCravings) {
-        protocols.push({
-          protocol: "Zone 2 cardio 20 min 3x/week + 16:8 time-restricted eating (8am-4pm window)",
-          goalConnection: goals.includes('weight_loss') ? "Directly supports fat oxidation and weight loss" : goals.includes('energy') ? "Targets mitochondrial energy production" : "Supports metabolic flexibility"
-        });
-      }
-      
-      if (userIssues.cognitive.brainFog || userIssues.cognitive.stressLevels) {
-        protocols.push({
-          protocol: "Wim Hof breathing 3 rounds daily + 1-2 cups wild blueberries for BDNF enhancement",
-          goalConnection: goals.includes('focus') ? "Directly improves cognitive function and mental clarity" : goals.includes('stress') ? "Supports stress resilience and emotional regulation" : "Enhances brain health and neuroplasticity"
-        });
-      }
-      
-      if (userIssues.gut.digestiveIssues) {
-        protocols.push({
-          protocol: "30+ plant foods weekly + rotating fermented foods daily + bone broth 3x/week",
-          goalConnection: goals.includes('digestion') ? "Directly targets microbiome diversity and gut healing" : goals.includes('immunity') ? "Supports immune function via gut health" : "Improves overall health through gut-body axis"
-        });
-      } else if (userIssues.inflammation.jointPain || userIssues.inflammation.skinIssues) {
-        protocols.push({
-          protocol: "Contrast hydrotherapy (sauna + cold plunge) 3x/week + forest bathing 2+ hours weekly",
-          goalConnection: goals.includes('immunity') ? "Supports immune balance and inflammation resolution" : goals.includes('skin') ? "Improves skin health through inflammation control" : "Reduces systemic inflammation"
-        });
-      } else {
-        protocols.push({
-          protocol: "Weekly heat shock protein activation via sauna + cognitive load training 30 min daily",
-          goalConnection: `Supports your goals to ${userGoalText} through hormetic stress and neuroplasticity enhancement`
-        });
-      }
-      
-      return protocols.slice(0, 3); // Limit to 3 protocols
-    })(),
-    conflictCheck: `All recommendations are personalized for ${firstName} and designed to be safe with ${conditions.length > 0 ? 'your medical conditions' : 'no known medical conditions'}, ${medications.length > 0 ? 'current medications' : 'no medications'}, and ${allergies.length > 0 ? 'known allergies' : 'no known allergies'}. Start with one protocol at a time and build gradually over 2-4 weeks.`
-  };
+    "lipidomic": { /* same structure */ },
+    "inflammation": { /* same structure */ },
+    "cognitive": { /* same structure */ },
+    "gutMicrobiome": { /* same structure */ }
+  },
+  "crossDomainConnections": [array of 2-3 connections between ${firstName}'s issues],
+  "priorityProtocols": [
+    {
+      "protocol": "Specific protocol description",
+      "goalConnection": "How this directly supports ${firstName}'s goals"
+    }
+  ],
+  "conflictCheck": "Safety considerations for ${firstName}'s medications/conditions"
 }
+
+BEGIN ANALYSIS FOR ${firstName}:`;
+
+  console.log('🤖 Calling o3 model for health domains analysis...');
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openaiApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'o3-mini',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are an expert functional medicine practitioner and health analyst. Provide comprehensive, personalized health domain analysis based on user data. Always return valid JSON format as specified.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      max_completion_tokens: 6000,
+      reasoning_effort: 'medium',
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('❌ OpenAI API error:', errorText);
+    throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
+  }
+
+  const data = await response.json();
+  const analysisContent = data.choices[0].message.content;
+
+  try {
+    const analysisResult = JSON.parse(analysisContent);
+    console.log('✅ Successfully parsed AI analysis response');
+    return analysisResult;
+  } catch (parseError) {
+    console.error('❌ Failed to parse AI response as JSON:', parseError);
+    console.error('Raw response:', analysisContent);
+    
+    // Fallback: return structured response with raw content
+    return {
+      userProfile: {
+        name: firstName,
+        personalHealthStory: `${firstName} is a ${age}-year-old ${gender} with ${totalIssues}/16 lifestyle health issues.`,
+        goals: goals,
+        goalDescription: goals.join(', ') || 'general wellness optimization',
+        primaryConcern: primaryConcern,
+        totalIssueCount: totalIssues,
+        riskLevel: totalIssues > 8 ? 'HIGH PRIORITY' : totalIssues > 4 ? 'MODERATE ATTENTION' : 'OPTIMIZATION FOCUS'
+      },
+      error: 'AI response parsing failed',
+      rawResponse: analysisContent
+    };
+  }
+} 

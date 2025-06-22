@@ -105,7 +105,7 @@ const comparisonOptions: ComparisonOption[] = [
     icon: <Brain className="w-6 h-6" />,
     gradient: 'from-blue-500/20 to-cyan-500/20',
     pros: [
-      'Personalized formula based on our AI Health Assessment',
+      'Formula personalized by our Deep Health Analysis',
       'Analyzes your goals, lifestyle, and symptoms',
       'Option to add biomarker data for ultimate precision',
       'High-absorption bioavailable forms',
@@ -124,9 +124,9 @@ const comparisonOptions: ComparisonOption[] = [
 
 const features = [
   {
-    name: 'Dynamic Health Assessment',
+    name: 'Deep Health Analysis',
     description:
-      'Our AI analyzes your goals, lifestyle, and symptoms to build a complete picture of your health needs.',
+      'Our analysis connects your goals, lifestyle, and symptoms to build a complete picture of your health needs.',
     icon: <Search className="w-6 h-6" />,
   },
   {
@@ -144,7 +144,7 @@ const features = [
   {
     name: 'Precision Ingredient Matching',
     description:
-      'Our engine matches your specific needs to a database of thousands of ingredients for optimal results.',
+      'Our system matches your specific needs to a database of thousands of ingredients for optimal results.',
     icon: <Spline className="w-6 h-6" />,
   },
   {
@@ -168,7 +168,7 @@ const features = [
   {
     name: 'Product Checker',
     description:
-      'Upload a product label and our AI will analyze its quality, ingredients, and potential interactions.',
+      'Upload a product label and our system will analyze its quality, ingredients, and potential interactions.',
     icon: <ScanLine className="w-6 h-6" />,
   },
   {
@@ -184,7 +184,7 @@ const smartReasons = [
     icon: <DollarSign className="w-6 h-6" />,
     title: 'They Stop Wasting Money on Guesswork.',
     description:
-      'Our AI-driven analysis ensures you only pay for the precise nutrients your body needs, eliminating costly trial-and-error with generic supplements.',
+      'Our data-driven analysis ensures you only pay for the precise nutrients your body needs, eliminating costly trial-and-error with generic supplements.',
   },
   {
     icon: <BarChart3 className="w-6 h-6" />,
@@ -230,7 +230,7 @@ export default function SupplementComparisonSection() {
           </h2>
           <p className="text-xl text-dark-secondary max-w-4xl mx-auto leading-relaxed">
             Most people waste money on generic formulas. Find out what your body
-            *actually* needs with our AI Health Assessment.
+            *actually* needs with our Deep Health Analysis.
           </p>
         </motion.div>
 
@@ -356,13 +356,13 @@ export default function SupplementComparisonSection() {
         >
           <div className="text-center mb-8">
             <p className="text-lg text-dark-secondary">
-              And this doesn't even include our AI features...
+              And that's just the beginning...
             </p>
           </div>
           
           <div className="bg-gradient-to-r from-dark-panel/80 to-dark-panel/60 border border-dark-accent/30 rounded-2xl p-8">
             <h3 className="text-2xl font-bold text-center mb-8 text-dark-primary">
-              World's First AI Supplement Platform
+              The Intelligent Supplement System
             </h3>
             
             {/* AI Features Grid */}
@@ -406,10 +406,10 @@ export default function SupplementComparisonSection() {
         >
           <div className="text-center mb-16">
             <h3 className="text-4xl font-bold text-dark-primary mb-4">
-              AI Health Analysis vs Traditional Health Consultant
+              Our Approach vs. The Traditional Way
             </h3>
             <p className="text-xl text-dark-secondary">
-              Why our AI-powered supplement personalization beats expensive consultations
+              Why our data-driven personalization beats expensive consultations
             </p>
           </div>
 
@@ -469,7 +469,7 @@ export default function SupplementComparisonSection() {
                   <Brain className="w-6 h-6 text-dark-accent" />
                 </div>
                 <div>
-                  <h4 className="text-2xl font-bold text-dark-primary">SupplementScribe AI</h4>
+                  <h4 className="text-2xl font-bold text-dark-primary">SupplementScribe</h4>
                   <p className="text-dark-accent font-semibold">$75/month (everything included)</p>
                 </div>
               </div>
@@ -477,7 +477,7 @@ export default function SupplementComparisonSection() {
               <div className="space-y-4 text-dark-secondary">
                 <div className="flex items-start">
                   <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 mr-3 flex-shrink-0" />
-                  <span><strong className="text-dark-primary">5-minute AI Health Assessment</strong> - comprehensive lifestyle and symptom analysis</span>
+                  <span><strong className="text-dark-primary">5-minute Deep Health Analysis</strong> - comprehensive lifestyle and symptom analysis</span>
                 </div>
                 <div className="flex items-start">
                   <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 mr-3 flex-shrink-0" />
@@ -497,12 +497,12 @@ export default function SupplementComparisonSection() {
                 </div>
                 <div className="flex items-start">
                   <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 mr-3 flex-shrink-0" />
-                  <span><strong className="text-dark-primary">AI Study Buddy</strong> - personalized research summaries from PubMed</span>
+                  <span><strong className="text-dark-primary">Personalized Research (Study Buddy)</strong> - personalized research summaries from PubMed</span>
                 </div>
               </div>
 
               <div className="mt-6 p-4 bg-dark-accent/20 rounded-lg">
-                <p className="text-dark-accent font-semibold">Complete Solution: $75/month (AI analysis + 6 supplements + delivery + ongoing optimization)</p>
+                <p className="text-dark-accent font-semibold">Complete Solution: $75/month (Deep Analysis + Core 6 Formula + delivery + ongoing optimization)</p>
               </div>
             </div>
           </div>
@@ -526,7 +526,7 @@ export default function SupplementComparisonSection() {
             
             <div className="mt-12 max-w-4xl mx-auto">
               <p className="text-lg text-dark-secondary leading-relaxed">
-                <strong className="text-dark-primary">Stop paying consultant prices for generic advice.</strong> Our AI analyzes your unique health goals, lifestyle, and symptoms to create a personalized supplement plan that actually adapts to your progress. Get precision nutrition delivered to your door for less than you'd spend on coffee.
+                <strong className="text-dark-primary">Stop paying consultant prices for generic advice.</strong> Our system analyzes your unique health goals, lifestyle, and symptoms to create a personalized supplement plan that actually adapts to your progress. Get precision nutrition delivered to your door for less than you'd spend on coffee.
               </p>
             </div>
           </div>

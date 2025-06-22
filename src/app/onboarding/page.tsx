@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { onboardingSchema, type OnboardingData } from '@/lib/schemas';
@@ -169,6 +169,8 @@ export default function OnboardingPage() {
   const [currentSubStep, setCurrentSubStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [familySetup, setFamilySetup] = useState<any>(null);
+  const [familySetupLoaded, setFamilySetupLoaded] = useState(false);
+  const familySetupProcessedRef = useRef(false);
 
   const [processingSteps, setProcessingSteps] = useState<ProcessingStep[]>([
     {
@@ -214,8 +216,12 @@ export default function OnboardingPage() {
   ]);
   const router = useRouter();
 
-  // Detect family setup from localStorage
+  // Detect family setup from localStorage (only run once)
   useEffect(() => {
+    if (familySetupLoaded || familySetupProcessedRef.current) return; // Prevent multiple runs
+    
+    familySetupProcessedRef.current = true; // Mark as being processed
+    
     try {
       // Check for family admin setup
       const familyData = localStorage.getItem('familySetup');
@@ -226,25 +232,35 @@ export default function OnboardingPage() {
         
         // Update processing steps to include family setup if applicable
         if (parsed.isAdmin) {
-          setProcessingSteps(prev => [
-            ...prev.slice(0, -1), // Remove the last 'complete' step
-            {
-              id: 'family-setup',
-              title: 'Family Setup',
-              description: 'Creating invite links for your family members',
-              icon: <Users className="h-5 w-5" />,
-              completed: false,
-              active: false
-            },
-            {
-              id: 'complete',
-              title: 'Complete',
-              description: 'Your family supplement protocol is ready!',
-              icon: <CheckCircle className="h-5 w-5" />,
-              completed: false,
-              active: false
+          setProcessingSteps(prev => {
+            // Check if family-setup step already exists to prevent duplicates
+            const hasFamilySetup = prev.some(step => step.id === 'family-setup');
+            if (hasFamilySetup) {
+              logger.debug('Family setup step already exists, skipping duplicate');
+              return prev; // Don't add duplicate
             }
-          ]);
+            
+            logger.debug('Adding family setup step to processing steps');
+            return [
+              ...prev.slice(0, -1), // Remove the last 'complete' step
+              {
+                id: 'family-setup',
+                title: 'Family Setup',
+                description: 'Creating invite links for your family members',
+                icon: <Users className="h-5 w-5" />,
+                completed: false,
+                active: false
+              },
+              {
+                id: 'complete',
+                title: 'Complete',
+                description: 'Your family supplement protocol is ready!',
+                icon: <CheckCircle className="h-5 w-5" />,
+                completed: false,
+                active: false
+              }
+            ];
+          });
         }
       }
       
@@ -255,10 +271,35 @@ export default function OnboardingPage() {
         setFamilySetup(parsed);
         logger.info('Family join detected', { familyAdminId: parsed.familyAdminId });
       }
-          } catch (error) {
-        logger.debug('No family setup data found');
+      
+      setFamilySetupLoaded(true); // Mark as loaded to prevent re-runs
+    } catch (error) {
+      logger.debug('No family setup data found');
+      setFamilySetupLoaded(true); // Mark as loaded even on error
+    }
+  }, [familySetupLoaded]);
+
+  // Cleanup effect to prevent stale data issues
+  useEffect(() => {
+    return () => {
+      // Clean up on component unmount if there was an error or interruption
+      if (familySetup && !isSubmitting) {
+        logger.debug('Cleaning up family setup data on component unmount');
       }
-  }, []);
+    };
+  }, [familySetup, isSubmitting]);
+
+  // Debug effect to log processing steps changes
+  useEffect(() => {
+    const stepIds = processingSteps.map(step => step.id);
+    const duplicateIds = stepIds.filter((id, index) => stepIds.indexOf(id) !== index);
+    
+    if (duplicateIds.length > 0) {
+      logger.error('Duplicate processing step IDs detected', { duplicateIds, allIds: stepIds });
+    } else {
+      logger.debug('Processing steps updated', { stepIds });
+    }
+  }, [processingSteps]);
 
   const updateProcessingStep = (stepId: string, completed: boolean = false, active: boolean = true) => {
     setProcessingSteps(prev => prev.map(step => ({
@@ -506,6 +547,32 @@ export default function OnboardingPage() {
       // Step 5: Family Setup (if applicable)
       updateProcessingStep('health-score', true, false);
       
+      // Trigger health domains analysis in the background (non-blocking)
+      try {
+        logger.info('Triggering health domains analysis...');
+        const { createClient } = await import('@/lib/supabase/client');
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session) {
+          const healthDomainsResponse = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/health-domains-analysis`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ userId: session.user.id }),
+          });
+          
+          if (!healthDomainsResponse.ok) {
+            logger.warn('Health domains analysis returned non-OK status:', { status: healthDomainsResponse.status });
+          }
+        }
+      } catch (error) {
+        logger.warn('Failed to trigger health domains analysis (non-blocking):', error instanceof Error ? error : { message: String(error) });
+        // Continue without blocking - user can generate from dashboard if needed
+      }
+      
       if (familySetup?.isAdmin) {
         updateProcessingStep('family-setup', false, true);
         logger.step('Setting up family invite links');
@@ -532,6 +599,9 @@ export default function OnboardingPage() {
       if (familySetup) {
         localStorage.removeItem('familySetup');
         localStorage.removeItem('familyJoin');
+        setFamilySetup(null);
+        setFamilySetupLoaded(false);
+        familySetupProcessedRef.current = false;
       }
       
       logger.success('Frictionless onboarding completed successfully');
@@ -548,7 +618,7 @@ export default function OnboardingPage() {
         <div className="space-y-4">
           {processingSteps.map((step, index) => (
             <motion.div
-              key={step.id}
+              key={`${step.id}-${index}`} // Ensure unique keys even if IDs somehow duplicate
               className={`flex items-center gap-4 p-4 rounded-lg border transition-all ${
                 step.completed 
                   ? 'bg-green-500/10 border-green-500/20' 

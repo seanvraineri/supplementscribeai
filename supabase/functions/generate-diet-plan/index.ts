@@ -16,10 +16,47 @@ interface DietPlan {
     beverages: { item: string; reason: string }[];
   };
   meal_suggestions: {
-    breakfast: { name: string; ingredients: string[]; benefits: string }[];
-    lunch: { name: string; ingredients: string[]; benefits: string }[];
-    dinner: { name: string; ingredients: string[]; benefits: string }[];
-    snacks: { name: string; ingredients: string[]; benefits: string }[];
+    breakfast: { 
+      name: string; 
+      ingredients: string[]; 
+      benefits: string;
+      prep_time: string;
+      cook_time: string;
+      servings: string;
+      instructions: string[];
+    }[];
+    lunch: { 
+      name: string; 
+      ingredients: string[]; 
+      benefits: string;
+      prep_time: string;
+      cook_time: string;
+      servings: string;
+      instructions: string[];
+    }[];
+    dinner: { 
+      name: string; 
+      ingredients: string[]; 
+      benefits: string;
+      prep_time: string;
+      cook_time: string;
+      servings: string;
+      instructions: string[];
+    }[];
+    snacks: { 
+      name: string; 
+      ingredients: string[]; 
+      benefits: string;
+      prep_time: string;
+      cook_time: string;
+      servings: string;
+      instructions: string[];
+    }[];
+  };
+  micronutrient_analysis: {
+    key_nutrients: { nutrient: string; sources: string[]; health_benefits: string; why_you_need_it: string }[];
+    nutrient_synergies: { combination: string; benefit: string; foods_involved: string[] }[];
+    supplement_synergy: { explanation: string; examples: string[] };
   };
   general_notes: string;
   contraindications: string;
@@ -108,6 +145,14 @@ Deno.serve(async (req) => {
       snpsCount: snps?.length || 0
     });
 
+    // 🚨 CRITICAL SAFETY LOG: Debug dietary constraints
+    console.log('🚨 DIETARY SAFETY CHECK:', {
+      userId: userId,
+      dietaryPreference: profile?.dietary_preference || 'NONE SET (DANGEROUS!)',
+      allergies: allergies?.map(a => a.ingredient_name) || [],
+      profileData: !!profile ? 'Profile exists' : 'NO PROFILE (ERROR!)'
+    });
+
     // Fetch supported SNPs for manual joining
     const { data: allSupportedSnps } = await supabase
       .from('supported_snps')
@@ -168,7 +213,13 @@ Deno.serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: getDietSystemPrompt(personalizationTier, labData.length, geneticData.length)
+            content: getDietSystemPrompt(
+              personalizationTier, 
+              labData.length, 
+              geneticData.length,
+              userProfile.dietary_preference,
+              healthHistory.allergies
+            )
           },
           {
             role: 'user',
@@ -232,20 +283,20 @@ Deno.serve(async (req) => {
 
     console.log('Successfully stored diet plan');
 
-    return new Response(JSON.stringify({ 
-      success: true, 
-      plan: planDetails,
-      message: 'Personalized whole food diet plan generated',
-      personalization_tier: personalizationTier
+    return new Response(JSON.stringify({
+      success: true,
+      message: 'Diet plan generated successfully',
+      data: planDetails
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 200,
     });
 
   } catch (error: any) {
-    console.error('Error in generate-diet-plan function:', error);
+    console.error('Error in generate-diet-plan:', error);
     return new Response(JSON.stringify({ 
-      error: error.message || 'Internal server error',
-      stack: error.stack
+      error: 'An unexpected error occurred while generating your diet plan.',
+      details: error.message 
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
@@ -284,16 +335,61 @@ function hasRichAssessmentData(profile: any): boolean {
   return completedFields >= 8;
 }
 
-function getDietSystemPrompt(tier: string, biomarkerCount: number, geneticCount: number): string {
-  const basePrompt = `You are a deeply caring, empathetic nutritionist who specializes in traditional whole food nutrition. You have a gift for making people feel truly seen, understood, and hopeful about their health journey.
+function getDietSystemPrompt(tier: string, biomarkerCount: number, geneticCount: number, dietaryPreference?: string, allergies?: string[]): string {
+  let dietaryConstraints = '';
+  
+  // Create ABSOLUTE dietary constraints based on diet type
+  if (dietaryPreference) {
+    dietaryConstraints = `\n🚨🚨🚨 ABSOLUTE DIETARY CONSTRAINTS (OVERRIDE EVERYTHING) 🚨🚨🚨\n`;
+    switch (dietaryPreference.toLowerCase()) {
+      case 'vegan':
+        dietaryConstraints += `❌ ABSOLUTELY NO: Meat, poultry, fish, eggs, dairy, honey, or ANY animal products
+✅ ONLY: Plant-based foods, vegetables, fruits, legumes, nuts, seeds, grains (if no other restrictions)`;
+        break;
+      case 'vegetarian':
+        dietaryConstraints += `❌ ABSOLUTELY NO: Meat, poultry, fish, or ANY foods containing these
+✅ ALLOWED: Eggs, dairy, plant-based foods, vegetables, fruits, legumes, nuts, seeds`;
+        break;
+      case 'celiac':
+        dietaryConstraints += `❌ ABSOLUTELY NO: Wheat, barley, rye, or ANY foods containing gluten
+❌ NO: Bread, pasta, cereals, beer, or processed foods with hidden gluten
+✅ ONLY: Certified gluten-free grains (rice, quinoa), meats, vegetables, fruits`;
+        break;
+      case 'keto':
+        dietaryConstraints += `❌ EXTREMELY LIMITED: Carbohydrates (max 20-30g net carbs per day)
+❌ AVOID: Grains, sugar, most fruits (except small amounts of berries), starchy vegetables
+✅ FOCUS: High-fat meats, fish, eggs, cheese, nuts, seeds, low-carb vegetables, healthy fats`;
+        break;
+      case 'paleo':
+        dietaryConstraints += `❌ ABSOLUTELY NO: Grains, legumes, dairy, processed foods, refined sugar
+✅ ONLY: Grass-fed meats, wild fish, eggs, vegetables, fruits, nuts, seeds`;
+        break;
+      case 'omnivore':
+        dietaryConstraints += `✅ Can eat all food groups following whole food principles
+⚠️ Still must avoid any specific allergies listed below`;
+        break;
+    }
+    dietaryConstraints += '\n\n';
+  }
+  
+  // Add allergy constraints
+  if (allergies && allergies.length > 0) {
+    dietaryConstraints += `🚨🚨🚨 LIFE-THREATENING ALLERGIES (ABSOLUTE AVOIDANCE) 🚨🚨🚨\n`;
+    dietaryConstraints += `❌ NEVER INCLUDE: ${allergies.join(', ')}\n`;
+    dietaryConstraints += `❌ NEVER INCLUDE foods that contain or may contain these allergens\n`;
+    dietaryConstraints += `❌ Check ALL ingredients for hidden allergens\n`;
+    dietaryConstraints += `⚠️ This is a SAFETY issue - NO EXCEPTIONS\n\n`;
+  }
 
+  const basePrompt = `You are a deeply caring, empathetic nutritionist who specializes in traditional whole food nutrition. You have a gift for making people feel truly seen, understood, and hopeful about their health journey.
+${dietaryConstraints}
 🎯 ULTIMATE MISSION: Create a personalized whole food grocery list + exactly 20 meal suggestions (5 breakfast, 5 lunch, 5 dinner, 5 snacks) with DEEPLY PERSONAL explanations
 
 WHOLE FOOD PRINCIPLES (NON-NEGOTIABLE):
 - ZERO seed oils (canola, soybean, corn, vegetable oil, sunflower oil)
-- Grass-fed/pasture-raised animal products ONLY
-- Wild-caught fish ONLY
-- Traditional healthy fats: grass-fed butter, tallow, coconut oil, olive oil
+- Grass-fed/pasture-raised animal products ONLY (if allowed by diet type)
+- Wild-caught fish ONLY (if allowed by diet type)
+- Traditional healthy fats: grass-fed butter, tallow, coconut oil, olive oil (if allowed by diet type)
 - Organic vegetables and fruits
 - NO processed foods
 - NO artificial ingredients
@@ -310,9 +406,29 @@ Available Data: ${biomarkerCount} biomarkers, ${geneticCount} genetic variants
 - Use their exact biomarker values when available
 - Reference their specific genetic variants when available
 
-MEAL INGREDIENT REQUIREMENT:
-- ALL meal ingredients MUST come from the grocery list you create
-- No ingredients in meals that aren't in the grocery list
+🚨 CRITICAL ANTI-HALLUCINATION REQUIREMENTS:
+- ALL meal ingredients MUST come from the grocery list you create - NO EXCEPTIONS
+- Before writing any meal, CHECK that every ingredient is in your grocery list
+- If an ingredient isn't in your grocery list, ADD IT to the grocery list first
+- Use EXACT SAME SPELLING and formatting for ingredients between grocery list and meals
+- NO ingredient can appear in a meal that isn't in the grocery list
+- VALIDATE every meal against your grocery list before finalizing
+
+🚨 COOKING INSTRUCTIONS ANTI-HALLUCINATION RULES:
+- EXACTLY 5 steps per recipe - no more, no less
+- Each step must be ACTIONABLE and SPECIFIC (include amounts, temperatures, timing)
+- NO vague instructions like "cook until done" - specify exact times/temperatures
+- Use REALISTIC cooking methods (no specialized equipment unless specified in grocery list)
+- Include actual measurements (1 tbsp, 2 cups, 350°F, 15 minutes, etc.)
+- Steps should flow logically: prep → cook → finish → serve
+- NO fictional cooking techniques or impossible timing
+
+MEAL INGREDIENT VALIDATION PROCESS:
+1. Create complete grocery list first
+2. For each meal, check EVERY ingredient against the grocery list
+3. If ingredient missing from grocery list, ADD IT to the appropriate category
+4. Use identical spelling/formatting between grocery list and meal ingredients
+5. Double-check that no meal contains ingredients not in grocery list
 
 FORMATTING REQUIREMENTS:
 - Use proper title case for all food names (e.g., "Grass-Fed Beef", "Wild-Caught Salmon", "Organic Spinach")
@@ -337,16 +453,55 @@ Your response must be valid JSON with exactly this structure:
     "beverages": [{"item": "...", "reason": "deeply personal explanation"}]
   },
   "meal_suggestions": {
-    "breakfast": [{"name": "...", "ingredients": ["from grocery list"], "benefits": "deeply personal explanation"}],
-    "lunch": [{"name": "...", "ingredients": ["from grocery list"], "benefits": "deeply personal explanation"}],
-    "dinner": [{"name": "...", "ingredients": ["from grocery list"], "benefits": "deeply personal explanation"}],
-    "snacks": [{"name": "...", "ingredients": ["from grocery list"], "benefits": "deeply personal explanation"}]
+    "breakfast": [
+      {
+        "name": "...", 
+        "ingredients": ["EXACTLY from grocery list"], 
+        "benefits": "deeply personal explanation",
+        "prep_time": "5 minutes",
+        "cook_time": "10 minutes", 
+        "servings": "1",
+        "instructions": [
+          "Step 1: Specific action with exact amounts",
+          "Step 2: Specific cooking instruction", 
+          "Step 3: Specific technique or timing",
+          "Step 4: Final preparation step",
+          "Step 5: Serving or finishing instruction"
+        ]
+      }
+    ],
+    "lunch": [{"name": "...", "ingredients": ["EXACTLY from grocery list"], "benefits": "deeply personal explanation", "prep_time": "...", "cook_time": "...", "servings": "...", "instructions": ["Step 1: ...", "Step 2: ...", "Step 3: ...", "Step 4: ...", "Step 5: ..."]}],
+    "dinner": [{"name": "...", "ingredients": ["EXACTLY from grocery list"], "benefits": "deeply personal explanation", "prep_time": "...", "cook_time": "...", "servings": "...", "instructions": ["Step 1: ...", "Step 2: ...", "Step 3: ...", "Step 4: ...", "Step 5: ..."]}],
+    "snacks": [{"name": "...", "ingredients": ["EXACTLY from grocery list"], "benefits": "deeply personal explanation", "prep_time": "...", "cook_time": "...", "servings": "...", "instructions": ["Step 1: ...", "Step 2: ...", "Step 3: ...", "Step 4: ...", "Step 5: ..."]}]
+  },
+  "micronutrient_analysis": {
+    "key_nutrients": [
+      {
+        "nutrient": "Vitamin C", 
+        "sources": ["Bell Peppers", "Citrus Fruits"], 
+        "health_benefits": "Immune support, collagen synthesis", 
+        "why_you_need_it": "Based on your frequent illness and skin issues, you need extra immune support"
+      }
+    ],
+    "nutrient_synergies": [
+      {
+        "combination": "Vitamin C + Iron", 
+        "benefit": "Enhanced iron absorption", 
+        "foods_involved": ["Bell Peppers", "Grass-Fed Beef"]
+      }
+    ],
+    "supplement_synergy": {
+      "explanation": "Your diet provides nutrients abundant in food while your 6-supplement pack covers nutrients hard to get from food",
+      "examples": ["Healthy fats in your diet enhance Vitamin D absorption from your supplement"]
+    }
   },
   "general_notes": "warm, encouraging message about how this plan will help them",
   "contraindications": "Traditional whole food safety considerations"
 }
 
-EXACTLY 5 meals in each category (breakfast, lunch, dinner, snacks) = 20 total meals.`;
+EXACTLY 5 meals in each category (breakfast, lunch, dinner, snacks) = 20 total meals.
+
+⚠️ REMEMBER: Dietary preference and allergies OVERRIDE all other considerations. Check every single food item against the constraints at the top of this prompt.`;
 
   switch (tier) {
     case 'PRECISION_NUTRITION':
@@ -401,7 +556,24 @@ MISSION: Create grocery list + exactly 20 meal suggestions (5 breakfast, 5 lunch
 
 PERSONALIZATION TIER: ${tier}
 
-=== PATIENT PROFILE ===\n`;
+🚨🚨🚨 CRITICAL SAFETY CONSTRAINTS (MUST CHECK FIRST) 🚨🚨🚨`;
+
+  // 🚨 DIETARY PREFERENCE - ABSOLUTE TOP PRIORITY
+  if (profile.dietary_preference) {
+    prompt += `\n\n🍽️ DIETARY PREFERENCE: ${profile.dietary_preference.toUpperCase()}\n`;
+    prompt += `⚠️ CRITICAL: This is NON-NEGOTIABLE. Every single food item and meal MUST align with their ${profile.dietary_preference} dietary requirements.\n`;
+  }
+
+  // 🚨 ALLERGIES - LIFE-THREATENING PRIORITY
+  if (healthHistory.allergies && healthHistory.allergies.length > 0) {
+    prompt += `\n⚠️ LIFE-THREATENING ALLERGIES:\n`;
+    healthHistory.allergies.forEach((allergy: string) => {
+      prompt += `❌ NEVER INCLUDE: ${allergy}\n`;
+    });
+    prompt += `⚠️ This is a SAFETY issue - check ALL ingredients for these allergens\n`;
+  }
+
+  prompt += `\n=== PATIENT PROFILE ===\n`;
 
   // Demographics
   if (profile.age) prompt += `Age: ${profile.age} years\n`;
@@ -409,13 +581,6 @@ PERSONALIZATION TIER: ${tier}
   if (profile.weight_lbs) prompt += `Weight: ${profile.weight_lbs} lbs\n`;
   if (profile.height_total_inches) prompt += `Height: ${profile.height_total_inches} inches\n`;
   if (profile.activity_level) prompt += `Activity: ${profile.activity_level}\n`;
-
-  // 🚨 DIETARY PREFERENCE - ABSOLUTE TOP PRIORITY
-  if (profile.dietary_preference) {
-    prompt += `\n🍽️ DIETARY PREFERENCE (ABSOLUTE TOP PRIORITY - NON-NEGOTIABLE):\n`;
-    prompt += `"${profile.dietary_preference.toUpperCase()}"\n`;
-    prompt += `\n⚠️ CRITICAL: This is NON-NEGOTIABLE. Every single food item and meal MUST align with their ${profile.dietary_preference} dietary requirements. This overrides ALL other considerations.\n`;
-  }
 
   // Primary health concern
   if (profile.primary_health_concern) {
@@ -475,15 +640,12 @@ PERSONALIZATION TIER: ${tier}
   // Custom goals
   if (profile.custom_health_goal) prompt += `Custom Health Goal: "${profile.custom_health_goal}"\n`;
 
-  // Health history
+  // Health history (excluding allergies which are at the top)
   if (healthHistory.conditions.length > 0) {
     prompt += `\n🏥 Conditions: ${healthHistory.conditions.join(', ')}\n`;
   }
   if (healthHistory.medications.length > 0) {
     prompt += `💊 Medications: ${healthHistory.medications.join(', ')}\n`;
-  }
-  if (healthHistory.allergies.length > 0) {
-    prompt += `⚠️ Allergies: ${healthHistory.allergies.join(', ')}\n`;
   }
 
   // Laboratory data
@@ -510,7 +672,27 @@ PERSONALIZATION TIER: ${tier}
     }
   }
 
-  prompt += `\n🔥 CRITICAL INSTRUCTIONS:\n- 🍽️ DIETARY PREFERENCE COMPLIANCE: If they specified a dietary preference, EVERY food item must comply 100% - this is NON-NEGOTIABLE\n- Reference their SPECIFIC biomarker values in reasoning (e.g., \"Your Vitamin D level of 22 ng/mL...\")\n- Connect genetic variants to food choices (e.g., \"Your MTHFR variant means...\")\n- USE ALL 16 ASSESSMENT QUESTIONS above - address their sleep, energy, stress, digestion, etc.\n- Connect their symptoms to specific foods (e.g., \"Your brain fog + bloating suggests...\")\n- Reference their exact responses (e.g., \"Since you sleep only 5 hours...\")\n- Explain HOW each food will help THEIR specific body and concerns\n- Make every explanation deeply personal and caring\n- ALL meal ingredients must come from your grocery list\n- Provide EXACTLY 5 meals in each category (20 total)\n- Use only traditional whole foods (no seed oils, grass-fed only, etc.)\n- 🚨 MANDATORY: Use Title Case for ALL grocery list items\n\nProvide ONLY the JSON response with grocery list first, then exactly 20 personalized meals.`;
+  prompt += `\n=== 🎯 DIET PLAN STRATEGY (Complement the 6-Supplement Pack) ===\n`;
+  prompt += `Your diet plan should focus on nutrients that ARE abundant in food and work synergistically with their supplement pack:\n\n`;
+  
+  prompt += `🥗 FOCUS ON FOOD-ABUNDANT NUTRIENTS (NOT in supplement pack):\n`;
+  prompt += `• Vitamin C - Citrus fruits, berries, bell peppers, leafy greens\n`;
+  prompt += `• Vitamin E - Nuts, seeds, avocados, olive oil\n`;
+  prompt += `• Potassium - Bananas, potatoes, spinach, avocados\n`;
+  prompt += `• Folate - Leafy greens, legumes (if no MTHFR issues)\n`;
+  prompt += `• Fiber - Vegetables, fruits, nuts, seeds\n`;
+  prompt += `• Antioxidants - Colorful vegetables, berries, herbs, spices\n`;
+  prompt += `• Polyphenols - Green tea, berries, dark chocolate, herbs\n\n`;
+  
+  prompt += `🔗 SYNERGY WITH SUPPLEMENT PACK:\n`;
+  prompt += `• Healthy fats enhance Vitamin D absorption (from their supplement)\n`;
+  prompt += `• Vitamin C foods enhance iron absorption (if they take Easy Iron)\n`;
+  prompt += `• Magnesium-rich foods support their Magnesium supplement\n`;
+  prompt += `• Prebiotic foods feed their probiotic supplements\n\n`;
+  
+  prompt += `🎯 STRATEGY: Create a diet plan that provides nutrients abundant in food while supporting the absorption and effectiveness of their 6-supplement pack.\n\n`;
+
+  prompt += `🔥 CRITICAL INSTRUCTIONS (IN ORDER OF PRIORITY):\n1. 🚨 ALLERGIES: NEVER include any allergen listed above - this is LIFE-THREATENING\n2. 🍽️ DIETARY PREFERENCE: EVERY food must comply with their ${profile.dietary_preference || 'specified'} diet - NO EXCEPTIONS\n3. Reference their SPECIFIC biomarker values in reasoning (e.g., \"Your Vitamin D level of 22 ng/mL...\")\n4. Connect genetic variants to food choices (e.g., \"Your MTHFR variant means...\")\n5. USE ALL 16 ASSESSMENT QUESTIONS above - address their sleep, energy, stress, digestion, etc.\n6. Connect their symptoms to specific foods (e.g., \"Your brain fog + bloating suggests...\")\n7. Reference their exact responses (e.g., \"Since you sleep only 5 hours...\")\n8. Explain HOW each food will help THEIR specific body and concerns\n9. Make every explanation deeply personal and caring\n10. ALL meal ingredients must come from your grocery list\n11. Provide EXACTLY 5 meals in each category (20 total)\n12. Use only traditional whole foods (no seed oils, grass-fed only if diet allows, etc.)\n13. 🚨 MANDATORY: Use Title Case for ALL grocery list items\n14. 🎯 FOCUS ON FOOD-ABUNDANT NUTRIENTS that complement their supplement pack\n\n🧬 MICRONUTRIENT ANALYSIS REQUIREMENTS:\n- Identify 6-8 KEY NUTRIENTS they're getting from this diet plan\n- For each nutrient, explain WHY THEY SPECIFICALLY need it based on their symptoms/biomarkers/genetics\n- Show which foods in your grocery list provide each nutrient\n- Identify 3-4 powerful nutrient synergies (e.g., Vitamin C + Iron for better absorption)\n- Explain how their diet works WITH their 6-supplement pack (not against it)\n- Make it personal - connect nutrients to their specific health concerns\n- Example: \"Vitamin C from your bell peppers will help with your frequent illness and skin issues\"\n\nProvide ONLY the JSON response with grocery list first, then exactly 20 personalized meals, then micronutrient analysis.`;
 
   return prompt;
 }
@@ -542,6 +724,19 @@ function parseDietPlan(aiResponse: string): any {
     
     console.log(`Meal counts: Breakfast: ${breakfast.length}, Lunch: ${lunch.length}, Dinner: ${dinner.length}, Snacks: ${snacks.length}`);
     
+    // Ensure micronutrient analysis exists
+    if (!parsed.micronutrient_analysis) {
+      console.warn('No micronutrient analysis in AI response, adding default structure');
+      parsed.micronutrient_analysis = {
+        key_nutrients: [],
+        nutrient_synergies: [],
+        supplement_synergy: {
+          explanation: "Your diet provides nutrients abundant in food while your supplement pack covers nutrients difficult to obtain from food alone.",
+          examples: []
+        }
+      };
+    }
+    
     return parsed;
     
   } catch (error) {
@@ -551,18 +746,39 @@ function parseDietPlan(aiResponse: string): any {
     // Return a fallback structure
     return {
       grocery_list: {
-        proteins: [{ item: "Grass-fed ground beef", reason: "High-quality protein source" }],
-        vegetables: [{ item: "Organic spinach", reason: "Nutrient-dense leafy green" }],
-        fruits: [{ item: "Organic blueberries", reason: "Antioxidant-rich fruit" }],
-        fats: [{ item: "Grass-fed butter", reason: "Traditional healthy fat" }],
-        seasonings: [{ item: "Sea salt", reason: "Natural mineral source" }],
-        beverages: [{ item: "Filtered water", reason: "Essential hydration" }]
+        proteins: [{ item: "Grass-Fed Ground Beef", reason: "High-quality protein source" }],
+        vegetables: [{ item: "Organic Spinach", reason: "Nutrient-dense leafy green" }],
+        fruits: [{ item: "Organic Blueberries", reason: "Antioxidant-rich fruit" }],
+        fats: [{ item: "Grass-Fed Butter", reason: "Traditional healthy fat" }],
+        seasonings: [{ item: "Sea Salt", reason: "Natural mineral source" }],
+        beverages: [{ item: "Filtered Water", reason: "Essential hydration" }]
       },
       meal_suggestions: {
-        breakfast: [{ name: "Simple scrambled eggs", ingredients: ["eggs", "butter"], benefits: "Basic nutrition" }],
-        lunch: [{ name: "Beef salad", ingredients: ["beef", "spinach"], benefits: "Protein and greens" }],
-        dinner: [{ name: "Grilled meat", ingredients: ["beef"], benefits: "Evening protein" }],
-        snacks: [{ name: "Berries", ingredients: ["blueberries"], benefits: "Healthy snack" }]
+        breakfast: [{ name: "Simple Scrambled Eggs", ingredients: ["Grass-Fed Butter"], benefits: "Basic nutrition" }],
+        lunch: [{ name: "Beef Salad", ingredients: ["Grass-Fed Ground Beef", "Organic Spinach"], benefits: "Protein and greens" }],
+        dinner: [{ name: "Grilled Beef", ingredients: ["Grass-Fed Ground Beef"], benefits: "Evening protein" }],
+        snacks: [{ name: "Fresh Berries", ingredients: ["Organic Blueberries"], benefits: "Healthy snack" }]
+      },
+      micronutrient_analysis: {
+        key_nutrients: [
+          {
+            nutrient: "Iron",
+            sources: ["Grass-Fed Ground Beef", "Organic Spinach"],
+            health_benefits: "Oxygen transport, energy production",
+            why_you_need_it: "Essential for preventing fatigue and supporting energy levels"
+          }
+        ],
+        nutrient_synergies: [
+          {
+            combination: "Iron + Vitamin C",
+            benefit: "Enhanced iron absorption",
+            foods_involved: ["Grass-Fed Ground Beef", "Organic Spinach"]
+          }
+        ],
+        supplement_synergy: {
+          explanation: "Your diet provides food-abundant nutrients while your supplement pack covers nutrients difficult to obtain from food alone.",
+          examples: ["Healthy fats enhance vitamin absorption from supplements"]
+        }
       },
       general_notes: "A basic whole food nutrition plan. Please regenerate for more personalization.",
       contraindications: "Avoid seed oils and processed foods."

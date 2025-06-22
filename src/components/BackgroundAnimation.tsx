@@ -3,43 +3,51 @@
 import React from 'react'
 
 const BackgroundAnimation: React.FC = () => {
-  // Real health data arrays
-  const genes = [
-    'MTHFR', 'COMT', 'APOE', 'CYP1A2', 'FADS1', 'VDR', 'ALDH2', 'GSTP1', 'BDNF', 'ACE'
+  // More dramatic, emotionally-charged questions
+  const agonyOfUncertainty = [
+    'Deceived by wellness marketing?',
+    'Lost in the contradictions?',
+    'Is this science or a sales pitch?',
+    'Another influencer, another empty promise?',
+    'Drowning in a sea of "shoulds"?',
   ]
 
-  const snps = [
-    'rs1801133', 'rs4680', 'rs429358', 'rs762551', 'rs174547', 'rs2228570', 'rs671', 'rs1695', 'rs6265', 'rs4340'
+  const silentWarWithin = [
+    "Why do my results say 'normal' when I feel broken?",
+    'What if the root cause is still hiding?',
+    'Am I funding a multi-billion dollar placebo?',
+    "Is my body fighting a battle I can't see?",
+    "What does my DNA know that I don't?",
   ]
 
-  const biomarkers = [
-    'Vitamin D', 'B12', 'Folate', 'CRP', 'LDL', 'HDL', 'HbA1c', 'TSH', 'Ferritin', 'Homocysteine'
+  const frustrationOfFutility = [
+    'All this effort... for nothing?',
+    'Is your supplement cabinet a graveyard of hope?',
+    'Doing everything right, feeling all wrong?',
+    'Trapped in endless trial and error?',
+    "Is 'pill fatigue' your new reality?",
   ]
 
-  const supplements = [
-    'Magnesium', 'Omega-3', 'Vitamin D3', 'B-Complex', 'NAC', 'Curcumin', 'Ashwagandha', 'CoQ10', 'Zinc', 'Probiotics'
-  ]
-
-  const healthTerms = [
-    'Methylation', 'Inflammation', 'Oxidative Stress', 'Detoxification', 'Neurotransmitters', 'Cardiovascular', 'Metabolic', 'Cognitive', 'Immune', 'Hormonal'
-  ]
-
-  const dnaSequences = [
-    'A T C G', 'G C T A', 'T A G C', 'C G A T', 'A T T A', 'G C C G', 'T A A T', 'C G G C', 'A T G C', 'G C A T'
+  const glimmerOfPossibility = [
+    'What if your biology held the blueprint?',
+    'Could your data unlock your true potential?',
+    'Imagine a formula built just for you.',
+    "What if 'optimized' wasn't a fantasy?",
+    "Ready to know your body's secrets?",
   ]
 
   // Create rows with different data types
   const rows = [
-    { data: genes, delay: '0s', speed: '120s' },
-    { data: dnaSequences, delay: '-15s', speed: '100s' },
-    { data: snps, delay: '-30s', speed: '140s' },
-    { data: dnaSequences, delay: '-45s', speed: '110s' },
-    { data: biomarkers, delay: '-60s', speed: '160s' },
-    { data: dnaSequences, delay: '-75s', speed: '90s' },
-    { data: supplements, delay: '-90s', speed: '180s' },
-    { data: dnaSequences, delay: '-105s', speed: '95s' },
-    { data: healthTerms, delay: '-120s', speed: '200s' },
-    { data: dnaSequences, delay: '-135s', speed: '105s' }
+    { data: agonyOfUncertainty, delay: '0s', speed: '120s' },
+    { data: silentWarWithin, delay: '-15s', speed: '100s' },
+    { data: frustrationOfFutility, delay: '-30s', speed: '140s' },
+    { data: glimmerOfPossibility, delay: '-45s', speed: '110s' },
+    { data: agonyOfUncertainty, delay: '-60s', speed: '160s' },
+    { data: silentWarWithin, delay: '-75s', speed: '90s' },
+    { data: frustrationOfFutility, delay: '-90s', speed: '180s' },
+    { data: glimmerOfPossibility, delay: '-105s', speed: '95s' },
+    { data: agonyOfUncertainty, delay: '-120s', speed: '200s' },
+    { data: silentWarWithin, delay: '-135s', speed: '105s' }
   ]
 
   return (

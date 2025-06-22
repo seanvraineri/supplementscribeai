@@ -44,7 +44,10 @@ import {
   Shield,
   Network,
   Send,
-  Apple
+  Apple,
+  Clock,
+  ChefHat,
+  Users
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { SVGProps } from 'react';
@@ -554,28 +557,40 @@ export default function DashboardPage() {
       setDomainsError(null);
       
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        const { data, error } = await supabase.functions.invoke('health-domains-analysis', {
-          headers: {
-            Authorization: `Bearer ${session?.access_token}`,
-          },
-        });
+        // 🔄 FETCH STORED HEALTH DOMAINS ANALYSIS FROM DATABASE
+        // Instead of calling the function every time, fetch stored results
+        const { data: storedAnalysis, error } = await supabase
+          .from('user_health_domains_analysis')
+          .select('analysis_data, created_at')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
 
         if (!isMounted) return; // Component unmounted
         
         if (error) {
-          console.error('Health domains analysis error:', error);
-          setDomainsError(error.message || 'Failed to analyze health domains');
+          if (error.code === 'PGRST116') {
+            // No analysis found - user hasn't completed onboarding or analysis hasn't been generated yet
+            console.log('No health domains analysis found - may need to generate');
+            setDomainsError('No health domains analysis found. Complete onboarding to generate your analysis.');
+          } else {
+            console.error('Health domains analysis database error:', error);
+            setDomainsError(error.message || 'Failed to load health domains analysis');
+          }
           return;
         }
 
-        console.log('Health domains data received:', data);
-        setDomainsData(data);
+        if (storedAnalysis?.analysis_data) {
+          console.log('Health domains data loaded from database:', storedAnalysis.analysis_data);
+          setDomainsData(storedAnalysis.analysis_data);
+        } else {
+          setDomainsError('No analysis data found. Please complete onboarding to generate your analysis.');
+        }
       } catch (error: any) {
         if (!isMounted || error.name === 'AbortError') return;
-        console.error('Health domains analysis error:', error);
-        setDomainsError(error.message || 'Failed to analyze health domains');
+        console.error('Health domains analysis loading error:', error);
+        setDomainsError(error.message || 'Failed to load health domains analysis');
       } finally {
         if (isMounted) {
           setDomainsLoading(false);
@@ -648,7 +663,7 @@ export default function DashboardPage() {
       }
 
       if (data.success) {
-        setDietPlan(data.plan);
+        setDietPlan(data.data);
         setActiveTab('diet-groceries'); // Switch to diet plan tab
       } else {
         console.error('Failed to generate diet plan:', data.error);
@@ -1288,6 +1303,38 @@ export default function DashboardPage() {
 
       {dietPlan ? (
         <div className="space-y-8">
+          {/* Dietary Restrictions Display */}
+          {(profile?.dietary_preference || (userAllergies && userAllergies.length > 0)) && (
+            <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-4">
+              <h3 className="text-lg font-semibold text-red-400 mb-3 flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5" />
+                Your Dietary Requirements (Strictly Followed)
+              </h3>
+              <div className="space-y-2">
+                {profile?.dietary_preference && (
+                  <div className="flex items-center gap-2">
+                    <Leaf className="h-4 w-4 text-dark-accent" />
+                    <span className="text-dark-primary font-medium">
+                      Diet Type: <span className="text-dark-accent">{profile.dietary_preference.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}</span>
+                    </span>
+                  </div>
+                )}
+                {userAllergies && userAllergies.length > 0 && (
+                  <div>
+                    <p className="text-dark-primary font-medium mb-1">⚠️ Allergies Avoided:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {userAllergies.map((allergy: any, index: number) => (
+                        <span key={index} className="bg-red-500/10 text-red-400 px-3 py-1 rounded-full text-sm font-medium">
+                          {allergy.ingredient_name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* General Notes Section */}
           {dietPlan.general_notes && (
             <div className="bg-dark-panel rounded-xl p-6 border border-dark-border">
@@ -1364,6 +1411,31 @@ export default function DashboardPage() {
                         transition={{ delay: 0.3 + index * 0.05 }}
                       >
                         <h4 className="font-bold text-dark-primary mb-2">{meal.name}</h4>
+                        
+                        {/* Cooking Info */}
+                        {(meal.prep_time || meal.cook_time || meal.servings) && (
+                          <div className="flex flex-wrap gap-4 mb-3 text-xs text-dark-secondary">
+                            {meal.prep_time && (
+                              <div className="flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                <span>Prep: {meal.prep_time}</span>
+                              </div>
+                            )}
+                            {meal.cook_time && (
+                              <div className="flex items-center gap-1">
+                                <ChefHat className="h-3 w-3" />
+                                <span>Cook: {meal.cook_time}</span>
+                              </div>
+                            )}
+                            {meal.servings && (
+                              <div className="flex items-center gap-1">
+                                <Users className="h-3 w-3" />
+                                <span>Serves: {meal.servings}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
                         <div className="mb-3">
                           <p className="text-dark-secondary text-sm mb-1">Ingredients:</p>
                           <div className="flex flex-wrap gap-1">
@@ -1374,6 +1446,24 @@ export default function DashboardPage() {
                             ))}
                           </div>
                         </div>
+
+                        {/* Cooking Instructions */}
+                        {meal.instructions && Array.isArray(meal.instructions) && meal.instructions.length > 0 && (
+                          <div className="mb-3">
+                            <p className="text-dark-secondary text-sm mb-2 font-semibold">5-Step Instructions:</p>
+                            <div className="space-y-1">
+                              {meal.instructions.map((step: string, stepIndex: number) => (
+                                <div key={stepIndex} className="flex items-start gap-2">
+                                  <span className="bg-dark-accent text-white text-xs rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    {stepIndex + 1}
+                                  </span>
+                                  <p className="text-dark-secondary text-xs leading-relaxed">{step}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
                         <div className="bg-dark-background/50 rounded-lg p-3 border-l-4 border-dark-accent">
                           <p className="text-dark-secondary text-sm">
                             <span className="font-semibold text-dark-accent">Why this works for you:</span> {meal.benefits}
@@ -1436,17 +1526,57 @@ export default function DashboardPage() {
     }
 
     if (domainsError) {
+      const isNotFoundError = domainsError.includes('No health domains analysis found');
+      
       return (
         <div className="space-y-8">
           <div className="text-center py-20">
             <AlertTriangle className="h-16 w-16 text-red-400 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-dark-primary mb-2">Analysis Error</h2>
-            <p className="text-dark-secondary mb-4">{domainsError}</p>
+            <h2 className="text-xl font-semibold text-dark-primary mb-2">
+              {isNotFoundError ? 'Health Analysis Not Generated' : 'Analysis Error'}
+            </h2>
+            <p className="text-dark-secondary mb-4">
+              {isNotFoundError 
+                ? 'Your personalized health domains analysis hasn\'t been generated yet.' 
+                : domainsError}
+            </p>
             <Button 
-              onClick={() => window.location.reload()} 
+              onClick={async () => {
+                if (isNotFoundError) {
+                  try {
+                    setIsLoading(true);
+                    const supabase = createClient();
+                    const { data: { session } } = await supabase.auth.getSession();
+                    
+                    if (session) {
+                      const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/health-domains-analysis`, {
+                        method: 'POST',
+                        headers: {
+                          'Authorization': `Bearer ${session.access_token}`,
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ userId: session.user.id }),
+                      });
+                      
+                      if (response.ok) {
+                        window.location.reload();
+                      } else {
+                        throw new Error(`Failed to generate analysis: ${response.status}`);
+                      }
+                    }
+                  } catch (error) {
+                    console.error('Failed to generate health domains analysis:', error);
+                  } finally {
+                    setIsLoading(false);
+                  }
+                } else {
+                  window.location.reload();
+                }
+              }} 
               className="bg-dark-accent text-white hover:bg-dark-accent/80"
+              disabled={isLoading}
             >
-              Try Again
+              {isLoading ? 'Generating...' : (isNotFoundError ? 'Generate Analysis' : 'Try Again')}
             </Button>
           </div>
         </div>

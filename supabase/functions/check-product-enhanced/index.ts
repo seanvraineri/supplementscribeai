@@ -526,6 +526,14 @@ ALLERGIES: ${healthProfile.allergies?.join(', ') || 'None reported'}
 CONDITIONS: ${healthProfile.conditions?.join(', ') || 'None reported'}  
 MEDICATIONS: ${healthProfile.medications?.join(', ') || 'None reported'}
 
+AI-DETECTED ROOT CAUSE PATTERNS (${healthProfile.symptomPatterns?.length || 0} patterns):
+${healthProfile.symptomPatterns && healthProfile.symptomPatterns.length > 0 ? 
+  healthProfile.symptomPatterns.map(p => 
+    `• ${p.pattern_name} (${p.confidence_score}% confidence): ${Array.isArray(p.symptoms_involved) ? p.symptoms_involved.join(' + ') : p.symptoms_involved} → Recommended: ${Array.isArray(p.recommendations) ? p.recommendations.join(', ') : p.recommendations}`
+  ).join('\n') :
+  'No AI-detected symptom patterns available - these are generated from supplement plan analysis'
+}
+
 HYPER-PERSONALIZED ANALYSIS RESULTS:
 ${hyperPersonalization.geneticCompatibility.length > 0 ? 
   `GENETIC COMPATIBILITY:\n${hyperPersonalization.geneticCompatibility.map(gc => 
@@ -705,7 +713,8 @@ serve(async (req) => {
       { data: allergies, error: allergiesError },
       { data: conditions, error: conditionsError },
       { data: medications, error: medicationsError },
-      { data: okCapsuleProducts, error: productsError }
+      { data: okCapsuleProducts, error: productsError },
+      { data: symptomPatterns, error: patternsError }
     ] = await Promise.all([
       supabase.from('user_profiles').select('*').eq('id', user.id).single(),
       supabase.from('user_biomarkers').select('*').eq('user_id', user.id).limit(500),
@@ -713,7 +722,8 @@ serve(async (req) => {
               supabase.from('user_allergies').select('*').eq('user_id', user.id).limit(50),
               supabase.from('user_conditions').select('*').eq('user_id', user.id).limit(30),
         supabase.from('user_medications').select('*').eq('user_id', user.id).limit(50),
-      supabase.from('products').select('supplement_name, brand, product_name, product_url').eq('brand', 'OK Capsule')
+      supabase.from('products').select('supplement_name, brand, product_name, product_url').eq('brand', 'OK Capsule'),
+      supabase.from('user_symptom_patterns').select('pattern_type, pattern_name, confidence_score, symptoms_involved, root_causes, pattern_description, recommendations').eq('user_id', user.id).order('confidence_score', { ascending: false })
     ]);
 
     // Fetch supported SNPs data separately for manual joining
@@ -743,6 +753,7 @@ serve(async (req) => {
     const userConditions = conditions || [];
     const userMedications = medications || [];
     const availableProducts = okCapsuleProducts || [];
+    const userSymptomPatterns = symptomPatterns || [];
 
     // ✨ BUILD HYPER-PERSONALIZED PRODUCT ANALYSIS
     const hyperPersonalization = buildProductHyperPersonalization(
@@ -815,6 +826,7 @@ serve(async (req) => {
       allergies: userAllergies.map(a => a.ingredient_name),
       conditions: userConditions.map(c => c.condition_name),
       medications: userMedications.map(m => m.medication_name),
+      symptomPatterns: userSymptomPatterns,
       okCapsuleAlternatives: availableProducts.map(p => ({
         supplementName: p.supplement_name,
         productName: p.product_name,

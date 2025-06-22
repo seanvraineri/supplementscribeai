@@ -149,6 +149,7 @@ export async function saveOnboardingData(formData: unknown, familySetupData?: an
       activity_level,
       sleep_hours,
       alcohol_intake,
+      dietary_preference, // 🚨 CRITICAL FIX: Add missing dietary_preference
       // 16 Lifestyle Assessment Questions (Yes/No)
       energy_levels,
       effort_fatigue,
@@ -238,6 +239,7 @@ export async function saveOnboardingData(formData: unknown, familySetupData?: an
       activity_level,
       sleep_hours,
       alcohol_intake,
+      dietary_preference, // 🚨 CRITICAL FIX: Add missing dietary_preference
       // 16 Lifestyle Assessment Questions (Yes/No)
       energy_levels,
       effort_fatigue,
@@ -350,6 +352,29 @@ export async function saveOnboardingData(formData: unknown, familySetupData?: an
           // Don't fail the onboarding if plan generation fails
         } else {
           logger.success('Supplement plan generated successfully');
+          
+          // 🔬 GENERATE AI-POWERED HEALTH DOMAINS ANALYSIS
+          logger.step('Generating AI-powered health domains analysis');
+          try {
+            const domainsResponse = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/health-domains-analysis`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${session.access_token}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({}),
+            });
+
+            if (!domainsResponse.ok) {
+              logger.error('Failed to generate health domains analysis', { error: await domainsResponse.text() });
+              // Don't fail the onboarding if domains analysis fails
+            } else {
+              logger.success('Health domains analysis generated successfully');
+            }
+          } catch (domainsError) {
+            logger.error('Error generating health domains analysis', domainsError instanceof Error ? domainsError : { message: String(domainsError) });
+            // Don't fail the onboarding if domains analysis fails
+          }
         }
       } else {
         logger.error('No session token available for plan generation');

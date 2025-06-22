@@ -581,7 +581,7 @@ function optimizeConversationHistory(messages: any[], personalityProfile?: Perso
 }
 
 // Enhanced data hash with health data prioritization
-function createDataHash(profile: any, biomarkers: any[], snps: any[], conditions: any[], medications: any[], allergies: any[], lifestyle?: LifestyleContext): string {
+function createDataHash(profile: any, biomarkers: any[], snps: any[], conditions: any[], medications: any[], allergies: any[], lifestyle?: LifestyleContext, symptomPatterns?: any[]): string {
   // Create detailed health data fingerprint for cache invalidation
   const healthDataFingerprint = {
     // Profile health indicators (most important)
@@ -619,7 +619,13 @@ function createDataHash(profile: any, biomarkers: any[], snps: any[], conditions
     },
     
     // Lifestyle factors
-    lifestyle: lifestyle || {}
+    lifestyle: lifestyle || {},
+    
+    // AI-detected symptom patterns (important for cache invalidation)
+    patterns: {
+      count: symptomPatterns?.length || 0,
+      patterns: symptomPatterns?.map(p => `${p.pattern_type}:${p.confidence_score}`).sort().join('|') || ''
+    }
   };
   
   const dataString = JSON.stringify(healthDataFingerprint);
@@ -1283,7 +1289,8 @@ Deno.serve(async (req) => {
         { data: conditions },
         { data: medications },
         { data: biomarkers },
-        { data: supplementPlan }
+        { data: supplementPlan },
+        { data: symptomPatterns }
       ] = await Promise.all([
         supabase.from('user_profiles').select(`
           age, gender, weight_lbs, height_total_inches, health_goals, activity_level, sleep_hours,
@@ -1297,7 +1304,8 @@ Deno.serve(async (req) => {
         supabase.from('user_conditions').select('condition_name').eq('user_id', userId).limit(20),
         supabase.from('user_medications').select('medication_name').eq('user_id', userId).limit(20),
         supabase.from('user_biomarkers').select('marker_name, value, unit, reference_range, comment').eq('user_id', userId).limit(100),
-        supabase.from('supplement_plans').select('plan_details').eq('user_id', userId).order('created_at', { ascending: false }).limit(1).maybeSingle()
+        supabase.from('supplement_plans').select('plan_details').eq('user_id', userId).order('created_at', { ascending: false }).limit(1).maybeSingle(),
+        supabase.from('user_symptom_patterns').select('pattern_type, pattern_name, confidence_score, symptoms_involved, root_causes, pattern_description, recommendations').eq('user_id', userId).order('confidence_score', { ascending: false })
       ]);
 
       // --- PARALLEL FETCH: LATEST ANALYSIS + SUPPORTED SNPS ---
@@ -1393,7 +1401,7 @@ Deno.serve(async (req) => {
         displayName: prettify(b.marker_name)
       }));
 
-      // Build optimized health context
+      // Build optimized health context with pattern memory
       healthContext = buildOptimizedHealthContext(
         profile || {},
         allergies || [],
@@ -1401,7 +1409,8 @@ Deno.serve(async (req) => {
         medications || [],
         formattedBiomarkers,
         enrichedSnps,
-        supplementPlan?.plan_details || null
+        supplementPlan?.plan_details || null,
+        symptomPatterns || []
       );
 
       if (latestAnalysis?.plaintext) {
@@ -1760,7 +1769,8 @@ function buildOptimizedHealthContext(
   medications: any[],
   biomarkers: any[],
   snps: any[],
-  supplementPlan: any
+  supplementPlan: any,
+  symptomPatterns: any[] = []
 ): string {
   const parts = [];
 
@@ -1768,6 +1778,19 @@ function buildOptimizedHealthContext(
   const onboardingContext = buildOnboardingContext(profile);
   if (onboardingContext) {
     parts.push(onboardingContext);
+  }
+
+  // 🧠 AI-DETECTED SYMPTOM PATTERNS (Critical for Consistency)
+  if (symptomPatterns && symptomPatterns.length > 0) {
+    const patternSummary = symptomPatterns
+      .slice(0, 5) // Top 5 patterns by confidence
+      .map(pattern => {
+        const symptoms = Array.isArray(pattern.symptoms_involved) ? pattern.symptoms_involved.join(' + ') : pattern.symptoms_involved;
+        const recommendations = Array.isArray(pattern.recommendations) ? pattern.recommendations.join(', ') : pattern.recommendations;
+        return `**${pattern.pattern_name}** (${pattern.confidence_score}% confidence): ${symptoms} → Recommended: ${recommendations}`;
+      })
+      .join('\n');
+    parts.push(`**🧬 AI-DETECTED ROOT CAUSE PATTERNS**:\n${patternSummary}`);
   }
 
   // Essential demographics

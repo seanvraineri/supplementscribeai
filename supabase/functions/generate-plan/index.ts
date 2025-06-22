@@ -224,7 +224,7 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'o3',
+        model: 'gpt-4o',
         messages: [
           {
             role: 'system',
@@ -312,6 +312,75 @@ Deno.serve(async (req) => {
     }
 
     console.log('Successfully stored supplement plan');
+
+    // 🧠 SURGICAL ADDITION: Store AI-detected symptom patterns for memory synchronization
+    try {
+      console.log('🧬 Storing symptom patterns for AI memory synchronization...');
+      
+      // Re-run pattern analysis to get the exact same results as used in prompt
+      const lifestyleProblems = [
+        { key: 'energy_levels', problem: 'Often feels tired or low energy' },
+        { key: 'effort_fatigue', problem: 'Physical activity feels more difficult than it should' },
+        { key: 'caffeine_effect', problem: 'Relies on caffeine to get through the day' },
+        { key: 'digestive_issues', problem: 'Experiences digestive discomfort regularly' },
+        { key: 'stress_levels', problem: 'Feels stressed or anxious frequently' },
+        { key: 'sleep_quality', problem: 'Has trouble falling asleep or staying asleep' },
+        { key: 'mood_changes', problem: 'Experiences mood swings or irritability' },
+        { key: 'brain_fog', problem: 'Experiences brain fog or difficulty concentrating' },
+        { key: 'sugar_cravings', problem: 'Craves sugar or processed foods' },
+        { key: 'skin_issues', problem: 'Has skin problems (acne, dryness, sensitivity)' },
+        { key: 'joint_pain', problem: 'Experiences joint pain or stiffness' },
+        { key: 'immune_system', problem: 'Gets sick more often than they\'d like' },
+        { key: 'workout_recovery', problem: 'Takes longer to recover from workouts' },
+        { key: 'food_sensitivities', problem: 'Certain foods make them feel unwell' },
+        { key: 'weight_management', problem: 'Difficult to maintain healthy weight' },
+        { key: 'medication_history', problem: 'Has been prescribed ADHD/Anxiety meds that haven\'t worked' }
+      ];
+
+      const activeProblems: any[] = [];
+      lifestyleProblems.forEach(q => {
+        if (userProfile[q.key] === 'yes') {
+          activeProblems.push(q);
+        }
+      });
+
+      const detectedPatterns = analyzeRootCausePatterns(activeProblems, userProfile, healthHistory);
+      
+      if (detectedPatterns.length > 0) {
+        const patternInserts = detectedPatterns.map(pattern => ({
+          user_id: userId,
+          pattern_type: pattern.pattern_name.replace(/\s+/g, '_').toUpperCase(),
+          pattern_name: pattern.pattern_name,
+          confidence_score: 85, // High confidence since detected by main AI analysis
+          symptoms_involved: pattern.symptoms,
+          root_causes: [pattern.root_cause_explanation],
+          pattern_description: pattern.root_cause_explanation,
+          recommendations: pattern.synergistic_supplements,
+          analysis_source: 'generate-plan',
+          analysis_version: 'v1.0'
+        }));
+        
+        // Use upsert to update existing patterns or create new ones
+        const { error: patternError } = await supabase
+          .from('user_symptom_patterns')
+          .upsert(patternInserts, { 
+            onConflict: 'user_id,pattern_type',
+            ignoreDuplicates: false 
+          });
+        
+        if (patternError) {
+          console.error('⚠️ Pattern storage warning (not failing plan):', patternError);
+        } else {
+          console.log(`✅ Stored ${detectedPatterns.length} symptom patterns for AI memory`);
+        }
+      } else {
+        console.log('ℹ️ No significant patterns detected for this user');
+      }
+      
+    } catch (patternError) {
+      console.error('⚠️ Pattern storage warning (not failing plan):', patternError);
+      // Don't fail plan generation if pattern storage fails
+    }
 
     // 🔥 ORCHESTRATION: Notify AI functions of updated health profile
     try {
@@ -466,6 +535,33 @@ PERSONALIZATION TIER: ${tier}
     prompt += `${index + 1}. ${product.supplement_name}\n`;
   });
 
+  // 🔥 SUPPLEMENT CATEGORIZATION: 6-Pack vs Diet Plan Strategy
+  prompt += `\n=== 🎯 SUPPLEMENT PACK STRATEGY (6 Essential vs Diet Plan) ===\n`;
+  prompt += `Your 6-supplement pack should contain the "IMPOSSIBLE FROM FOOD" nutrients:\n\n`;
+  
+  prompt += `🏆 TIER 1 - IMPOSSIBLE FROM FOOD (Always prioritize for supplement pack):\n`;
+  prompt += `• Vitamin D - Need 100+ salmon fillets daily to get therapeutic dose\n`;
+  prompt += `• Magnesium - Food sources blocked by oxalates, soil depletion\n`;
+  prompt += `• Omega-3 EPA/DHA - Need 2+ lbs fish daily + mercury concerns\n`;
+  prompt += `• Vitamin B12 - Absorption declines with age, stomach acid issues\n`;
+  prompt += `• Methyl B-Complex - MTHFR variants can't use food folate\n`;
+  prompt += `• Zinc - Soil depletion + phytates block absorption\n\n`;
+  
+  prompt += `🥗 TIER 2 - ABUNDANT IN FOOD (Save for diet plan recommendations):\n`;
+  prompt += `• Vitamin C - Easy from citrus, berries, vegetables\n`;
+  prompt += `• Vitamin E - Nuts, seeds, avocados\n`;
+  prompt += `• Folate - Leafy greens (if no MTHFR issues)\n`;
+  prompt += `• Potassium - Bananas, potatoes, vegetables\n`;
+  prompt += `• Calcium - Dairy, leafy greens, sardines\n\n`;
+  
+  prompt += `⚡ TIER 3 - THERAPEUTIC DOSES NEEDED (Include if medically necessary):\n`;
+  prompt += `• CoQ10 - Heart conditions, statin users\n`;
+  prompt += `• Berberine - Diabetes, metabolic syndrome\n`;
+  prompt += `• Turmeric - Severe inflammation, arthritis\n`;
+  prompt += `• Probiotics - Gut dysfunction, antibiotic use\n\n`;
+  
+  prompt += `🎯 STRATEGY: Focus your 6-pack on TIER 1 supplements that are impossible to get from food in therapeutic amounts. Save food-abundant nutrients for the diet plan.\n`;
+
   prompt += `\n=== PATIENT PROFILE ===\n`;
 
   // Demographics
@@ -555,6 +651,34 @@ PERSONALIZATION TIER: ${tier}
     prompt += `"${profile.known_biomarkers}"\n`;
     prompt += `🔴 MANDATORY: Treat any out-of-range values as HIGH PRIORITY requiring targeted supplements.\n`;
     prompt += `📊 Parse specific values - use Berberine for cholesterol/glucose, Omega-3 for inflammation, etc.\n`;
+  }
+
+  // 🔥 ROOT CAUSE PATTERN DETECTION - Look for COMBINATIONS, not isolated symptoms
+  prompt += `\n=== 🧬 ROOT CAUSE PATTERN ANALYSIS ===\n`;
+  prompt += `Look for COMBINATIONS of symptoms that suggest underlying dysfunction patterns:\n\n`;
+
+  // Analyze for root cause patterns
+  const rootCausePatterns = analyzeRootCausePatterns(activeProblems, profile, healthHistory);
+  if (rootCausePatterns.length > 0) {
+    prompt += `🎯 DETECTED DYSFUNCTION PATTERNS (2+ symptoms = pattern):\n`;
+    rootCausePatterns.forEach(pattern => {
+      prompt += `• ${pattern.pattern_name}: ${pattern.symptoms.join(' + ')}\n`;
+      prompt += `  → Synergistic Stack: ${pattern.synergistic_supplements.join(' + ')}\n`;
+      prompt += `  → Root Cause: ${pattern.root_cause_explanation}\n\n`;
+    });
+    prompt += `⚠️ CRITICAL: These patterns indicate underlying dysfunction. Prioritize synergistic supplement combinations.\n`;
+  }
+
+  // 🔥 NEUROTRANSMITTER EXCESS DETECTION - Check for patterns indicating excess
+  const excessPatterns = detectNeurotransmitterExcess(activeProblems, noProblems, profile);
+  if (excessPatterns.length > 0) {
+    prompt += `\n🚨 NEUROTRANSMITTER EXCESS PATTERNS DETECTED:\n`;
+    excessPatterns.forEach(excess => {
+      prompt += `• ${excess.neurotransmitter} EXCESS signs: ${excess.indicators.join(' + ')}\n`;
+      prompt += `  🚫 CONTRAINDICATE: ${excess.avoid_supplements.join(', ')}\n`;
+      prompt += `  ✅ SAFE ALTERNATIVES: ${excess.safe_alternatives.join(', ')}\n\n`;
+    });
+    prompt += `⚠️ CRITICAL: Do NOT recommend contraindicated supplements - could worsen symptoms.\n`;
   }
 
   // Optional manual genetic variant input (Step 8 - user-entered text)
@@ -717,6 +841,25 @@ Before creating your recommendations, you MUST check for these three critical si
 
 ⚠️ THESE ARE THE BIG 3 THAT MOST PEOPLE NEED - DO NOT MISS THEM WHEN THE SIGNS ARE THERE!
 
+🔗 SYNERGISTIC SUPPLEMENT COMBINATIONS - Work together for maximum benefit:
+
+METHYLATION SYNERGY STACK (if MTHFR signs or failed psych meds):
+• Methyl B-Complex + Vitamin B12 + Magnesium (methylation pathway support)
+
+ENERGY SYNERGY STACK (if mitochondrial dysfunction):  
+• CoQ10 + Magnesium + Easy Iron (cellular energy production)
+
+INFLAMMATION SYNERGY STACK (if joint pain/skin issues):
+• Omega-3 + Turmeric + Vitamin D (anti-inflammatory cascade)
+
+GUT HEALING SYNERGY STACK (if digestive issues):
+• Complete Probiotic + Digestive Enzymes + Zinc (gut repair & function)
+
+STRESS RESILIENCE STACK (if anxiety/sleep issues):
+• Magnesium + Ashwagandha + Theanine (nervous system support)
+
+⚡ PRIORITIZE SYNERGISTIC COMBINATIONS: Choose supplements that work together rather than random individual supplements. These stacks amplify each other's benefits.
+
 🎯 ULTIMATE PERSONALIZATION REQUIREMENTS:
 
 1. **EXACTLY 6 SUPPLEMENTS** - Count them before responding
@@ -727,14 +870,23 @@ Before creating your recommendations, you MUST check for these three critical si
 6. **YOUR CATALOG ONLY** - Use only the supplements listed above
 7. **BIG 3 PRIORITY** - Never miss MTHFR, Vitamin D, or Magnesium when indicated
 
-🎯 PRIORITIZATION HIERARCHY (MANDATORY ORDER):
-1. 🚨 PRIMARY HEALTH CONCERN - Address their stated main concern FIRST
-2. 🔴 ACTIVE HEALTH PROBLEMS - Address lifestyle issues they answered "YES" to
-3. 🔬 USER-ENTERED BIOMARKERS - Address manually entered biomarker concerns
-4. 🧬 USER-ENTERED GENETICS - Consider manually entered genetic variants
-5. 🏥 CRITICAL MEDICAL CONDITIONS - Target serious medical conditions
-6. 🎯 HEALTH GOALS - Support their stated objectives
-7. FOUNDATIONAL WELLNESS - Fill remaining slots
+🎯 PRIORITIZATION HIERARCHY (MANDATORY ORDER - NEVER OVERRIDE):
+1. 🚨 PRIMARY HEALTH CONCERN - Address their stated main concern FIRST (NON-NEGOTIABLE)
+2. 🔬 USER-ENTERED BIOMARKERS - Address manually entered biomarker concerns (HIGHEST PRIORITY)
+3. 🧬 USER-ENTERED GENETICS - Consider manually entered genetic variants (VERY HIGH PRIORITY)
+4. 🏥 CRITICAL MEDICAL CONDITIONS - Target serious medical conditions (HIGH PRIORITY)
+5. 🔴 ACTIVE HEALTH PROBLEMS - Address lifestyle issues they answered "YES" to
+6. 🎯 ROOT CAUSE PATTERNS - Use pattern analysis to enhance, NOT override above priorities
+7. 🎯 HEALTH GOALS - Support their stated objectives
+8. FOUNDATIONAL WELLNESS - Fill remaining slots
+
+🚨 CRITICAL SYNCHRONIZATION RULES:
+- PRIMARY HEALTH CONCERN is SACRED - never override with pattern analysis
+- User-entered genetic/biomarker data ALWAYS takes precedence over pattern detection
+- Pattern analysis should ENHANCE and SUPPORT user inputs, not replace them
+- If someone says "I have MTHFR" in genetic field, methylation pattern is CONFIRMED
+- If someone enters "B12 deficiency" in biomarkers, that's DEFINITIVE
+- Medical conditions ALWAYS override symptom patterns when there's conflict
 
 CRITICAL: The PRIMARY HEALTH CONCERN is their most important issue. At least 2-3 supplements should directly address this concern.
 
@@ -1517,4 +1669,245 @@ function analyzeConditionInteractions(conditions: string[]): string {
   }
   
   return guidance || "Consider foundational nutrients that support multiple systems.";
+}
+
+// 🔥 ROOT CAUSE PATTERN ANALYSIS FUNCTIONS - FULLY SYNCHRONIZED WITH ALL USER INPUTS
+function analyzeRootCausePatterns(activeProblems: any[], profile: any, healthHistory: any): any[] {
+  const patterns: any[] = [];
+  
+  // METHYLATION DYSFUNCTION PATTERN - Enhanced with ALL possible indicators
+  const methylationSigns = activeProblems.filter(p => 
+    ['brain_fog', 'mood_changes', 'energy_levels', 'medication_history'].includes(p.key)
+  );
+  
+  // 🚨 CRITICAL: Check ALL methylation indicators, not just symptoms
+  const hasMethylationIssues = 
+    methylationSigns.length >= 2 || 
+    profile.medication_history === 'yes' ||
+    // Check user-entered genetic data for MTHFR mentions
+    (profile.known_genetic_variants && profile.known_genetic_variants.toLowerCase().includes('mthfr')) ||
+    // Check medical conditions for depression/anxiety (methylation-related)
+    healthHistory.conditions.some((condition: string) => 
+      condition.toLowerCase().includes('depression') || 
+      condition.toLowerCase().includes('anxiety') ||
+      condition.toLowerCase().includes('adhd')
+    ) ||
+    // Check user-entered biomarker data for B12/folate deficiency
+    (profile.known_biomarkers && (
+      profile.known_biomarkers.toLowerCase().includes('b12') || 
+      profile.known_biomarkers.toLowerCase().includes('folate') ||
+      profile.known_biomarkers.toLowerCase().includes('homocysteine')
+    ));
+  
+  if (hasMethylationIssues) {
+    const allMethylationIndicators = [
+      ...methylationSigns.map(s => s.problem),
+      ...(profile.medication_history === 'yes' ? ['Failed ADHD/anxiety medications'] : []),
+      ...(profile.known_genetic_variants && profile.known_genetic_variants.toLowerCase().includes('mthfr') ? ['MTHFR genetic variant (user-entered)'] : []),
+      ...healthHistory.conditions.filter((c: string) => c.toLowerCase().includes('depression') || c.toLowerCase().includes('anxiety')),
+      ...(profile.known_biomarkers && profile.known_biomarkers.toLowerCase().includes('b12') ? ['B12 deficiency (user-entered)'] : [])
+    ];
+    
+    patterns.push({
+      pattern_name: 'METHYLATION DYSFUNCTION',
+      symptoms: allMethylationIndicators,
+      synergistic_supplements: ['Methyl B-Complex', 'Vitamin B12', 'Magnesium'],
+      root_cause_explanation: 'Impaired methylation pathways affecting neurotransmitter production - DETECTED from multiple sources including user-entered data'
+    });
+  }
+  
+  // MITOCHONDRIAL DYSFUNCTION PATTERN - Enhanced with ALL possible indicators
+  const mitochondrialSigns = activeProblems.filter(p => 
+    ['energy_levels', 'effort_fatigue', 'workout_recovery'].includes(p.key)
+  );
+  
+  const hasMitochondrialIssues = 
+    mitochondrialSigns.length >= 2 ||
+    // Check medical conditions for mitochondrial-related issues
+    healthHistory.conditions.some((condition: string) => 
+      condition.toLowerCase().includes('chronic fatigue') || 
+      condition.toLowerCase().includes('fibromyalgia') ||
+      condition.toLowerCase().includes('heart') ||
+      condition.toLowerCase().includes('diabetes')
+    ) ||
+    // Check user-entered biomarkers for energy-related deficiencies
+    (profile.known_biomarkers && (
+      profile.known_biomarkers.toLowerCase().includes('coq10') || 
+      profile.known_biomarkers.toLowerCase().includes('iron') ||
+      profile.known_biomarkers.toLowerCase().includes('ferritin')
+    ));
+  
+  if (hasMitochondrialIssues) {
+    const allMitochondrialIndicators = [
+      ...mitochondrialSigns.map(s => s.problem),
+      ...healthHistory.conditions.filter((c: string) => 
+        c.toLowerCase().includes('chronic fatigue') || c.toLowerCase().includes('fibromyalgia')
+      ),
+      ...(profile.known_biomarkers && profile.known_biomarkers.toLowerCase().includes('iron') ? ['Iron deficiency (user-entered)'] : [])
+    ];
+    
+    patterns.push({
+      pattern_name: 'MITOCHONDRIAL DYSFUNCTION',
+      symptoms: allMitochondrialIndicators,
+      synergistic_supplements: ['CoQ10', 'Magnesium', 'Easy Iron'],
+      root_cause_explanation: 'Impaired cellular energy production in mitochondria - DETECTED from multiple sources'
+    });
+  }
+  
+  // INFLAMMATORY CASCADE PATTERN - Enhanced with ALL possible indicators
+  const inflammatorySigns = activeProblems.filter(p => 
+    ['joint_pain', 'skin_issues', 'digestive_issues'].includes(p.key)
+  );
+  
+  const hasInflammatoryIssues = 
+    inflammatorySigns.length >= 2 ||
+    // Check medical conditions for inflammatory diseases
+    healthHistory.conditions.some((condition: string) => 
+      condition.toLowerCase().includes('arthritis') || 
+      condition.toLowerCase().includes('ibs') ||
+      condition.toLowerCase().includes('crohn') ||
+      condition.toLowerCase().includes('colitis') ||
+      condition.toLowerCase().includes('endometriosis') ||
+      condition.toLowerCase().includes('pcos')
+    ) ||
+    // Check user-entered biomarkers for inflammation markers
+    (profile.known_biomarkers && (
+      profile.known_biomarkers.toLowerCase().includes('crp') || 
+      profile.known_biomarkers.toLowerCase().includes('esr') ||
+      profile.known_biomarkers.toLowerCase().includes('inflammation')
+    ));
+  
+  if (hasInflammatoryIssues) {
+    const allInflammatoryIndicators = [
+      ...inflammatorySigns.map(s => s.problem),
+      ...healthHistory.conditions.filter((c: string) => 
+        c.toLowerCase().includes('arthritis') || c.toLowerCase().includes('ibs') || c.toLowerCase().includes('endometriosis')
+      ),
+      ...(profile.known_biomarkers && profile.known_biomarkers.toLowerCase().includes('crp') ? ['Elevated CRP (user-entered)'] : [])
+    ];
+    
+    patterns.push({
+      pattern_name: 'INFLAMMATORY CASCADE',
+      symptoms: allInflammatoryIndicators,
+      synergistic_supplements: ['Omega-3', 'Turmeric', 'Vitamin D'],
+      root_cause_explanation: 'Chronic systemic inflammation affecting multiple body systems - DETECTED from multiple sources'
+    });
+  }
+  
+  // GUT MICROBIOME DYSFUNCTION PATTERN - Enhanced with ALL possible indicators
+  const gutSigns = activeProblems.filter(p => 
+    ['digestive_issues', 'food_sensitivities', 'immune_system'].includes(p.key)
+  );
+  
+  const hasGutIssues = 
+    gutSigns.length >= 2 ||
+    // Check medical conditions for gut-related issues
+    healthHistory.conditions.some((condition: string) => 
+      condition.toLowerCase().includes('ibs') || 
+      condition.toLowerCase().includes('crohn') ||
+      condition.toLowerCase().includes('colitis') ||
+      condition.toLowerCase().includes('gerd') ||
+      condition.toLowerCase().includes('sibo')
+    ) ||
+    // Check medications for gut-disrupting drugs
+    healthHistory.medications.some((medication: string) => 
+      medication.toLowerCase().includes('antibiotic') || 
+      medication.toLowerCase().includes('ppi') ||
+      medication.toLowerCase().includes('acid blocker')
+    ) ||
+    // Check allergies for food sensitivities
+    healthHistory.allergies.length > 2;
+  
+  if (hasGutIssues) {
+    const allGutIndicators = [
+      ...gutSigns.map(s => s.problem),
+      ...healthHistory.conditions.filter((c: string) => 
+        c.toLowerCase().includes('ibs') || c.toLowerCase().includes('crohn') || c.toLowerCase().includes('gerd')
+      ),
+      ...(healthHistory.medications.some((m: string) => m.toLowerCase().includes('antibiotic')) ? ['Recent antibiotic use'] : []),
+      ...(healthHistory.allergies.length > 2 ? ['Multiple food sensitivities'] : [])
+    ];
+    
+    patterns.push({
+      pattern_name: 'GUT MICROBIOME DYSFUNCTION',
+      symptoms: allGutIndicators,
+      synergistic_supplements: ['Complete Probiotic', 'Digestive Enzymes', 'Zinc'],
+      root_cause_explanation: 'Imbalanced gut bacteria affecting digestion and immunity - DETECTED from multiple sources'
+    });
+  }
+  
+  return patterns;
+}
+
+function detectNeurotransmitterExcess(activeProblems: any[], noProblems: any[], profile: any): any[] {
+  const excessPatterns: any[] = [];
+  
+  // DOPAMINE EXCESS PATTERN - Enhanced with genetic data check
+  const highEnergyNoProblems = noProblems.filter(p => 
+    ['energy_levels', 'effort_fatigue'].includes(p.key)
+  );
+  const restlessnessSigns = activeProblems.filter(p => 
+    ['sleep_quality'].includes(p.key) && p.problem.includes('trouble falling asleep')
+  );
+  
+  // Check for COMT slow variants (high dopamine) in user-entered genetic data
+  const hasCOMTSlow = profile.known_genetic_variants && 
+    (profile.known_genetic_variants.toLowerCase().includes('comt') && 
+     (profile.known_genetic_variants.toLowerCase().includes('aa') || 
+      profile.known_genetic_variants.toLowerCase().includes('slow')));
+  
+  const hasDopamineExcess = 
+    (highEnergyNoProblems.length >= 1 && profile.caffeine_effect === 'makes me jittery') ||
+    hasCOMTSlow ||
+    (profile.caffeine_effect === 'makes me anxious' || profile.caffeine_effect === 'makes me jittery');
+  
+  if (hasDopamineExcess) {
+    const dopamineIndicators = [
+      ...(highEnergyNoProblems.length >= 1 ? ['High natural energy'] : []),
+      ...(profile.caffeine_effect === 'makes me jittery' ? ['Caffeine makes jittery'] : []),
+      ...(hasCOMTSlow ? ['COMT slow variant (user-entered genetic data)'] : []),
+      ...(restlessnessSigns.length > 0 ? ['Trouble winding down'] : [])
+    ];
+    
+    excessPatterns.push({
+      neurotransmitter: 'DOPAMINE',
+      indicators: dopamineIndicators,
+      avoid_supplements: ['Tyrosine', 'Rhodiola'],
+      safe_alternatives: ['Magnesium', 'Theanine', 'Ashwagandha']
+    });
+  }
+  
+  // SEROTONIN EXCESS PATTERN - Enhanced detection
+  const goodMoodNoProblems = noProblems.filter(p => 
+    ['mood_changes', 'stress_levels'].includes(p.key)
+  );
+  const serotoninExcessSigns = activeProblems.filter(p => 
+    ['digestive_issues', 'sleep_quality'].includes(p.key)
+  );
+  
+  // Check user-entered biomarkers for serotonin-related issues
+  const hasSerotoninMarkers = profile.known_biomarkers && 
+    (profile.known_biomarkers.toLowerCase().includes('serotonin') ||
+     profile.known_biomarkers.toLowerCase().includes('5-hiaa'));
+  
+  const hasSerotoninExcess = 
+    (goodMoodNoProblems.length >= 1 && serotoninExcessSigns.length >= 1) ||
+    hasSerotoninMarkers;
+  
+  if (hasSerotoninExcess) {
+    const serotoninIndicators = [
+      ...(goodMoodNoProblems.length >= 1 ? ['Good mood baseline'] : []),
+      ...(serotoninExcessSigns.length >= 1 ? ['Digestive sensitivity', 'Sleep disruption'] : []),
+      ...(hasSerotoninMarkers ? ['Serotonin markers in biomarker data'] : [])
+    ];
+    
+    excessPatterns.push({
+      neurotransmitter: 'SEROTONIN',
+      indicators: serotoninIndicators,
+      avoid_supplements: ['5-HTP', 'Tryptophan'],
+      safe_alternatives: ['Magnesium', 'Vitamin D', 'Omega-3']
+    });
+  }
+  
+  return excessPatterns;
 } 

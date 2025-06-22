@@ -130,14 +130,16 @@ Deno.serve(async (req) => {
       { data: snps, error: snpsError },
       { data: allergies, error: allergiesError },
       { data: conditions, error: conditionsError },
-      { data: medications, error: medicationsError }
+      { data: medications, error: medicationsError },
+      { data: symptomPatterns, error: patternsError }
     ] = await Promise.all([
       supabase.from('user_profiles').select('*').eq('id', user.id).single(),
       supabase.from('user_biomarkers').select('*').eq('user_id', user.id).limit(500),
       supabase.from('user_snps').select('*').eq('user_id', user.id).limit(1000),
               supabase.from('user_allergies').select('*').eq('user_id', user.id).limit(50),
               supabase.from('user_conditions').select('*').eq('user_id', user.id).limit(30),
-        supabase.from('user_medications').select('*').eq('user_id', user.id).limit(50)
+        supabase.from('user_medications').select('*').eq('user_id', user.id).limit(50),
+        supabase.from('user_symptom_patterns').select('pattern_type, pattern_name, confidence_score, symptoms_involved, root_causes, pattern_description, recommendations').eq('user_id', user.id).order('confidence_score', { ascending: false })
     ]);
 
     // Log data counts for debugging
@@ -200,6 +202,7 @@ Deno.serve(async (req) => {
     const userAllergies = allergies || [];
     const userConditions = conditions || [];
     const userMedications = medications || [];
+    const userSymptomPatterns = symptomPatterns || [];
 
     // Build onboarding context from new frictionless onboarding data
     function buildOnboardingContext(profile: any): string {
@@ -320,7 +323,8 @@ Deno.serve(async (req) => {
       })),
       allergies: userAllergies.map(a => a.ingredient_name),
       conditions: userConditions.map(c => c.condition_name),
-      medications: userMedications.map(m => m.medication_name)
+      medications: userMedications.map(m => m.medication_name),
+      symptomPatterns: userSymptomPatterns
     };
 
     // Generate AI analysis
@@ -490,6 +494,13 @@ ${healthProfile.biomarkers.length > 0 ?
 • Energy Levels: ${healthProfile.healthMetrics.energyLevels || 'Not reported'}
 • Anxiety Level: ${healthProfile.healthMetrics.anxietyLevel || 'Not reported'}
 • Joint Pain: ${healthProfile.healthMetrics.jointPain || 'Not reported'}
+
+=== 🧬 AI-DETECTED ROOT CAUSE PATTERNS ===
+${healthProfile.symptomPatterns && healthProfile.symptomPatterns.length > 0 ? 
+  `You have ${healthProfile.symptomPatterns.length} AI-detected symptom patterns:\n` +
+  healthProfile.symptomPatterns.map(p => `• ${p.pattern_name} (${p.confidence_score}% confidence): ${Array.isArray(p.symptoms_involved) ? p.symptoms_involved.join(' + ') : p.symptoms_involved} → Recommended: ${Array.isArray(p.recommendations) ? p.recommendations.join(', ') : p.recommendations}`).join('\n') :
+  'No AI-detected symptom patterns available - these are generated from your supplement plan analysis.'
+}
 
 === STUDY TO ANALYZE ===
 URL: ${studyUrl}

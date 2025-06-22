@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
     const { data: profile, error: profileError } = await supabaseClient
       .from('user_profiles')
       .select(`
-        first_name, age, gender, weight_lbs, height_total_inches, health_goals, activity_level, sleep_hours,
+        full_name, age, gender, weight_lbs, height_total_inches, health_goals, activity_level, sleep_hours,
         primary_health_concern, known_biomarkers, known_genetic_variants, alcohol_intake,
         energy_levels, effort_fatigue, caffeine_effect, digestive_issues, stress_levels, 
         sleep_quality, mood_changes, brain_fog, sugar_cravings, skin_issues, joint_pain,
@@ -106,12 +106,12 @@ Deno.serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are a personalized health analyst for ${profile.first_name || 'this individual'}. Analyze their specific onboarding health assessment and provide a hyper-personalized health score.
+            content: `You are a personalized health analyst for ${profile.full_name || 'this individual'}. Analyze their specific onboarding health assessment and provide a hyper-personalized health score.
 
 CRITICAL REQUIREMENTS:
 1. Return ONLY valid JSON, no markdown formatting
 2. Be ULTRA-REALISTIC in scoring - most people with multiple lifestyle issues should score 60-75
-3. Address ${profile.first_name || 'them'} by name and reference their exact age (${profile.age}) and primary concern
+3. Address ${profile.full_name || 'them'} by name and reference their exact age (${profile.age}) and primary concern
 4. Create a "health story" that connects their symptoms and issues logically
 5. Make scoring harsh but fair - someone with 6+ issues should NOT score above 70
 
@@ -132,7 +132,7 @@ Return JSON with this exact structure:
 }
 
 PERSONALIZATION REQUIREMENTS:
-- Reference ${profile.first_name || 'the user'}'s exact age (${profile.age}) and primary concern: "${profile.primary_health_concern}"
+- Reference ${profile.full_name || 'the user'}'s exact age (${profile.age}) and primary concern: "${profile.primary_health_concern}"
 - Connect their symptoms into a coherent health narrative
 - Make recommendations feel like they're written specifically for their situation
 - Use realistic scoring - someone with multiple "yes" answers has real health challenges
@@ -321,16 +321,16 @@ function buildHealthAnalysisPrompt(profile: any, conditions: any[], medications:
   if (profile?.brain_fog === 'no') lifestyleStrengths.push('Good cognitive function');
   if (profile?.mood_changes === 'no') lifestyleStrengths.push('Stable mood');
   
-  return `PERSONALIZED HEALTH ANALYSIS FOR ${profile.first_name?.toUpperCase() || 'USER'}
+  return `PERSONALIZED HEALTH ANALYSIS FOR ${profile.full_name?.toUpperCase() || 'USER'}
 
 === PERSONAL PROFILE ===
-• Name: ${profile.first_name || 'Not provided'}
+• Name: ${profile.full_name || 'Not provided'}
 • Age: ${profile.age || 'Not specified'} years old
 • Gender: ${profile.gender || 'Not specified'}
 • Height: ${profile.height_total_inches ? Math.floor(profile.height_total_inches / 12) + "'" + (profile.height_total_inches % 12) + '"' : 'Not specified'}
 • Weight: ${profile.weight_lbs ? profile.weight_lbs + ' lbs' : 'Not specified'}
 
-=== ${profile.first_name?.toUpperCase() || 'USER'}'S PRIMARY HEALTH STORY ===
+=== ${profile.full_name?.toUpperCase() || 'USER'}'S PRIMARY HEALTH STORY ===
 Main Concern: "${profile.primary_health_concern || 'General wellness optimization'}"
 
 ${profile.age && profile.age > 40 ? `At ${profile.age} years old, age-related factors may be contributing to health challenges.` : profile.age && profile.age < 30 ? `At ${profile.age}, this is an optimal time to establish strong health foundations.` : `At ${profile.age || 'this'} age, focusing on sustainable health practices is key.`}
@@ -344,10 +344,10 @@ ${profile.age && profile.age > 40 ? `At ${profile.age} years old, age-related fa
 Total Health Issues: ${lifestyleIssues.length}/16 (Higher count = more concerning)
 Total Positive Factors: ${lifestyleStrengths.length}/16
 
-${lifestyleIssues.length > 10 ? `💪 FOCUS AREAS: ${profile.first_name || 'User'} has ${lifestyleIssues.length} areas to optimize - great opportunity for transformation!` : 
-  lifestyleIssues.length > 6 ? `✨ ROOM FOR GROWTH: ${profile.first_name || 'User'} has ${lifestyleIssues.length} areas to enhance - you're ahead of most people!` :
-  lifestyleIssues.length > 3 ? `🌟 SOLID FOUNDATION: ${profile.first_name || 'User'} has ${lifestyleIssues.length} areas to fine-tune - excellent baseline health!` :
-  `🏆 OUTSTANDING: ${profile.first_name || 'User'} has minimal areas for improvement - you're in the top tier!`}
+${lifestyleIssues.length > 10 ? `💪 FOCUS AREAS: ${profile.full_name || 'User'} has ${lifestyleIssues.length} areas to optimize - great opportunity for transformation!` : 
+  lifestyleIssues.length > 6 ? `✨ ROOM FOR GROWTH: ${profile.full_name || 'User'} has ${lifestyleIssues.length} areas to enhance - you're ahead of most people!` :
+  lifestyleIssues.length > 3 ? `🌟 SOLID FOUNDATION: ${profile.full_name || 'User'} has ${lifestyleIssues.length} areas to fine-tune - excellent baseline health!` :
+  `🏆 OUTSTANDING: ${profile.full_name || 'User'} has minimal areas for improvement - you're in the top tier!`}
 
 === SPECIFIC ISSUES IDENTIFIED ===
 ${lifestyleIssues.length > 0 ? lifestyleIssues.map(issue => `• ${issue}`).join('\n') : '• No significant lifestyle issues reported'}
@@ -367,7 +367,7 @@ ${profile.health_goals?.length > 0 ? profile.health_goals.join(', ') : 'Not spec
 • User-Entered Biomarkers: ${profile.known_biomarkers || 'None provided'}
 • User-Entered Genetic Variants: ${profile.known_genetic_variants || 'None provided'}
 
-**PERSONALIZED SCORING FOR ${profile.first_name?.toUpperCase() || 'THIS USER'}:**
+**PERSONALIZED SCORING FOR ${profile.full_name?.toUpperCase() || 'THIS USER'}:**
 - Current issue count (${lifestyleIssues.length}) suggests encouraging score should be: ${
   lifestyleIssues.length > 10 ? '65-75' : 
   lifestyleIssues.length > 6 ? '75-82' :
@@ -390,7 +390,7 @@ ${profile.health_goals?.length > 0 ? profile.health_goals.join(', ') : 'Not spec
 - Age factor: ${profile.age ? (profile.age > 50 ? 'Older adult' : profile.age > 30 ? 'Middle-aged adult' : 'Young adult') : 'Unknown'}
 - Activity level: ${profile.activity_level || 'Unknown'}
 
-FOCUS ON ENCOURAGEMENT: Give scores that motivate users to take action. ${profile.first_name || 'This person'} has real potential for optimization and growth.`;
+FOCUS ON ENCOURAGEMENT: Give scores that motivate users to take action. ${profile.full_name || 'This person'} has real potential for optimization and growth.`;
 }
 
 function createFallbackHealthScore(profile: any): any {
