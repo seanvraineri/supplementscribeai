@@ -1464,6 +1464,45 @@ export default function DashboardPage() {
                           </div>
                         )}
 
+                        {/* Micronutrient Information */}
+                        {meal.micronutrients && (
+                          <div className="mb-3">
+                            <p className="text-dark-secondary text-sm mb-2 font-semibold flex items-center gap-1">
+                              <Dna className="h-3 w-3" />
+                              Personalized Nutrition Analysis:
+                            </p>
+                            <div className="bg-dark-background/30 rounded-lg p-3 space-y-2">
+                              {meal.micronutrients.nutrient_density_score && (
+                                <div className="flex items-center gap-2">
+                                  <Star className="h-3 w-3 text-yellow-400" />
+                                  <span className="text-xs text-dark-accent font-medium">{meal.micronutrients.nutrient_density_score}</span>
+                                </div>
+                              )}
+                              
+                              {meal.micronutrients.primary_nutrients && meal.micronutrients.primary_nutrients.length > 0 && (
+                                <div>
+                                  <p className="text-xs text-dark-secondary font-medium mb-1">Key Nutrients:</p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {meal.micronutrients.primary_nutrients.map((nutrient: string, i: number) => (
+                                      <span key={i} className="bg-blue-500/20 text-blue-400 px-2 py-1 rounded text-xs">
+                                        {nutrient}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {meal.micronutrients.synergistic_effects && (
+                                <div className="bg-dark-panel rounded p-2 border-l-2 border-dark-accent">
+                                  <p className="text-xs text-dark-secondary">
+                                    <span className="font-semibold text-dark-accent">Synergy:</span> {meal.micronutrients.synergistic_effects}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
                         <div className="bg-dark-background/50 rounded-lg p-3 border-l-4 border-dark-accent">
                           <p className="text-dark-secondary text-sm">
                             <span className="font-semibold text-dark-accent">Why this works for you:</span> {meal.benefits}

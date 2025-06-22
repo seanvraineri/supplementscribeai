@@ -24,6 +24,14 @@ interface DietPlan {
       cook_time: string;
       servings: string;
       instructions: string[];
+      micronutrients: {
+        primary_nutrients: string[];
+        nutrient_density_score: string;
+        key_vitamins: string[];
+        key_minerals: string[];
+        bioactive_compounds: string[];
+        synergistic_effects: string;
+      };
     }[];
     lunch: { 
       name: string; 
@@ -33,6 +41,14 @@ interface DietPlan {
       cook_time: string;
       servings: string;
       instructions: string[];
+      micronutrients: {
+        primary_nutrients: string[];
+        nutrient_density_score: string;
+        key_vitamins: string[];
+        key_minerals: string[];
+        bioactive_compounds: string[];
+        synergistic_effects: string;
+      };
     }[];
     dinner: { 
       name: string; 
@@ -42,6 +58,14 @@ interface DietPlan {
       cook_time: string;
       servings: string;
       instructions: string[];
+      micronutrients: {
+        primary_nutrients: string[];
+        nutrient_density_score: string;
+        key_vitamins: string[];
+        key_minerals: string[];
+        bioactive_compounds: string[];
+        synergistic_effects: string;
+      };
     }[];
     snacks: { 
       name: string; 
@@ -51,6 +75,14 @@ interface DietPlan {
       cook_time: string;
       servings: string;
       instructions: string[];
+      micronutrients: {
+        primary_nutrients: string[];
+        nutrient_density_score: string;
+        key_vitamins: string[];
+        key_minerals: string[];
+        bioactive_compounds: string[];
+        synergistic_effects: string;
+      };
     }[];
   };
   micronutrient_analysis: {
@@ -423,6 +455,16 @@ Available Data: ${biomarkerCount} biomarkers, ${geneticCount} genetic variants
 - Steps should flow logically: prep → cook → finish → serve
 - NO fictional cooking techniques or impossible timing
 
+🚨 MICRONUTRIENT PERSONALIZATION RULES (CRITICAL):
+- NEVER use generic micronutrient info - ALWAYS connect to THEIR specific health data
+- Reference their EXACT biomarker values (e.g., "Your Vitamin D level of 22 ng/mL...")
+- Connect nutrients to their SPECIFIC symptoms (e.g., "Iron addresses YOUR fatigue")
+- Use their genetic variants when explaining nutrient needs (e.g., "Your MTHFR variant...")
+- Make nutrient density scores personal (e.g., "9.2/10 for YOUR energy needs")
+- Explain synergistic effects for THEIR body (e.g., "enhances absorption for YOUR deficiency")
+- NO generic statements like "good for immune system" - say "boosts YOUR weak immune system"
+- Include approximate amounts from the meal (e.g., "Vitamin C: ~80mg from bell peppers")
+
 MEAL INGREDIENT VALIDATION PROCESS:
 1. Create complete grocery list first
 2. For each meal, check EVERY ingredient against the grocery list
@@ -467,12 +509,20 @@ Your response must be valid JSON with exactly this structure:
           "Step 3: Specific technique or timing",
           "Step 4: Final preparation step",
           "Step 5: Serving or finishing instruction"
-        ]
+        ],
+        "micronutrients": {
+          "primary_nutrients": ["Vitamin D: 400 IU", "Omega-3: 1.2g", "Magnesium: 180mg"],
+          "nutrient_density_score": "9.2/10 - Exceptionally dense for your energy needs",
+          "key_vitamins": ["B12 (supports your low energy)", "Folate (helps with your brain fog)", "Vitamin C (boosts your weak immune system)"],
+          "key_minerals": ["Iron (addresses your fatigue)", "Zinc (supports your slow wound healing)", "Magnesium (calms your anxiety)"],
+          "bioactive_compounds": ["Choline (improves your memory issues)", "Antioxidants (fights your inflammation)", "Probiotics (heals your digestive problems)"],
+          "synergistic_effects": "The vitamin C enhances iron absorption for your anemia, while healthy fats boost vitamin D uptake for your deficiency"
+        }
       }
     ],
-    "lunch": [{"name": "...", "ingredients": ["EXACTLY from grocery list"], "benefits": "deeply personal explanation", "prep_time": "...", "cook_time": "...", "servings": "...", "instructions": ["Step 1: ...", "Step 2: ...", "Step 3: ...", "Step 4: ...", "Step 5: ..."]}],
-    "dinner": [{"name": "...", "ingredients": ["EXACTLY from grocery list"], "benefits": "deeply personal explanation", "prep_time": "...", "cook_time": "...", "servings": "...", "instructions": ["Step 1: ...", "Step 2: ...", "Step 3: ...", "Step 4: ...", "Step 5: ..."]}],
-    "snacks": [{"name": "...", "ingredients": ["EXACTLY from grocery list"], "benefits": "deeply personal explanation", "prep_time": "...", "cook_time": "...", "servings": "...", "instructions": ["Step 1: ...", "Step 2: ...", "Step 3: ...", "Step 4: ...", "Step 5: ..."]}]
+    "lunch": [{"name": "...", "ingredients": ["EXACTLY from grocery list"], "benefits": "deeply personal explanation", "prep_time": "...", "cook_time": "...", "servings": "...", "instructions": ["Step 1: ...", "Step 2: ...", "Step 3: ...", "Step 4: ...", "Step 5: ..."], "micronutrients": {"primary_nutrients": ["Specific amounts based on their deficiencies"], "nutrient_density_score": "X/10 - Personalized for their needs", "key_vitamins": ["Connect to their symptoms"], "key_minerals": ["Address their biomarker deficiencies"], "bioactive_compounds": ["Target their health concerns"], "synergistic_effects": "Explain how nutrients work together for THEIR body"}}],
+    "dinner": [{"name": "...", "ingredients": ["EXACTLY from grocery list"], "benefits": "deeply personal explanation", "prep_time": "...", "cook_time": "...", "servings": "...", "instructions": ["Step 1: ...", "Step 2: ...", "Step 3: ...", "Step 4: ...", "Step 5: ..."], "micronutrients": {"primary_nutrients": ["Specific amounts based on their deficiencies"], "nutrient_density_score": "X/10 - Personalized for their needs", "key_vitamins": ["Connect to their symptoms"], "key_minerals": ["Address their biomarker deficiencies"], "bioactive_compounds": ["Target their health concerns"], "synergistic_effects": "Explain how nutrients work together for THEIR body"}}],
+    "snacks": [{"name": "...", "ingredients": ["EXACTLY from grocery list"], "benefits": "deeply personal explanation", "prep_time": "...", "cook_time": "...", "servings": "...", "instructions": ["Step 1: ...", "Step 2: ...", "Step 3: ...", "Step 4: ...", "Step 5: ..."], "micronutrients": {"primary_nutrients": ["Specific amounts based on their deficiencies"], "nutrient_density_score": "X/10 - Personalized for their needs", "key_vitamins": ["Connect to their symptoms"], "key_minerals": ["Address their biomarker deficiencies"], "bioactive_compounds": ["Target their health concerns"], "synergistic_effects": "Explain how nutrients work together for THEIR body"}}]
   },
   "micronutrient_analysis": {
     "key_nutrients": [
