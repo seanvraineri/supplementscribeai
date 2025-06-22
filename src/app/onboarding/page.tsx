@@ -7,6 +7,7 @@ import { onboardingSchema, type OnboardingData } from '@/lib/schemas';
 
 // Import new frictionless onboarding components
 import { HealthGoalsStep } from '@/components/onboarding/01-HealthGoalsStep';
+import { SubscriptionTierStep } from '@/components/onboarding/02-SubscriptionTierStep';
 import { LifestyleAssessment, LIFESTYLE_QUESTIONS } from '@/components/onboarding/02-LifestyleAssessment';
 import { ActivityLevelStep } from '@/components/onboarding/03-ActivityLevelStep';
 import { SleepHoursStep } from '@/components/onboarding/04-SleepHoursStep';
@@ -121,6 +122,10 @@ const STEP_INFO = [
   {
     title: "Health Goals",
     subtitle: "Select all that apply - we'll create a personalized plan"
+  },
+  {
+    title: "Choose Your Plan",
+    subtitle: "Select how you'd like to experience SupplementScribe"
   },
   {
     title: "Lifestyle Assessment",
@@ -321,6 +326,7 @@ export default function OnboardingPage() {
       weight_lbs: '' as any,
       healthGoals: [],
       customHealthGoal: '',
+      subscription_tier: 'full',
       allergies: [],
       conditions: [],
       medications: [],
@@ -362,16 +368,17 @@ export default function OnboardingPage() {
   
   const steps = [
     { id: 1, component: HealthGoalsStep, title: 'Health Goals', fields: ['healthGoals', 'customHealthGoal'] },
-    { id: 2, component: () => <div>Lifestyle Assessment</div>, title: 'Lifestyle Assessment', fields: ['energy_levels', 'effort_fatigue', 'caffeine_effect', 'digestive_issues', 'stress_levels', 'sleep_quality', 'mood_changes', 'brain_fog', 'sugar_cravings', 'skin_issues', 'joint_pain', 'immune_system', 'workout_recovery', 'food_sensitivities', 'weight_management', 'medication_history'] },
-    { id: 3, component: ActivityLevelStep, title: 'Activity Level', fields: ['activity_level'] },
-    { id: 4, component: SleepHoursStep, title: 'Sleep Hours', fields: ['sleep_hours'] },
-    { id: 5, component: AlcoholStep, title: 'Alcohol Intake', fields: ['alcohol_intake'] },
-    { id: 6, component: DietaryPreferenceStep, title: 'Dietary Preference', fields: ['dietary_preference'] },
-    { id: 7, component: HealthProfileStep, title: 'Health Profile', fields: ['allergies', 'conditions', 'medications'] },
-    { id: 8, component: PrimaryConcernStep, title: 'Primary Concern', fields: ['primary_health_concern'] },
-    { id: 9, component: OptionalDataStep, title: 'Optional Data', fields: ['known_biomarkers', 'known_genetic_variants'] },
-    { id: 10, component: PersonalDetailsStep, title: 'Personal Details', fields: ['fullName', 'age', 'gender', 'height_ft', 'height_in', 'weight_lbs'] },
-    { id: 11, component: ReviewStep, title: 'Review & Submit', fields: [] }
+    { id: 2, component: SubscriptionTierStep, title: 'Choose Your Plan', fields: ['subscription_tier'] },
+    { id: 3, component: () => <div>Lifestyle Assessment</div>, title: 'Lifestyle Assessment', fields: ['energy_levels', 'effort_fatigue', 'caffeine_effect', 'digestive_issues', 'stress_levels', 'sleep_quality', 'mood_changes', 'brain_fog', 'sugar_cravings', 'skin_issues', 'joint_pain', 'immune_system', 'workout_recovery', 'food_sensitivities', 'weight_management', 'medication_history'] },
+    { id: 4, component: ActivityLevelStep, title: 'Activity Level', fields: ['activity_level'] },
+    { id: 5, component: SleepHoursStep, title: 'Sleep Hours', fields: ['sleep_hours'] },
+    { id: 6, component: AlcoholStep, title: 'Alcohol Intake', fields: ['alcohol_intake'] },
+    { id: 7, component: DietaryPreferenceStep, title: 'Dietary Preference', fields: ['dietary_preference'] },
+    { id: 8, component: HealthProfileStep, title: 'Health Profile', fields: ['allergies', 'conditions', 'medications'] },
+    { id: 9, component: PrimaryConcernStep, title: 'Primary Concern', fields: ['primary_health_concern'] },
+    { id: 10, component: OptionalDataStep, title: 'Optional Data', fields: ['known_biomarkers', 'known_genetic_variants'] },
+    { id: 11, component: PersonalDetailsStep, title: 'Personal Details', fields: ['fullName', 'age', 'gender', 'height_ft', 'height_in', 'weight_lbs'] },
+    { id: 12, component: ReviewStep, title: 'Review & Submit', fields: [] }
   ];
 
   const totalSteps = steps.length;
@@ -650,7 +657,7 @@ export default function OnboardingPage() {
   );
   
   // For lifestyle assessment, show current question progress
-  const isLifestyleStep = step === 2;
+  const isLifestyleStep = step === 3;
   const stepInfo = STEP_INFO[step - 1];
 
   let displayTitle = stepInfo.title;
@@ -692,28 +699,30 @@ export default function OnboardingPage() {
       case 1:
         return <HealthGoalsStep onNext={handleNext} />;
       case 2:
+        return <SubscriptionTierStep onNext={handleNext} />;
+      case 3:
         return <LifestyleAssessment 
           currentSubStep={currentSubStep} 
           onSubStepComplete={handleNext} 
           totalSubSteps={16}
         />;
-      case 3:
-        return <ActivityLevelStep onNext={handleNext} />;
       case 4:
-        return <SleepHoursStep onNext={handleNext} />;
+        return <ActivityLevelStep onNext={handleNext} />;
       case 5:
-        return <AlcoholStep onNext={handleNext} />;
+        return <SleepHoursStep onNext={handleNext} />;
       case 6:
-        return <DietaryPreferenceStep onNext={handleNext} />;
+        return <AlcoholStep onNext={handleNext} />;
       case 7:
-        return <HealthProfileStep />;
+        return <DietaryPreferenceStep onNext={handleNext} />;
       case 8:
-        return <PrimaryConcernStep />;
+        return <HealthProfileStep />;
       case 9:
-        return <OptionalDataStep />;
+        return <PrimaryConcernStep />;
       case 10:
-        return <PersonalDetailsStep />;
+        return <OptionalDataStep />;
       case 11:
+        return <PersonalDetailsStep />;
+      case 12:
         return <ReviewStep />;
       default:
         return null;
@@ -725,7 +734,7 @@ export default function OnboardingPage() {
 
   const getNextLabel = () => {
     if (isLastStep) return form.formState.isSubmitting ? 'Creating Plan...' : 'Submit & Create My Plan';
-    if ([1, 6, 7, 8, 9, 10].includes(step)) return 'Continue';
+    if ([1, 2, 7, 8, 9, 10, 11].includes(step)) return 'Continue';
     return 'Next';
   }
 
@@ -760,7 +769,7 @@ export default function OnboardingPage() {
               nextLabel={getNextLabel()}
               nextDisabled={form.formState.isSubmitting}
               isLastStep={isLastStep}
-              showNextButton={!isSubmitting && ![2, 3, 4, 5, 6].includes(step)}
+              showNextButton={!isSubmitting && ![2, 3, 4, 5, 6, 7].includes(step)}
             >
               <AnimatePresence mode="wait">
                 {isSubmitting ? (

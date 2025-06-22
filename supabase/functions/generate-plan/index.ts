@@ -114,7 +114,7 @@ Deno.serve(async (req) => {
       { data: snps, error: snpsError },
       { data: products, error: productsError }
     ] = await Promise.all([
-      supabase.from('user_profiles').select('*').eq('id', userId).single(),
+      supabase.from('user_profiles').select('*').eq('id', userId).maybeSingle(),
       supabase.from('user_allergies').select('ingredient_name').eq('user_id', userId).limit(50),
               supabase.from('user_conditions').select('condition_name').eq('user_id', userId).limit(30),
         supabase.from('user_medications').select('medication_name').eq('user_id', userId).limit(50),
@@ -131,6 +131,18 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Failed to fetch health profile or product data.', details: dataFetchError }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
+      });
+    }
+
+    // Check if profile exists
+    if (!profile) {
+      console.error('No user profile found for user:', userId);
+      return new Response(JSON.stringify({ 
+        error: 'User profile not found. Please complete your onboarding first.',
+        code: 'PROFILE_NOT_FOUND'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 404,
       });
     }
 
@@ -224,7 +236,7 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'o3',
         messages: [
           {
             role: 'system',

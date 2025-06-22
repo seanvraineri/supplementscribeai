@@ -99,15 +99,16 @@ const comparisonOptions: ComparisonOption[] = [
   {
     id: 'supplementscribe',
     title: 'SupplementScribe',
-    subtitle: '$75/month — truly personalized nutrition',
+    subtitle: '$75/month Complete or $20/month Software-Only',
     price: '$75',
-    priceDetail: '/month for personalized nutrition',
-    icon: <Brain className="w-6 h-6" />,
+    priceDetail: '/month Complete or $20/month Software-Only',
+    icon: <Target className="w-6 h-6" />,
     gradient: 'from-blue-500/20 to-cyan-500/20',
     pros: [
       'Formula personalized by our Deep Health Analysis',
       'Analyzes your goals, lifestyle, and symptoms',
-      'Option to add biomarker data for ultimate precision',
+      'Custom grocery list prioritizing micronutrient-dense foods',
+      'Synergistic diet plan that works with your supplements',
       'High-absorption bioavailable forms',
       'Adaptive monthly re-optimization',
       'Saves $800+/year vs DIY',
@@ -466,11 +467,11 @@ export default function SupplementComparisonSection() {
               
               <div className="flex items-center mb-6">
                 <div className="p-3 bg-dark-accent/20 rounded-xl mr-4">
-                  <Brain className="w-6 h-6 text-dark-accent" />
+                  <Target className="w-6 h-6 text-dark-accent" />
                 </div>
                 <div>
                   <h4 className="text-2xl font-bold text-dark-primary">SupplementScribe</h4>
-                  <p className="text-dark-accent font-semibold">$75/month (everything included)</p>
+                  <p className="text-dark-accent font-semibold">$75/month Complete or $20/month Software-Only</p>
                 </div>
               </div>
               
@@ -481,7 +482,11 @@ export default function SupplementComparisonSection() {
                 </div>
                 <div className="flex items-start">
                   <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 mr-3 flex-shrink-0" />
-                  <span><strong className="text-dark-primary">Instant personalized plan</strong> - custom formula with exact dosages</span>
+                  <span><strong className="text-dark-primary">Instant personalized plan</strong> - custom Core 6 formula with exact dosages</span>
+                </div>
+                <div className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 mr-3 flex-shrink-0" />
+                  <span><strong className="text-dark-primary">Custom grocery list & diet plan</strong> - prioritizes micronutrient-dense whole foods for your needs</span>
                 </div>
                 <div className="flex items-start">
                   <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 mr-3 flex-shrink-0" />

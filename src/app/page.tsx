@@ -65,6 +65,9 @@ const Navigation = () => (
           <Link href="/science" className="text-dark-secondary hover:text-dark-primary transition-colors">
             Science
           </Link>
+          <a href="#pricing" className="text-dark-secondary hover:text-dark-primary transition-colors">
+            Pricing
+          </a>
           <Link href="/login">
             <button className="inline-flex items-center px-4 py-2 text-sm font-medium text-dark-secondary hover:text-dark-primary border border-dark-border rounded-lg hover:border-dark-accent transition-all duration-200">
               <LogIn className="w-4 h-4 mr-2" />
@@ -206,9 +209,8 @@ export default function HomePage() {
             </AnimatePresence>
           </div>
           <p className="mx-auto mt-6 max-w-2xl text-center text-lg leading-8 text-slate-200">
-            Modern life depletes you. Our Deep Health Analysis acts as an X-ray for your biology, 
-            identifying the root causes of your symptoms. We then build your complete micronutrient 
-            stack—a precision supplement formula and a synergistic diet plan—to help you reclaim your health.
+            Deep Health Analysis identifies what's depleting you. 
+            Precision supplement formula restores what's missing.
           </p>
 
           <div className="flex justify-center">
@@ -447,30 +449,168 @@ export default function HomePage() {
 
       <FloatingPanel>
         {/* Pricing Section */}
-        <section className="py-32">
+        <section id="pricing" className="py-32">
           <div className="container mx-auto px-4">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
               viewport={{ once: true }}
-              className="max-w-md mx-auto bg-dark-panel border border-dark-border rounded-3xl p-10 text-center shadow-2xl shadow-black/20"
+              className="text-center mb-16"
             >
-              <h3 className="text-3xl font-bold mb-4 text-dark-primary">One Plan, Total Precision</h3>
-              <div className="text-6xl font-bold mb-4 text-dark-primary">
-                $75<span className="text-2xl text-dark-secondary">/month</span>
+              <h2 className="text-4xl font-bold tracking-tight text-dark-primary mb-4">Choose Your Health Journey</h2>
+              <p className="text-lg text-dark-secondary max-w-3xl mx-auto">
+                Select the plan that fits your lifestyle. All plans include our AI-powered health analysis and personalized recommendations.
+              </p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              viewport={{ once: true }}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto"
+            >
+              {/* Software-Only Plan */}
+              <div className="bg-dark-panel border border-dark-border rounded-3xl p-6 shadow-xl shadow-black/20 relative">
+                <div className="text-center mb-6">
+                  <h3 className="text-xl font-bold text-dark-primary mb-2">Software-Only</h3>
+                  <p className="text-sm text-dark-secondary mb-4">AI analysis & recommendations</p>
+                  <div className="mb-4">
+                    <div className="text-3xl font-bold text-dark-primary">
+                      $19.99<span className="text-sm text-dark-secondary">/month</span>
+                    </div>
+                    <div className="text-sm text-dark-accent mt-1">
+                      $14.99/month yearly
+                    </div>
+                  </div>
+                </div>
+                <ul className="space-y-3 mb-6 text-dark-primary text-sm">
+                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Deep Health Analysis</li>
+                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Personalized Core 6 Formula Plan</li>
+                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Custom Diet Plan</li>
+                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Progress Tracking</li>
+                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Health Score Monitoring</li>
+                </ul>
+                <Link href="/auth/signup">
+                  <button className="w-full px-4 py-2 text-sm font-bold text-dark-primary bg-dark-background border border-dark-border rounded-full hover:bg-dark-border transition-all duration-200">
+                    Get Started
+                  </button>
+                </Link>
               </div>
-              <ul className="space-y-3 text-left mb-8 text-dark-primary">
-                <li className="flex items-center"><CheckCircle className="h-5 w-5 mr-3 text-dark-accent flex-shrink-0" /> Personalized daily supplement pack</li>
-                <li className="flex items-center"><CheckCircle className="h-5 w-5 mr-3 text-dark-accent flex-shrink-0" /> Data-driven plan adaptations</li>
-                <li className="flex items-center"><CheckCircle className="h-5 w-5 mr-3 text-dark-accent flex-shrink-0" /> Optional lab & genetic integration</li>
-                <li className="flex items-center"><CheckCircle className="h-5 w-5 mr-3 text-dark-accent flex-shrink-0" /> Ongoing progress tracking</li>
-              </ul>
-              <Link href="/auth/signup">
-                <button className="group relative inline-flex items-center justify-center w-full px-8 py-4 text-lg font-bold text-dark-background bg-dark-accent rounded-full overflow-hidden transition-all duration-300 transform hover:scale-105">
-                  <span className="relative">Get Started</span>
-                </button>
-              </Link>
+
+              {/* Complete Package Plan - Recommended */}
+              <div className="bg-dark-panel border-2 border-dark-accent rounded-3xl p-6 shadow-2xl shadow-black/30 relative transform scale-105">
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                  <span className="bg-dark-accent text-dark-background px-4 py-1 rounded-full text-xs font-bold">
+                    RECOMMENDED
+                  </span>
+                </div>
+                <div className="text-center mb-6 mt-2">
+                  <h3 className="text-xl font-bold text-dark-primary mb-2">Complete Package</h3>
+                  <p className="text-sm text-dark-secondary mb-4">Software + physical supplements</p>
+                  <div className="mb-4">
+                    <div className="text-3xl font-bold text-dark-primary">
+                      $75<span className="text-sm text-dark-secondary">/month</span>
+                    </div>
+                    <div className="text-sm text-dark-accent mt-1">
+                      $65/month yearly
+                    </div>
+                  </div>
+                </div>
+                <ul className="space-y-3 mb-6 text-dark-primary text-sm">
+                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Everything in Software-Only</li>
+                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Monthly Core 6 Supplement Pack</li>
+                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Premium Bioavailable Formulas</li>
+                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Delivered to Your Door</li>
+                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> No Sourcing Required</li>
+                </ul>
+                <Link href="/auth/signup">
+                  <button className="w-full px-4 py-2 text-sm font-bold text-dark-background bg-dark-accent rounded-full hover:bg-dark-accent/90 transition-all duration-200 transform hover:scale-105">
+                    Get Started
+                  </button>
+                </Link>
+              </div>
+
+              {/* Family Software-Only Plan */}
+              <div className="bg-dark-panel border border-dark-border rounded-3xl p-6 shadow-xl shadow-black/20 relative">
+                <div className="text-center mb-6">
+                  <h3 className="text-xl font-bold text-dark-primary mb-2">Family Software</h3>
+                  <p className="text-sm text-dark-secondary mb-4">For families (2-9 members)</p>
+                  <div className="mb-4">
+                    <div className="text-3xl font-bold text-dark-primary">
+                      $17.99<span className="text-sm text-dark-secondary">/month</span>
+                    </div>
+                    <div className="text-sm text-dark-accent mt-1">
+                      $13.99/month yearly
+                    </div>
+                    <div className="text-xs text-dark-secondary mt-1">
+                      Per person
+                    </div>
+                  </div>
+                </div>
+                <ul className="space-y-3 mb-6 text-dark-primary text-sm">
+                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Everything in Software-Only</li>
+                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Up to 9 Family Members</li>
+                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Individual Health Profiles</li>
+                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Family Discount Pricing</li>
+                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Separate Tracking Per Person</li>
+                </ul>
+                <Link href="/auth/signup">
+                  <button className="w-full px-4 py-2 text-sm font-bold text-dark-primary bg-dark-background border border-dark-border rounded-full hover:bg-dark-border transition-all duration-200">
+                    Get Started
+                  </button>
+                </Link>
+              </div>
+
+              {/* Family Complete Plan */}
+              <div className="bg-dark-panel border border-dark-border rounded-3xl p-6 shadow-xl shadow-black/20 relative">
+                <div className="text-center mb-6">
+                  <h3 className="text-xl font-bold text-dark-primary mb-2">Family Complete</h3>
+                  <p className="text-sm text-dark-secondary mb-4">Software + supplements for all</p>
+                  <div className="mb-4">
+                    <div className="text-3xl font-bold text-dark-primary">
+                      $70<span className="text-sm text-dark-secondary">/month</span>
+                    </div>
+                    <div className="text-sm text-dark-accent mt-1">
+                      $63/month yearly
+                    </div>
+                    <div className="text-xs text-dark-secondary mt-1">
+                      Per person
+                    </div>
+                  </div>
+                </div>
+                <ul className="space-y-3 mb-6 text-dark-primary text-sm">
+                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Everything in Complete Package</li>
+                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Up to 9 Family Members</li>
+                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Individual Supplement Packs</li>
+                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Personalized for Each Member</li>
+                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Family Discount Pricing</li>
+                </ul>
+                <Link href="/auth/signup">
+                  <button className="w-full px-4 py-2 text-sm font-bold text-dark-primary bg-dark-background border border-dark-border rounded-full hover:bg-dark-border transition-all duration-200">
+                    Get Started
+                  </button>
+                </Link>
+              </div>
+            </motion.div>
+
+            {/* Additional Info */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              viewport={{ once: true }}
+              className="text-center mt-12"
+            >
+              <p className="text-sm text-dark-secondary mb-4">
+                All plans include 30-day money-back guarantee • Cancel anytime • No setup fees
+              </p>
+              <div className="flex justify-center items-center space-x-8 text-xs text-dark-secondary">
+                <span>✓ HIPAA Compliant</span>
+                <span>✓ Bank-Level Security</span>
+                <span>✓ 99.9% Uptime</span>
+              </div>
             </motion.div>
           </div>
         </section>

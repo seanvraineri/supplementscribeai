@@ -150,7 +150,7 @@ Deno.serve(async (req) => {
       { data: biomarkers, error: biomarkersError },
       { data: snps, error: snpsError }
     ] = await Promise.all([
-      supabase.from('user_profiles').select('*').eq('id', userId).single(),
+      supabase.from('user_profiles').select('*').eq('id', userId).maybeSingle(),
       supabase.from('user_allergies').select('ingredient_name').eq('user_id', userId).limit(50),
       supabase.from('user_conditions').select('condition_name').eq('user_id', userId).limit(30),
       supabase.from('user_medications').select('medication_name').eq('user_id', userId).limit(50),
@@ -165,6 +165,18 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Failed to fetch health profile data.', details: dataFetchError }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
+      });
+    }
+
+    // Check if profile exists
+    if (!profile) {
+      console.error('No user profile found for user:', userId);
+      return new Response(JSON.stringify({ 
+        error: 'User profile not found. Please complete your onboarding first.',
+        code: 'PROFILE_NOT_FOUND'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 404,
       });
     }
 

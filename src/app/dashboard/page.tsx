@@ -930,7 +930,11 @@ export default function DashboardPage() {
     }
   }, [activeTab]);
 
-  const cleanProductName = (productName: string) => {
+  const cleanProductName = (productName: string | undefined) => {
+    // Handle undefined/null productName
+    if (!productName) {
+      return '';
+    }
     // Remove "OK Capsule" prefix if present
     if (productName.startsWith('OK Capsule ')) {
       return productName.replace('OK Capsule ', '');
@@ -2469,20 +2473,46 @@ export default function DashboardPage() {
               
               <div className="flex items-center space-x-2">
                 <span className="text-sm text-dark-secondary">{symptom.reverse ? 'High' : 'Low'}</span>
-                <div className="flex-1 flex space-x-1">
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => (
-                    <button
-                      key={value}
-                      onClick={() => logSymptom(symptom.name, value)}
-                      className={`flex-1 h-8 rounded transition-all ${
-                        symptomRatings[symptom.name] === value
-                          ? 'bg-dark-accent text-white'
-                          : 'bg-dark-border hover:bg-dark-accent/30 text-dark-secondary hover:text-white'
-                      }`}
-                    >
-                      {value}
-                    </button>
-                  ))}
+                <div className="flex-1 relative">
+                  {/* Bloomberg-style Segmented Control */}
+                  <div className="relative bg-dark-background border border-dark-border rounded-lg p-1 h-10">
+                    {/* Background highlight for selected value */}
+                    {symptomRatings[symptom.name] && (
+                      <div 
+                        className="absolute top-1 bottom-1 bg-dark-accent rounded transition-all duration-200 ease-out"
+                        style={{
+                          left: `${((symptomRatings[symptom.name] - 1) * 10) + 0.25}%`,
+                          width: '9.5%'
+                        }}
+                      />
+                    )}
+                    
+                    {/* Clickable segments */}
+                    <div className="relative flex h-full">
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => (
+                        <button
+                          key={value}
+                          onClick={() => logSymptom(symptom.name, value)}
+                          className={`flex-1 relative z-10 text-sm font-medium rounded transition-colors duration-200 ${
+                            symptomRatings[symptom.name] === value
+                              ? 'text-white'
+                              : 'text-dark-secondary hover:text-dark-primary'
+                          }`}
+                        >
+                          {value}
+                        </button>
+                      ))}
+                    </div>
+                    
+                    {/* Subtle segment dividers */}
+                    <div className="absolute inset-y-1 flex pointer-events-none">
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
+                        <div key={i} className="flex-1 relative">
+                          <div className="absolute right-0 top-0 bottom-0 w-px bg-dark-border/30" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
                 <span className="text-sm text-dark-secondary">{symptom.reverse ? 'Low' : 'High'}</span>
               </div>
@@ -2543,20 +2573,46 @@ export default function DashboardPage() {
                 
                 <div className="flex items-center space-x-2">
                   <span className="text-sm text-dark-secondary">Low</span>
-                  <div className="flex-1 flex space-x-1">
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => (
-                      <button
-                        key={value}
-                        onClick={() => logSymptom(symptom, value)}
-                        className={`flex-1 h-8 rounded transition-all ${
-                          symptomRatings[symptom] === value
-                            ? 'bg-dark-accent text-white'
-                            : 'bg-dark-border hover:bg-dark-accent/30 text-dark-secondary hover:text-white'
-                        }`}
-                      >
-                        {value}
-                      </button>
-                    ))}
+                  <div className="flex-1 relative">
+                    {/* Bloomberg-style Segmented Control */}
+                    <div className="relative bg-dark-background border border-dark-border rounded-lg p-1 h-10">
+                      {/* Background highlight for selected value */}
+                      {symptomRatings[symptom] && (
+                        <div 
+                          className="absolute top-1 bottom-1 bg-dark-accent rounded transition-all duration-200 ease-out"
+                          style={{
+                            left: `${((symptomRatings[symptom] - 1) * 10) + 0.25}%`,
+                            width: '9.5%'
+                          }}
+                        />
+                      )}
+                      
+                      {/* Clickable segments */}
+                      <div className="relative flex h-full">
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => (
+                          <button
+                            key={value}
+                            onClick={() => logSymptom(symptom, value)}
+                            className={`flex-1 relative z-10 text-sm font-medium rounded transition-colors duration-200 ${
+                              symptomRatings[symptom] === value
+                                ? 'text-white'
+                                : 'text-dark-secondary hover:text-dark-primary'
+                            }`}
+                          >
+                            {value}
+                          </button>
+                        ))}
+                      </div>
+                      
+                      {/* Subtle segment dividers */}
+                      <div className="absolute inset-y-1 flex pointer-events-none">
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
+                          <div key={i} className="flex-1 relative">
+                            <div className="absolute right-0 top-0 bottom-0 w-px bg-dark-border/30" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                   <span className="text-sm text-dark-secondary">High</span>
                 </div>

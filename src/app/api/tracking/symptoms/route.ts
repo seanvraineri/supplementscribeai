@@ -51,11 +51,13 @@ export async function POST(request: NextRequest) {
 
     const { data, error } = await supabase
       .from('user_symptom_entries')
-      .insert({
+      .upsert({
         user_id: user.id,
         symptom_name,
         value,
         entry_date,
+      }, {
+        onConflict: 'user_id,symptom_name,entry_date'
       })
       .select()
       .single();

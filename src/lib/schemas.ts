@@ -13,6 +13,9 @@ export const onboardingSchema = z.object({
   healthGoals: z.array(z.string()).min(1, { message: "Please select at least one health goal." }),
   customHealthGoal: z.string().optional(),
   
+  // Step 2: Subscription Tier
+  subscription_tier: z.string({ required_error: "Please select a subscription plan." }),
+  
   // Step 2: Lifestyle Assessment (16 Yes/No Questions)
   energy_levels: z.string().optional(),
   effort_fatigue: z.string().optional(),
