@@ -258,7 +258,7 @@ Deno.serve(async (req) => {
             content: prompt
           }
         ],
-        max_tokens: 5000,
+        max_tokens: 12000,
         temperature: 0.7,
       }),
     });
@@ -289,6 +289,8 @@ Deno.serve(async (req) => {
     }
 
     console.log('Parsing AI diet plan...');
+    console.log('Raw AI response:', aiDietPlan);
+    
     // Parse AI response
     const planDetails = parseDietPlan(aiDietPlan);
     console.log('Successfully parsed diet plan');
@@ -752,11 +754,25 @@ function parseDietPlan(aiResponse: string): any {
     // Clean the response to extract JSON
     let cleanResponse = aiResponse.trim();
     
+    // Log response length for debugging
+    console.log(`AI response length: ${cleanResponse.length} characters`);
+    
+    // Check if response appears truncated
+    if (!cleanResponse.endsWith('}') && !cleanResponse.endsWith('```')) {
+      console.warn('⚠️ Response appears truncated - does not end with } or ```');
+      console.log('Last 200 characters:', cleanResponse.slice(-200));
+    }
+    
     // Remove any markdown code blocks
     if (cleanResponse.startsWith('```json')) {
       cleanResponse = cleanResponse.replace(/^```json\s*/, '').replace(/\s*```$/, '');
     } else if (cleanResponse.startsWith('```')) {
       cleanResponse = cleanResponse.replace(/^```\s*/, '').replace(/\s*```$/, '');
+    }
+    
+    // Final check for proper JSON ending
+    if (!cleanResponse.trim().endsWith('}')) {
+      console.warn('⚠️ Cleaned response does not end with }, attempting to parse anyway');
     }
     
     const parsed = JSON.parse(cleanResponse);
