@@ -13,6 +13,7 @@ interface DynamicQuestion {
   question_context: string;
   question_category: string;
   scale_description: string;
+  generated_date: string;
 }
 
 interface TrackingResponse {
@@ -85,6 +86,11 @@ export default function DynamicTracker({ userId }: DynamicTrackerProps) {
         const firstQuestionDate = anyActiveQuestions[0].generated_date;
         if (firstQuestionDate !== today) {
           console.log(`Found old questions from ${firstQuestionDate}, generating new ones for ${today}`);
+          // Clear old state before generating new questions
+          setQuestions([]);
+          setResponses({});
+          setInsight('');
+          setCurrentQuestionIndex(0);
           await generateQuestions();
           return;
         }
@@ -388,7 +394,25 @@ export default function DynamicTracker({ userId }: DynamicTrackerProps) {
         {/* Summary of Responses */}
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
-            <CardTitle className="text-zinc-100">Your Responses Today</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-zinc-100">Your Responses Today</CardTitle>
+              {questions.length > 0 && questions[0].generated_date !== new Date().toISOString().split('T')[0] && (
+                <Button 
+                  onClick={() => {
+                    setQuestions([]);
+                    setResponses({});
+                    setInsight('');
+                    setCurrentQuestionIndex(0);
+                    loadTodaysQuestions();
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                >
+                  Get Today's Questions
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="space-y-3">
             {questions.map((question) => {
