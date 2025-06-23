@@ -125,8 +125,21 @@ export default function DynamicTracker({ userId }: DynamicTrackerProps) {
           }
         }
       } else {
-        // No active questions at all, generate new ones
-        console.log('No active questions found, generating new ones');
+        // No questions for today, check if there are old questions
+        const { data: anyOldQuestions } = await supabase
+          .from('user_dynamic_questions')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('is_active', true)
+          .order('created_at', { ascending: true })
+          .limit(1);
+          
+        if (anyOldQuestions && anyOldQuestions.length > 0) {
+          console.log(`Found old active questions from ${anyOldQuestions[0].generated_date}, need to generate new ones`);
+        }
+        
+        // Generate new questions for today
+        console.log('No questions for today, generating new ones');
         await generateQuestions();
       }
     } catch (error) {
@@ -440,6 +453,28 @@ export default function DynamicTracker({ userId }: DynamicTrackerProps) {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
+      {/* Debug info - temporary */}
+      <div className="text-xs text-zinc-500 bg-zinc-900 p-2 rounded flex items-center justify-between">
+        <span>
+          Today's date: {new Date().toISOString().split('T')[0]} | 
+          Questions from: {questions[0]?.generated_date || 'N/A'}
+        </span>
+        {questions[0]?.generated_date !== new Date().toISOString().split('T')[0] && (
+          <Button 
+            size="sm" 
+            variant="outline"
+            onClick={async () => {
+              setQuestions([]);
+              setResponses({});
+              setInsight('');
+              await generateQuestions();
+            }}
+          >
+            Get Today's Questions
+          </Button>
+        )}
+      </div>
+      
       {/* Progress */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
