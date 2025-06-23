@@ -10,11 +10,11 @@ CREATE EXTENSION IF NOT EXISTS pg_cron;
 -- Remove any existing cron job with the same name
 SELECT cron.unschedule('daily-tracker-automation');
 
--- Schedule daily tracker automation to run every day at 6 AM UTC
+-- Schedule daily tracker automation to run every day at 4 AM EDT (8 AM UTC)
 -- This ensures all users have fresh questions when they wake up
 SELECT cron.schedule(
   'daily-tracker-automation',
-  '0 6 * * *', -- Every day at 6 AM UTC
+  '0 8 * * *', -- Every day at 8 AM UTC (4 AM EDT)
   $$
   SELECT
     net.http_post(

@@ -67,35 +67,30 @@ export default function DynamicTracker({ userId }: DynamicTrackerProps) {
       console.log('Loading questions for date:', today);
       console.log('User ID:', userId);
       
-      const { data: existingQuestions, error } = await supabase
+      // First, check if there are ANY active questions (regardless of date)
+      const { data: anyActiveQuestions, error: activeError } = await supabase
         .from('user_dynamic_questions')
         .select('*')
         .eq('user_id', userId)
         .eq('is_active', true)
-        .eq('generated_date', today)
         .order('created_at', { ascending: true });
 
-      if (error) {
-        console.error('Error loading questions from DB:', error);
-        throw error;
+      if (activeError) {
+        console.error('Error checking active questions:', activeError);
+        throw activeError;
       }
 
-      console.log('Existing questions found:', existingQuestions?.length || 0);
-      
-      // Check if we have questions for today
-      if (existingQuestions && existingQuestions.length > 0) {
-        // Verify these questions are actually from today
-        const questionDate = existingQuestions[0].generated_date;
-        console.log('Questions are from date:', questionDate);
-        console.log('Today is:', today);
-        
-        if (questionDate !== today) {
-          console.log('Questions are from a different day, generating new ones...');
+      // If there are active questions but they're not from today, we need new ones
+      if (anyActiveQuestions && anyActiveQuestions.length > 0) {
+        const firstQuestionDate = anyActiveQuestions[0].generated_date;
+        if (firstQuestionDate !== today) {
+          console.log(`Found old questions from ${firstQuestionDate}, generating new ones for ${today}`);
           await generateQuestions();
           return;
         }
         
-        setQuestions(existingQuestions);
+        // Questions are from today, use them
+        setQuestions(anyActiveQuestions);
         setHasGeneratedToday(true);
         
         // Load existing responses for today
@@ -116,13 +111,27 @@ export default function DynamicTracker({ userId }: DynamicTrackerProps) {
           });
           setResponses(responseMap);
           
-          // If all questions are already answered, jump to the last index
-          if (existingQuestions.every(q => responseMap[q.id])) {
-            setCurrentQuestionIndex(existingQuestions.length - 1);
+          // If all questions are already answered, show the completed view
+          if (anyActiveQuestions.every(q => responseMap[q.id])) {
+            setCurrentQuestionIndex(anyActiveQuestions.length - 1);
+            
+            // Load existing insight if available
+            const { data: todaysInsight } = await supabase
+              .from('user_tracking_insights')
+              .select('insight_text')
+              .eq('user_id', userId)
+              .eq('data_period_end', today)
+              .order('created_at', { ascending: false })
+              .limit(1);
+              
+            if (todaysInsight && todaysInsight.length > 0) {
+              setInsight(todaysInsight[0].insight_text);
+            }
           }
         }
       } else {
-        // If no questions exist, trigger automatic generation
+        // No active questions at all, generate new ones
+        console.log('No active questions found, generating new ones');
         await generateQuestions();
       }
     } catch (error) {
