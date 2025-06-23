@@ -2396,7 +2396,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Dynamic Tracker Component */}
-      {user && <DynamicTracker userId={user.id} />}
+                  {user && <DynamicTracker userId={user.id} key={`tracker-${new Date().toISOString().split('T')[0]}`} />}
     </div>
   );
 

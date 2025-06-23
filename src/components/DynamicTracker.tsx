@@ -43,6 +43,29 @@ export default function DynamicTracker({ userId }: DynamicTrackerProps) {
     loadTodaysQuestions();
   }, [userId]);
 
+  // Check for date change every minute while component is mounted
+  useEffect(() => {
+    const checkDateChange = () => {
+      const currentDate = new Date().toISOString().split('T')[0];
+      if (questions.length > 0 && questions[0].generated_date !== currentDate) {
+        console.log('Date changed! Reloading questions...');
+        setQuestions([]);
+        setResponses({});
+        setInsight('');
+        setCurrentQuestionIndex(0);
+        loadTodaysQuestions();
+      }
+    };
+
+    // Check immediately
+    checkDateChange();
+    
+    // Then check every minute
+    const interval = setInterval(checkDateChange, 60000);
+    
+    return () => clearInterval(interval);
+  }, [questions]);
+
   // Keyboard navigation
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
