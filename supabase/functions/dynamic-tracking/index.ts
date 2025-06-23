@@ -148,9 +148,17 @@ Return ONLY a JSON array with this EXACT structure:
     "question_text": "[Hyper-specific question that feels like a personal health detective asking]",
     "question_context": "[Brief explanation connecting to their specific condition/concern]",
     "question_category": "[energy/cognitive/physical/emotional/sleep]",
-    "scale_description": "[Specific scale that teaches them what optimal looks like]"
+    "scale_description": "1 ([worst description]) to 10 ([best description])"
   }
 ]
+
+CRITICAL: The scale_description MUST always be from 1 to 10, with 1 being the worst/negative end and 10 being the best/positive end.
+
+Examples of proper scale_description format:
+- "1 (no cravings) to 10 (intense cravings)" ❌ WRONG - reversed
+- "1 (intense cravings) to 10 (no cravings)" ✅ CORRECT
+- "1 (very foggy) to 10 (crystal clear)" ✅ CORRECT
+- "1 (poor sleep) to 10 (perfect sleep)" ✅ CORRECT
 
 Make every question feel like a breakthrough moment in understanding their health!
 `;
@@ -175,7 +183,23 @@ Make every question feel like a breakthrough moment in understanding their healt
     // Parse the JSON response
     let questions;
     try {
-      questions = JSON.parse(questionsText);
+      // Clean up the response - remove markdown code blocks if present
+      let cleanedText = questionsText.trim();
+      
+      // Remove ```json and ``` markers if present
+      if (cleanedText.startsWith('```json')) {
+        cleanedText = cleanedText.substring(7); // Remove ```json
+      } else if (cleanedText.startsWith('```')) {
+        cleanedText = cleanedText.substring(3); // Remove ```
+      }
+      
+      if (cleanedText.endsWith('```')) {
+        cleanedText = cleanedText.substring(0, cleanedText.length - 3); // Remove trailing ```
+      }
+      
+      cleanedText = cleanedText.trim();
+      
+      questions = JSON.parse(cleanedText);
     } catch (parseError) {
       console.error('Failed to parse AI response:', questionsText);
       return new Response(JSON.stringify({ error: 'Failed to parse AI response' }), {
@@ -243,13 +267,19 @@ Make every question feel like a breakthrough moment in understanding their healt
 
 async function submitTrackingResponse(supabaseClient: any, userId: string, questionId: string, responseValue: number, notes?: string) {
   try {
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Use upsert to update if exists, insert if not
     const { data, error } = await supabaseClient
       .from('user_dynamic_responses')
-      .insert({
+      .upsert({
         user_id: userId,
         question_id: questionId,
         response_value: responseValue,
+        response_date: today,
         notes: notes,
+      }, {
+        onConflict: 'user_id,question_id,response_date'
       })
       .select();
 

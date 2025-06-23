@@ -211,6 +211,16 @@ export default function DynamicTracker({ userId }: DynamicTrackerProps) {
   };
 
   const submitResponse = async (questionId: string, value: number, notes?: string) => {
+    // Update local state immediately to allow changing selection
+    setResponses(prev => ({
+      ...prev,
+      [questionId]: { question_id: questionId, response_value: value, notes: notes || prev[questionId]?.notes }
+    }));
+    
+    // Don't save to database yet - wait for user to click Next or change notes
+  };
+
+  const saveResponseToDatabase = async (questionId: string, value: number, notes?: string) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
@@ -230,39 +240,36 @@ export default function DynamicTracker({ userId }: DynamicTrackerProps) {
       });
 
       const result = await response.json();
-      if (result.success) {
-        setResponses(prev => ({
-          ...prev,
-          [questionId]: { question_id: questionId, response_value: value, notes }
-        }));
-        
-        // Auto-advance to next question after a longer delay
-        const questionIndex = questions.findIndex(q => q.id === questionId);
-        if (questionIndex < questions.length - 1 && !notes) {
-          // Give user 3 seconds to decide if they want to add notes
-          setTimeout(() => {
-            // Only advance if user hasn't started typing notes
-            const currentResponse = responses[questionId];
-            if (!currentResponse?.notes) {
-              setCurrentQuestionIndex(questionIndex + 1);
-            }
-          }, 3000); // 3 second delay to allow note-taking
-        }
-        
-        // Auto-generate insights when all questions are answered
-        const updatedResponses = {
-          ...responses,
-          [questionId]: { question_id: questionId, response_value: value, notes }
-        };
-        const allAnswered = questions.every(q => updatedResponses[q.id]);
-        if (allAnswered && !insight) {
-          setTimeout(() => {
-            getInsights();
-          }, 500);
-        }
+      if (!result.success) {
+        console.error('Failed to save response:', result.error);
       }
     } catch (error) {
-      console.error('Error submitting response:', error);
+      console.error('Error saving response:', error);
+    }
+  };
+
+  const moveToNextQuestion = () => {
+    // Save current response before moving
+    const currentQuestion = questions[currentQuestionIndex];
+    const currentResponse = responses[currentQuestion.id];
+    
+    if (currentResponse) {
+      saveResponseToDatabase(
+        currentQuestion.id, 
+        currentResponse.response_value, 
+        currentResponse.notes
+      );
+    }
+    
+    // Check if this is the last question
+    if (currentQuestionIndex === questions.length - 1) {
+      // All questions completed - trigger insights after a delay
+      setTimeout(() => {
+        getInsights();
+      }, 1000);
+    } else {
+      // Move to next question
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
     }
   };
 
@@ -291,6 +298,28 @@ export default function DynamicTracker({ userId }: DynamicTrackerProps) {
       setSubmitting(false);
     }
   };
+
+  // Effect to save last response and generate insights when all questions are answered
+  useEffect(() => {
+    const allAnswered = questions.length > 0 && questions.every(q => responses[q.id]);
+    if (allAnswered && !insight && currentQuestionIndex === questions.length - 1) {
+      // Save the last response
+      const lastQuestion = questions[questions.length - 1];
+      const lastResponse = responses[lastQuestion.id];
+      if (lastResponse) {
+        saveResponseToDatabase(
+          lastQuestion.id,
+          lastResponse.response_value,
+          lastResponse.notes
+        ).then(() => {
+          // Generate insights after saving
+          setTimeout(() => {
+            getInsights();
+          }, 500);
+        });
+      }
+    }
+  }, [responses, questions, currentQuestionIndex, insight]);
 
   const getCategoryIcon = (category: string) => {
     switch (category.toLowerCase()) {
@@ -321,23 +350,67 @@ export default function DynamicTracker({ userId }: DynamicTrackerProps) {
     }
   };
 
-  const ScaleButton = ({ value, questionId, currentValue }: { value: number; questionId: string; currentValue?: number }) => {
+  // Determine if scale is reversed (1 is good, 10 is bad) by checking scale description
+  const isReversedScale = (scaleDescription: string): boolean => {
+    const lowerDesc = scaleDescription.toLowerCase();
+    
+    // Keywords that indicate 1 is good (no/none/absence of negative)
+    const reversedIndicators = [
+      'no discomfort',
+      'no pain',
+      'no cravings',
+      'no symptoms',
+      'no issues',
+      'none',
+      'absent',
+      'comfortable',
+      'calm',
+      'relaxed',
+      'clear'
+    ];
+    
+    // Check if the description for 1 contains positive indicators
+    const firstPart = lowerDesc.split(' to ')[0];
+    return reversedIndicators.some(indicator => firstPart.includes(indicator));
+  };
+
+  // Get color based on value and whether scale is reversed
+  const getValueColor = (value: number, scaleDescription: string): string => {
+    const reversed = isReversedScale(scaleDescription);
+    
+    if (reversed) {
+      // Reversed scale: 1-3 is good (green), 8-10 is bad (red)
+      if (value <= 3) return 'emerald';
+      if (value <= 7) return 'amber';
+      return 'red';
+    } else {
+      // Normal scale: 1-3 is bad (red), 8-10 is good (green)
+      if (value <= 3) return 'red';
+      if (value <= 7) return 'amber';
+      return 'emerald';
+    }
+  };
+
+  const ScaleButton = ({ value, questionId, currentValue, scaleDescription }: { 
+    value: number; 
+    questionId: string; 
+    currentValue?: number;
+    scaleDescription: string;
+  }) => {
     const isSelected = currentValue === value;
-    const isLow = value <= 3;
-    const isMid = value >= 4 && value <= 7;
-    const isHigh = value >= 8;
+    const color = getValueColor(value, scaleDescription);
 
     // Bloomberg-inspired design with Apple's interaction principles
     let buttonClass = 'relative h-11 w-11 rounded-lg font-mono text-sm transition-all duration-200 transform active:scale-95 ';
     
     if (isSelected) {
-      // Selected state maintains Bloomberg dark theme with color accents
-      if (isLow) {
-        buttonClass += 'bg-red-500/20 text-red-400 border-2 border-red-500 shadow-lg shadow-red-500/20';
-      } else if (isMid) {
+      // Selected state with dynamic colors based on scale direction
+      if (color === 'emerald') {
+        buttonClass += 'bg-emerald-500/20 text-emerald-400 border-2 border-emerald-500 shadow-lg shadow-emerald-500/20';
+      } else if (color === 'amber') {
         buttonClass += 'bg-amber-500/20 text-amber-400 border-2 border-amber-500 shadow-lg shadow-amber-500/20';
       } else {
-        buttonClass += 'bg-emerald-500/20 text-emerald-400 border-2 border-emerald-500 shadow-lg shadow-emerald-500/20';
+        buttonClass += 'bg-red-500/20 text-red-400 border-2 border-red-500 shadow-lg shadow-red-500/20';
       }
     } else {
       // Unselected with Bloomberg's signature dark aesthetic
@@ -456,6 +529,8 @@ export default function DynamicTracker({ userId }: DynamicTrackerProps) {
           <CardContent className="space-y-3">
             {questions.map((question) => {
               const response = responses[question.id];
+              const color = response ? getValueColor(response.response_value, question.scale_description) : 'zinc';
+              
               return (
                 <div key={question.id} className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg">
                   <div className="flex-1">
@@ -464,9 +539,10 @@ export default function DynamicTracker({ userId }: DynamicTrackerProps) {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className={`font-mono font-bold text-lg ${
-                      response?.response_value <= 3 ? 'text-red-400' :
-                      response?.response_value <= 7 ? 'text-amber-400' :
-                      'text-emerald-400'
+                      color === 'emerald' ? 'text-emerald-400' :
+                      color === 'amber' ? 'text-amber-400' :
+                      color === 'red' ? 'text-red-400' :
+                      'text-zinc-400'
                     }`}>
                       {response?.response_value}/10
                     </span>
@@ -549,6 +625,7 @@ export default function DynamicTracker({ userId }: DynamicTrackerProps) {
                     value={value}
                     questionId={currentQuestion.id}
                     currentValue={currentResponse?.response_value}
+                    scaleDescription={currentQuestion.scale_description}
                   />
                 ))}
               </div>
@@ -559,9 +636,6 @@ export default function DynamicTracker({ userId }: DynamicTrackerProps) {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-sm text-zinc-300">Notes (optional)</label>
-                  {currentQuestionIndex < questions.length - 1 && (
-                    <span className="text-xs text-zinc-500">Auto-advancing in 3s...</span>
-                  )}
                 </div>
                 <Textarea
                   placeholder="Any additional context about your response..."
@@ -569,25 +643,38 @@ export default function DynamicTracker({ userId }: DynamicTrackerProps) {
                   onChange={(e) => {
                     const newResponse = { ...currentResponse, notes: e.target.value };
                     setResponses(prev => ({ ...prev, [currentQuestion.id]: newResponse }));
-                    // Auto-save notes after user stops typing
-                    setTimeout(() => {
-                      submitResponse(currentQuestion.id, currentResponse.response_value, e.target.value);
-                    }, 1000);
+                    
+                    // Clear any existing timeout
+                    if ((window as any).noteSaveTimeout) {
+                      clearTimeout((window as any).noteSaveTimeout);
+                    }
+                    
+                    // Save notes after user stops typing for 1.5 seconds
+                    (window as any).noteSaveTimeout = setTimeout(() => {
+                      if (currentResponse.response_value) {
+                        saveResponseToDatabase(currentQuestion.id, currentResponse.response_value, e.target.value);
+                      }
+                    }, 1500);
                   }}
                   className="bg-zinc-800 border-zinc-700 text-zinc-100 placeholder:text-zinc-500 resize-none"
                   rows={2}
                 />
                 
-                {/* Manual next button */}
+                {/* Next button - always visible when not on last question */}
                 {currentQuestionIndex < questions.length - 1 && (
                   <Button
-                    onClick={() => setCurrentQuestionIndex(currentQuestionIndex + 1)}
-                    variant="outline"
-                    size="sm"
-                    className="w-full mt-2"
+                    onClick={moveToNextQuestion}
+                    className="w-full mt-2 bg-dark-accent text-white hover:bg-dark-accent/80"
                   >
                     Next Question →
                   </Button>
+                )}
+                
+                {/* On last question, show complete button */}
+                {currentQuestionIndex === questions.length - 1 && (
+                  <div className="text-center text-sm text-zinc-400 mt-2">
+                    All questions answered! Insights will generate automatically.
+                  </div>
                 )}
               </div>
             )}

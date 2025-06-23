@@ -22,6 +22,9 @@ const Navigation = () => (
           <Link href="/science" className="text-dark-secondary hover:text-dark-primary transition-colors">
             Science
           </Link>
+          <Link href="/content" className="text-dark-secondary hover:text-dark-primary transition-colors">
+            Content
+          </Link>
           <Link href="/login">
             <button className="inline-flex items-center px-4 py-2 text-sm font-medium text-dark-secondary hover:text-dark-primary border border-dark-border rounded-lg hover:border-dark-accent transition-all duration-200">
               <LogIn className="w-4 h-4 mr-2" />

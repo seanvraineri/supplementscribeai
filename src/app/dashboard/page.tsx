@@ -47,7 +47,9 @@ import {
   Apple,
   Clock,
   ChefHat,
-  Users
+  Users,
+  Menu,
+  X
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { SVGProps } from 'react';
@@ -207,6 +209,9 @@ export default function DashboardPage() {
   
   // Share graphics state
   const [showShareGraphics, setShowShareGraphics] = useState(false);
+
+  // Mobile menu state
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
@@ -3474,14 +3479,46 @@ export default function DashboardPage() {
       <AnimatePresence>
         {!isLoading && (
           <motion.div 
-            className="flex h-screen"
+            className="flex h-screen relative"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
           >
-            {/* Sidebar */}
-            <div className="w-64 bg-dark-panel border-r border-dark-border flex flex-col">
+            {/* Mobile Menu Button - Only visible on small screens */}
+            <button
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-dark-panel border border-dark-border rounded-lg"
+            >
+              <Menu className="h-5 w-5 text-dark-primary" />
+            </button>
+
+            {/* Mobile Backdrop */}
+            {isMobileMenuOpen && (
+              <div 
+                className="lg:hidden fixed inset-0 bg-black/50 z-40"
+                onClick={() => setIsMobileMenuOpen(false)}
+              />
+            )}
+
+            {/* Sidebar - IDENTICAL design, just responsive positioning */}
+            <div className={`
+              w-64 bg-dark-panel border-r border-dark-border flex flex-col
+              lg:relative lg:block
+              ${isMobileMenuOpen ? 'fixed' : 'hidden lg:flex'}
+              ${isMobileMenuOpen ? 'inset-y-0 left-0 z-50' : ''}
+            `}>
+              {/* Mobile Close Button - Only shows on mobile when open */}
+              {isMobileMenuOpen && (
+                <button
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="lg:hidden absolute top-4 right-4 p-1 text-dark-secondary hover:text-dark-primary"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              )}
+
+              {/* EXACT SAME CONTENT - ZERO CHANGES */}
               <div className="p-6 border-b border-dark-border flex items-center gap-3 flex-shrink-0">
                 <h1 className="text-xl font-bold text-dark-primary tracking-tighter">SupplementScribe</h1>
               </div>
@@ -3495,7 +3532,10 @@ export default function DashboardPage() {
                   {sidebarItems.map((item) => (
                     <li key={item.id}>
                       <button
-                        onClick={() => setActiveTab(item.id as TabType)}
+                        onClick={() => {
+                          setActiveTab(item.id as TabType);
+                          setIsMobileMenuOpen(false); // Auto-close on mobile
+                        }}
                         className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors duration-200 ${
                           activeTab === item.id
                             ? 'bg-dark-accent text-white font-semibold'
@@ -3524,9 +3564,9 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Main Content */}
+            {/* Main Content - Add mobile padding only */}
             <main className="flex-1 flex flex-col">
-              <div className={`container mx-auto ${activeTab === 'dashboard' ? 'h-full flex-1 p-4' : 'overflow-auto p-6'}`}>
+              <div className={`container mx-auto ${activeTab === 'dashboard' ? 'h-full flex-1 p-4' : 'overflow-auto p-6'} lg:pt-4 pt-16`}>
                 {renderContent()}
               </div>
             </main>

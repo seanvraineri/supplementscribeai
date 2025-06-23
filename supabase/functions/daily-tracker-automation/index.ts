@@ -133,6 +133,8 @@ Return ONLY a JSON array of objects with this structure:
     "scale_description": "1 (Very foggy) to 10 (Crystal clear)"
   }
 ]
+
+CRITICAL: The scale_description MUST always be from 1 to 10, with 1 being the worst/negative end and 10 being the best/positive end.
 `;
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {

@@ -65,6 +65,9 @@ const Navigation = () => (
           <Link href="/science" className="text-dark-secondary hover:text-dark-primary transition-colors">
             Science
           </Link>
+          <Link href="/content" className="text-dark-secondary hover:text-dark-primary transition-colors">
+            Content
+          </Link>
           <a href="#pricing" className="text-dark-secondary hover:text-dark-primary transition-colors">
             Pricing
           </a>

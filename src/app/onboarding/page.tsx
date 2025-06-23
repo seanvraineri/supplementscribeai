@@ -455,21 +455,21 @@ export default function OnboardingPage() {
       updateProcessingStep('plan', true, false);
       
       // Get session once for all parallel operations
-      const { createClient } = await import('@/lib/supabase/client');
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
+          const { createClient } = await import('@/lib/supabase/client');
+          const supabase = createClient();
+          const { data: { session } } = await supabase.auth.getSession();
+          
+          if (!session) {
         logger.warn('No session found, attempting refresh');
-        const { data: { session: refreshedSession } } = await supabase.auth.refreshSession();
-        if (!refreshedSession) {
+            const { data: { session: refreshedSession } } = await supabase.auth.refreshSession();
+            if (!refreshedSession) {
           throw new Error('Unable to authenticate for generating health data');
-        }
-      }
-      
-      const currentSession = session || (await supabase.auth.getSession()).data.session;
-      
-      if (currentSession) {
+            }
+          }
+          
+          const currentSession = session || (await supabase.auth.getSession()).data.session;
+          
+          if (currentSession) {
         logger.info('🚀 Starting PARALLEL generation of all health data...');
         
         // Update all processing steps to show they're running
@@ -484,11 +484,11 @@ export default function OnboardingPage() {
             try {
               logger.step('📊 Generating health score...');
               const response = await supabase.functions.invoke('health-score', {
-                headers: {
-                  Authorization: `Bearer ${currentSession.access_token}`,
-                },
-              });
-              
+              headers: {
+                Authorization: `Bearer ${currentSession.access_token}`,
+              },
+            });
+            
               if (response.error) {
                 throw response.error;
               }
@@ -499,9 +499,9 @@ export default function OnboardingPage() {
             } catch (error) {
               logger.error('Health score generation failed:', error instanceof Error ? error : { message: String(error) });
               // Try fallback
-              const { data: { user } } = await supabase.auth.getUser();
-              if (user) {
-                await createFallbackHealthScore(supabase, user.id, data);
+                 const { data: { user } } = await supabase.auth.getUser();
+                 if (user) {
+                   await createFallbackHealthScore(supabase, user.id, data);
                 logger.success('✅ Fallback health score created');
                 updateProcessingStep('health-score', true, false);
               }
