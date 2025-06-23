@@ -63,13 +63,16 @@ export default function DynamicTracker({ userId }: DynamicTrackerProps) {
 
   const loadTodaysQuestions = async () => {
     try {
-      console.log('Loading today\'s questions for user:', userId);
+      const today = new Date().toISOString().split('T')[0];
+      console.log('Loading questions for date:', today);
+      console.log('User ID:', userId);
+      
       const { data: existingQuestions, error } = await supabase
         .from('user_dynamic_questions')
         .select('*')
         .eq('user_id', userId)
         .eq('is_active', true)
-        .eq('generated_date', new Date().toISOString().split('T')[0])
+        .eq('generated_date', today)
         .order('created_at', { ascending: true });
 
       if (error) {
@@ -79,7 +82,19 @@ export default function DynamicTracker({ userId }: DynamicTrackerProps) {
 
       console.log('Existing questions found:', existingQuestions?.length || 0);
       
+      // Check if we have questions for today
       if (existingQuestions && existingQuestions.length > 0) {
+        // Verify these questions are actually from today
+        const questionDate = existingQuestions[0].generated_date;
+        console.log('Questions are from date:', questionDate);
+        console.log('Today is:', today);
+        
+        if (questionDate !== today) {
+          console.log('Questions are from a different day, generating new ones...');
+          await generateQuestions();
+          return;
+        }
+        
         setQuestions(existingQuestions);
         setHasGeneratedToday(true);
         
@@ -88,7 +103,7 @@ export default function DynamicTracker({ userId }: DynamicTrackerProps) {
           .from('user_dynamic_responses')
           .select('*')
           .eq('user_id', userId)
-          .eq('response_date', new Date().toISOString().split('T')[0]);
+          .eq('response_date', today);
 
         if (todaysResponses) {
           const responseMap: Record<string, TrackingResponse> = {};

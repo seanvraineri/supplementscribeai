@@ -184,13 +184,26 @@ Make every question feel like a breakthrough moment in understanding their healt
       });
     }
 
-    // Insert questions into database
+    // First, deactivate all old questions for this user
+    const { error: deactivateError } = await supabaseClient
+      .from('user_dynamic_questions')
+      .update({ is_active: false })
+      .eq('user_id', userId);
+    
+    if (deactivateError) {
+      console.error('Error deactivating old questions:', deactivateError);
+    }
+
+    // Insert new questions into database
+    const today = new Date().toISOString().split('T')[0];
     const questionsToInsert = questions.map((q: any) => ({
       user_id: userId,
       question_text: q.question_text,
       question_context: q.question_context,
       question_category: q.question_category,
       scale_description: q.scale_description || '1 (Poor) to 10 (Excellent)',
+      generated_date: today,
+      is_active: true,
     }));
 
     const { data: insertedQuestions, error: insertError } = await supabaseClient
