@@ -19,18 +19,15 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const today = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     
-    // Get all users who don't have questions for today
+    // Get all users who need questions refreshed (last refresh was before today)
     const { data: usersNeedingQuestions, error: usersError } = await supabaseClient
       .from('user_profiles')
-      .select('id')
-      .not('id', 'in', 
-        supabaseClient
-          .from('user_dynamic_questions')
-          .select('user_id')
-          .eq('generated_date', today)
-      );
+      .select('id, last_question_refresh')
+      .or(`last_question_refresh.is.null,last_question_refresh.lt.${today}T00:00:00Z`);
 
     if (usersError) {
       console.error('Error fetching users:', usersError);
@@ -186,5 +183,15 @@ Return ONLY a JSON array of objects with this structure:
 
   if (insertError) {
     throw new Error(`Failed to save questions: ${insertError.message}`);
+  }
+  
+  // Update user's last_question_refresh timestamp
+  const { error: updateError } = await supabaseClient
+    .from('user_profiles')
+    .update({ last_question_refresh: new Date().toISOString() })
+    .eq('id', userId);
+    
+  if (updateError) {
+    console.error(`Failed to update last_question_refresh for user ${userId}:`, updateError);
   }
 } 

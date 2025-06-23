@@ -34,6 +34,7 @@ export default function DynamicTracker({ userId }: DynamicTrackerProps) {
   const [submitting, setSubmitting] = useState(false);
   const [hasGeneratedToday, setHasGeneratedToday] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [isNewDay, setIsNewDay] = useState(false);
   
   const supabase = createClient();
 
@@ -66,38 +67,26 @@ export default function DynamicTracker({ userId }: DynamicTrackerProps) {
     try {
       const today = new Date().toISOString().split('T')[0];
       console.log('Loading questions for date:', today);
-      console.log('User ID:', userId);
       
-      // First, check if there are ANY active questions (regardless of date)
-      const { data: anyActiveQuestions, error: activeError } = await supabase
+      // Query for today's questions specifically
+      const { data: todaysQuestions, error: questionsError } = await supabase
         .from('user_dynamic_questions')
         .select('*')
         .eq('user_id', userId)
+        .eq('generated_date', today)
         .eq('is_active', true)
         .order('created_at', { ascending: true });
 
-      if (activeError) {
-        console.error('Error checking active questions:', activeError);
-        throw activeError;
+      if (questionsError) {
+        console.error('Error loading today\'s questions:', questionsError);
+        throw questionsError;
       }
 
-      // If there are active questions but they're not from today, we need new ones
-      if (anyActiveQuestions && anyActiveQuestions.length > 0) {
-        const firstQuestionDate = anyActiveQuestions[0].generated_date;
-        if (firstQuestionDate !== today) {
-          console.log(`Found old questions from ${firstQuestionDate}, generating new ones for ${today}`);
-          // Clear old state before generating new questions
-          setQuestions([]);
-          setResponses({});
-          setInsight('');
-          setCurrentQuestionIndex(0);
-          await generateQuestions();
-          return;
-        }
-        
-        // Questions are from today, use them
-        setQuestions(anyActiveQuestions);
+      if (todaysQuestions && todaysQuestions.length > 0) {
+        // We have today's questions
+        setQuestions(todaysQuestions);
         setHasGeneratedToday(true);
+        setIsNewDay(true);
         
         // Load existing responses for today
         const { data: todaysResponses } = await supabase
@@ -118,8 +107,8 @@ export default function DynamicTracker({ userId }: DynamicTrackerProps) {
           setResponses(responseMap);
           
           // If all questions are already answered, show the completed view
-          if (anyActiveQuestions.every(q => responseMap[q.id])) {
-            setCurrentQuestionIndex(anyActiveQuestions.length - 1);
+          if (todaysQuestions.every((q: DynamicQuestion) => responseMap[q.id])) {
+            setCurrentQuestionIndex(todaysQuestions.length - 1);
             
             // Load existing insight if available
             const { data: todaysInsight } = await supabase
@@ -340,16 +329,20 @@ export default function DynamicTracker({ userId }: DynamicTrackerProps) {
             <Target className="h-6 w-6 text-white" />
           </div>
           <CardTitle className="text-xl font-semibold text-zinc-100">
-            Preparing Your Daily Tracker
+            {isNewDay ? '🌅 Good morning! Your daily check-in is ready' : 'Preparing Your Daily Tracker'}
           </CardTitle>
           <CardDescription className="text-zinc-400">
-            AI is generating personalized questions based on your health profile...
+            {isNewDay 
+              ? 'Fresh questions tailored to your health journey await...' 
+              : 'AI is generating personalized questions based on your health profile...'}
           </CardDescription>
         </CardHeader>
         <CardContent className="text-center">
           <div className="flex items-center justify-center">
             <Loader2 className="mr-2 h-6 w-6 animate-spin text-blue-500" />
-            <span className="text-zinc-400">Analyzing your health data</span>
+            <span className="text-zinc-400">
+              {isNewDay ? 'Loading today\'s personalized questions' : 'Analyzing your health data'}
+            </span>
           </div>
         </CardContent>
       </Card>

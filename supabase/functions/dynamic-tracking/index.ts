@@ -218,6 +218,12 @@ Make every question feel like a breakthrough moment in understanding their healt
         status: 500,
       });
     }
+    
+    // Update user's last_question_refresh timestamp
+    await supabaseClient
+      .from('user_profiles')
+      .update({ last_question_refresh: new Date().toISOString() })
+      .eq('id', userId);
 
     return new Response(JSON.stringify({ 
       success: true, 
