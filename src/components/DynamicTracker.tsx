@@ -166,21 +166,8 @@ export default function DynamicTracker({ userId }: DynamicTrackerProps) {
           }
         }
       } else {
-        // No questions for today, check if there are old questions
-        const { data: anyOldQuestions } = await supabase
-          .from('user_dynamic_questions')
-          .select('*')
-          .eq('user_id', userId)
-          .eq('is_active', true)
-          .order('created_at', { ascending: true })
-          .limit(1);
-          
-        if (anyOldQuestions && anyOldQuestions.length > 0) {
-          console.log(`Found old active questions from ${anyOldQuestions[0].generated_date}, need to generate new ones`);
-        }
-        
-        // Generate new questions for today
-        console.log('No questions for today, generating new ones');
+        // No questions for today, generate new ones
+        console.log('No active questions for today, generating fresh ones...');
         await generateQuestions();
       }
     } catch (error) {
@@ -249,12 +236,17 @@ export default function DynamicTracker({ userId }: DynamicTrackerProps) {
           [questionId]: { question_id: questionId, response_value: value, notes }
         }));
         
-        // Auto-advance to next question
+        // Auto-advance to next question after a longer delay
         const questionIndex = questions.findIndex(q => q.id === questionId);
         if (questionIndex < questions.length - 1 && !notes) {
+          // Give user 3 seconds to decide if they want to add notes
           setTimeout(() => {
-            setCurrentQuestionIndex(questionIndex + 1);
-          }, 300); // Small delay for visual feedback
+            // Only advance if user hasn't started typing notes
+            const currentResponse = responses[questionId];
+            if (!currentResponse?.notes) {
+              setCurrentQuestionIndex(questionIndex + 1);
+            }
+          }, 3000); // 3 second delay to allow note-taking
         }
         
         // Auto-generate insights when all questions are answered
@@ -565,7 +557,12 @@ export default function DynamicTracker({ userId }: DynamicTrackerProps) {
             {/* Notes */}
             {currentResponse && (
               <div className="space-y-2">
-                <label className="text-sm text-zinc-300">Notes (optional)</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-sm text-zinc-300">Notes (optional)</label>
+                  {currentQuestionIndex < questions.length - 1 && (
+                    <span className="text-xs text-zinc-500">Auto-advancing in 3s...</span>
+                  )}
+                </div>
                 <Textarea
                   placeholder="Any additional context about your response..."
                   value={currentResponse.notes || ''}
@@ -580,6 +577,18 @@ export default function DynamicTracker({ userId }: DynamicTrackerProps) {
                   className="bg-zinc-800 border-zinc-700 text-zinc-100 placeholder:text-zinc-500 resize-none"
                   rows={2}
                 />
+                
+                {/* Manual next button */}
+                {currentQuestionIndex < questions.length - 1 && (
+                  <Button
+                    onClick={() => setCurrentQuestionIndex(currentQuestionIndex + 1)}
+                    variant="outline"
+                    size="sm"
+                    className="w-full mt-2"
+                  >
+                    Next Question →
+                  </Button>
+                )}
               </div>
             )}
           </CardContent>
