@@ -35,6 +35,7 @@ export default function DynamicTracker({ userId }: DynamicTrackerProps) {
   const [hasGeneratedToday, setHasGeneratedToday] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [isNewDay, setIsNewDay] = useState(false);
+  const [nextRefreshTime, setNextRefreshTime] = useState<Date | null>(null);
   
   const supabase = createClient();
 
@@ -43,28 +44,45 @@ export default function DynamicTracker({ userId }: DynamicTrackerProps) {
     loadTodaysQuestions();
   }, [userId]);
 
-  // Check for date change every minute while component is mounted
+  // Auto-refresh at 4 AM local time
   useEffect(() => {
-    const checkDateChange = () => {
-      const currentDate = new Date().toISOString().split('T')[0];
-      if (questions.length > 0 && questions[0].generated_date !== currentDate) {
-        console.log('Date changed! Reloading questions...');
+    const scheduleNextRefresh = () => {
+      const now = new Date();
+      const next4AM = new Date(now);
+      next4AM.setHours(4, 0, 0, 0);
+      
+      // If it's already past 4 AM today, schedule for tomorrow
+      if (now >= next4AM) {
+        next4AM.setDate(next4AM.getDate() + 1);
+      }
+      
+      const timeUntilRefresh = next4AM.getTime() - now.getTime();
+      console.log(`Next refresh scheduled in ${Math.floor(timeUntilRefresh / 1000 / 60)} minutes at`, next4AM.toLocaleString());
+      setNextRefreshTime(next4AM);
+      
+      // Set timeout for the refresh
+      const timeout = setTimeout(() => {
+        console.log('4 AM refresh triggered! Loading new questions...');
         setQuestions([]);
         setResponses({});
         setInsight('');
         setCurrentQuestionIndex(0);
+        setHasGeneratedToday(false);
         loadTodaysQuestions();
-      }
+        
+        // Schedule the next refresh
+        scheduleNextRefresh();
+      }, timeUntilRefresh);
+      
+      return timeout;
     };
-
-    // Check immediately
-    checkDateChange();
     
-    // Then check every minute
-    const interval = setInterval(checkDateChange, 60000);
+    // Initial schedule
+    const timeout = scheduleNextRefresh();
     
-    return () => clearInterval(interval);
-  }, [questions]);
+    // Cleanup
+    return () => clearTimeout(timeout);
+  }, []); // Empty dependency array - only run once on mount
 
   // Keyboard navigation
   useEffect(() => {
@@ -476,27 +494,12 @@ export default function DynamicTracker({ userId }: DynamicTrackerProps) {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      {/* Debug info - temporary */}
-      <div className="text-xs text-zinc-500 bg-zinc-900 p-2 rounded flex items-center justify-between">
-        <span>
-          Today's date: {new Date().toISOString().split('T')[0]} | 
-          Questions from: {questions[0]?.generated_date || 'N/A'}
-        </span>
-        {questions[0]?.generated_date !== new Date().toISOString().split('T')[0] && (
-          <Button 
-            size="sm" 
-            variant="outline"
-            onClick={async () => {
-              setQuestions([]);
-              setResponses({});
-              setInsight('');
-              await generateQuestions();
-            }}
-          >
-            Get Today's Questions
-          </Button>
-        )}
-      </div>
+      {/* Next refresh indicator */}
+      {nextRefreshTime && (
+        <div className="text-xs text-zinc-500 text-center">
+          Next daily refresh: {nextRefreshTime.toLocaleDateString()} at 4:00 AM
+        </div>
+      )}
       
       {/* Progress */}
       <div className="space-y-2">
