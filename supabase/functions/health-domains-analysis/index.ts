@@ -141,6 +141,52 @@ Deno.serve(async (req) => {
 
     // 💾 STORE ANALYSIS RESULTS
     console.log('💾 Storing health domains analysis results...');
+    
+    // First, ensure the table exists (in case migration didn't run)
+    try {
+      await supabaseClient.rpc('exec', {
+        query: `
+          CREATE TABLE IF NOT EXISTS public.user_health_domains_analysis (
+              id uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
+              user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+              analysis_data jsonb NOT NULL,
+              created_at timestamp with time zone DEFAULT now() NOT NULL,
+              updated_at timestamp with time zone DEFAULT now() NOT NULL
+          );
+          
+          -- Create indexes if they don't exist
+          CREATE INDEX IF NOT EXISTS idx_user_health_domains_analysis_user_id 
+          ON public.user_health_domains_analysis(user_id);
+          
+          CREATE INDEX IF NOT EXISTS idx_user_health_domains_analysis_created_at 
+          ON public.user_health_domains_analysis(user_id, created_at DESC);
+          
+          -- Enable RLS if not already enabled
+          ALTER TABLE public.user_health_domains_analysis ENABLE ROW LEVEL SECURITY;
+          
+          -- Create policy if it doesn't exist
+          DO $$ 
+          BEGIN
+            IF NOT EXISTS (
+              SELECT 1 FROM pg_policies 
+              WHERE tablename = 'user_health_domains_analysis' 
+              AND policyname = 'user_health_domains_analysis_policy'
+            ) THEN
+              CREATE POLICY "user_health_domains_analysis_policy" ON public.user_health_domains_analysis
+              FOR ALL
+              USING (auth.uid() = user_id) 
+              WITH CHECK (auth.uid() = user_id);
+            END IF;
+          END $$;
+          
+          -- Grant permissions
+          GRANT ALL ON public.user_health_domains_analysis TO authenticated;
+        `
+      });
+    } catch (tableError) {
+      console.log('Table creation check completed (may already exist):', tableError);
+    }
+    
     const { data: storedAnalysis, error: storeError } = await supabaseClient
       .from('user_health_domains_analysis')
       .insert({

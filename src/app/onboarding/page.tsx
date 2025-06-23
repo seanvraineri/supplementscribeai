@@ -211,9 +211,25 @@ export default function OnboardingPage() {
       active: false
     },
     {
+      id: 'health-domains',
+      title: 'Health Analysis',
+      description: 'Analyzing your health domains and patterns',
+      icon: <Heart className="h-5 w-5" />,
+      completed: false,
+      active: false
+    },
+    {
+      id: 'diet-plan',
+      title: 'Diet Plan',
+      description: 'Creating your personalized whole food diet',
+      icon: <FileText className="h-5 w-5" />,
+      completed: false,
+      active: false
+    },
+    {
       id: 'complete',
       title: 'Complete',
-      description: 'Your personalized supplement protocol is ready!',
+      description: 'Your personalized health protocol is ready!',
       icon: <CheckCircle className="h-5 w-5" />,
       completed: false,
       active: false
@@ -435,149 +451,135 @@ export default function OnboardingPage() {
         return;
       }
 
-      // Step 4: Generate Health Score
+      // Step 4: PARALLEL GENERATION - Run all functions simultaneously for speed!
       updateProcessingStep('plan', true, false);
-      updateProcessingStep('health-score', false, true);
       
-      // Generate health score with comprehensive error handling and fallbacks
-      let healthScoreGenerated = false;
-      let healthScoreAttempts = 0;
-      const maxHealthScoreAttempts = 3;
+      // Get session once for all parallel operations
+      const { createClient } = await import('@/lib/supabase/client');
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
       
-      while (!healthScoreGenerated && healthScoreAttempts < maxHealthScoreAttempts) {
-        try {
-          healthScoreAttempts++;
-          logger.step(`Health score generation attempt ${healthScoreAttempts}/${maxHealthScoreAttempts}`);
-          
-          const { createClient } = await import('@/lib/supabase/client');
-          const supabase = createClient();
-          const { data: { session } } = await supabase.auth.getSession();
-          
-          if (!session) {
-            logger.warn('No session found for health score generation');
-            // Try to refresh session
-            const { data: { session: refreshedSession } } = await supabase.auth.refreshSession();
-            if (!refreshedSession) {
-              throw new Error('Unable to authenticate for health score generation');
-            }
-            logger.success('Session refreshed successfully');
-          }
-          
-          const currentSession = session || (await supabase.auth.getSession()).data.session;
-          
-          if (currentSession) {
-            logger.step('Calling health score function');
-            const healthScoreResponse = await supabase.functions.invoke('health-score', {
-              headers: {
-                Authorization: `Bearer ${currentSession.access_token}`,
-              },
-            });
-            
-            if (healthScoreResponse.error) {
-              logger.error(`Health score generation failed (attempt ${healthScoreAttempts})`, healthScoreResponse.error);
-              
-                             // Check if it's a retryable error
-               const errorMessage = healthScoreResponse.error?.message || '';
-               const isRetryableError = 
-                 errorMessage.includes('timeout') ||
-                 errorMessage.includes('network') ||
-                 errorMessage.includes('temporary') ||
-                 errorMessage.includes('rate limit') ||
-                 errorMessage.includes('502') ||
-                 errorMessage.includes('503') ||
-                 errorMessage.includes('504') ||
-                 errorMessage.includes('429');
-               
-               if (!isRetryableError || healthScoreAttempts >= maxHealthScoreAttempts) {
-                 logger.warn('Health score generation failed permanently, creating fallback score');
-                 const { data: { user } } = await supabase.auth.getUser();
-                 if (user) {
-                   await createFallbackHealthScore(supabase, user.id, data);
-                   healthScoreGenerated = true;
-                   logger.success('Fallback health score created successfully');
-                 } else {
-                   throw new Error('No user found for fallback health score creation');
-                 }
-               } else {
-                 logger.info(`Retryable error detected, waiting before retry ${healthScoreAttempts + 1}`);
-                 await new Promise(resolve => setTimeout(resolve, 2000 * healthScoreAttempts)); // Exponential backoff
-               }
-             } else if (healthScoreResponse.data) {
-               logger.success('Health score generated and saved successfully');
-               logger.debug('Health score data received', { hasData: !!healthScoreResponse.data });
-               healthScoreGenerated = true;
-             } else {
-               logger.warn('Health score response was empty, treating as error');
-               if (healthScoreAttempts >= maxHealthScoreAttempts) {
-                 const { data: { user } } = await supabase.auth.getUser();
-                 if (user) {
-                   await createFallbackHealthScore(supabase, user.id, data);
-                   healthScoreGenerated = true;
-                   logger.success('Fallback health score created after empty response');
-                 } else {
-                   throw new Error('No user found for fallback health score creation');
-                 }
-               }
-             }
-          } else {
-            throw new Error('No valid session available after refresh attempt');
-          }
-        } catch (error) {
-          logger.error(`Health score generation error (attempt ${healthScoreAttempts})`, error instanceof Error ? error : { message: String(error) });
-          
-          if (healthScoreAttempts >= maxHealthScoreAttempts) {
-            logger.warn('All health score attempts failed, creating emergency fallback');
-             try {
-               const { createClient } = await import('@/lib/supabase/client');
-               const supabase = createClient();
-               const { data: { user } } = await supabase.auth.getUser();
-               if (user) {
-                 await createFallbackHealthScore(supabase, user.id, data);
-                 healthScoreGenerated = true;
-                 logger.success('Emergency fallback health score created');
-               } else {
-                 throw new Error('No user found for emergency fallback health score creation');
-               }
-             } catch (fallbackError) {
-               logger.error('Even fallback health score creation failed', fallbackError instanceof Error ? fallbackError : { message: String(fallbackError) });
-               // Continue without health score - don't block onboarding
-               healthScoreGenerated = true; // Set to true to exit loop
-               logger.warn('Continuing onboarding without health score - user can generate it later from dashboard');
-             }
-          } else {
-            logger.info(`Waiting before retry ${healthScoreAttempts + 1}`);
-            await new Promise(resolve => setTimeout(resolve, 1000 * healthScoreAttempts)); // Exponential backoff
-          }
+      if (!session) {
+        logger.warn('No session found, attempting refresh');
+        const { data: { session: refreshedSession } } = await supabase.auth.refreshSession();
+        if (!refreshedSession) {
+          throw new Error('Unable to authenticate for generating health data');
         }
       }
-
-      // Step 5: Family Setup (if applicable)
-      updateProcessingStep('health-score', true, false);
       
-      // Trigger health domains analysis in the background (non-blocking)
-      try {
-        logger.info('Triggering health domains analysis...');
-        const { createClient } = await import('@/lib/supabase/client');
-        const supabase = createClient();
-        const { data: { session } } = await supabase.auth.getSession();
+      const currentSession = session || (await supabase.auth.getSession()).data.session;
+      
+      if (currentSession) {
+        logger.info('🚀 Starting PARALLEL generation of all health data...');
         
-        if (session) {
-          const healthDomainsResponse = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/health-domains-analysis`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${session.access_token}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ userId: session.user.id }),
-          });
+        // Update all processing steps to show they're running
+        updateProcessingStep('health-score', false, true);
+        updateProcessingStep('health-domains', false, true);
+        updateProcessingStep('diet-plan', false, true);
+        
+        // Run all three functions in PARALLEL
+        const [healthScoreResult, healthDomainsResult, dietPlanResult] = await Promise.allSettled([
+          // 1. Health Score Generation
+          (async () => {
+            try {
+              logger.step('📊 Generating health score...');
+              const response = await supabase.functions.invoke('health-score', {
+                headers: {
+                  Authorization: `Bearer ${currentSession.access_token}`,
+                },
+              });
+              
+              if (response.error) {
+                throw response.error;
+              }
+              
+              logger.success('✅ Health score generated');
+              updateProcessingStep('health-score', true, false);
+              return response;
+            } catch (error) {
+              logger.error('Health score generation failed:', error instanceof Error ? error : { message: String(error) });
+              // Try fallback
+              const { data: { user } } = await supabase.auth.getUser();
+              if (user) {
+                await createFallbackHealthScore(supabase, user.id, data);
+                logger.success('✅ Fallback health score created');
+                updateProcessingStep('health-score', true, false);
+              }
+              throw error;
+            }
+          })(),
           
-          if (!healthDomainsResponse.ok) {
-            logger.warn('Health domains analysis returned non-OK status:', { status: healthDomainsResponse.status });
-          }
+          // 2. Health Domains Analysis
+          (async () => {
+            try {
+              logger.step('🧬 Analyzing health domains...');
+              const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/health-domains-analysis`, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${currentSession.access_token}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ userId: currentSession.user.id }),
+              });
+              
+              if (!response.ok) {
+                throw new Error(`Health domains failed: ${response.status}`);
+              }
+              
+              logger.success('✅ Health domains analyzed');
+              updateProcessingStep('health-domains', true, false);
+              return response;
+            } catch (error) {
+              logger.error('Health domains analysis failed:', error instanceof Error ? error : { message: String(error) });
+              updateProcessingStep('health-domains', true, false); // Mark complete anyway
+              throw error;
+            }
+          })(),
+          
+          // 3. Diet Plan Generation
+          (async () => {
+            try {
+              logger.step('🍽️ Creating personalized diet plan...');
+              const response = await supabase.functions.invoke('generate-diet-plan', {
+                headers: {
+                  Authorization: `Bearer ${currentSession.access_token}`,
+                },
+              });
+              
+              if (response.error) {
+                throw response.error;
+              }
+              
+              if (response.data?.success) {
+                logger.success('✅ Diet plan created');
+                updateProcessingStep('diet-plan', true, false);
+              }
+              
+              return response;
+            } catch (error) {
+              logger.error('Diet plan generation failed:', error instanceof Error ? error : { message: String(error) });
+              updateProcessingStep('diet-plan', true, false); // Mark complete anyway
+              throw error;
+            }
+          })()
+        ]);
+        
+        // Log results
+        const successCount = [healthScoreResult, healthDomainsResult, dietPlanResult]
+          .filter(result => result.status === 'fulfilled').length;
+        
+        logger.info(`🎯 Parallel generation complete: ${successCount}/3 successful`);
+        
+        // Log any failures for debugging
+        if (healthScoreResult.status === 'rejected') {
+          logger.warn('Health score failed but continuing:', healthScoreResult.reason);
         }
-      } catch (error) {
-        logger.warn('Failed to trigger health domains analysis (non-blocking):', error instanceof Error ? error : { message: String(error) });
-        // Continue without blocking - user can generate from dashboard if needed
+        if (healthDomainsResult.status === 'rejected') {
+          logger.warn('Health domains failed but continuing:', healthDomainsResult.reason);
+        }
+        if (dietPlanResult.status === 'rejected') {
+          logger.warn('Diet plan failed but continuing:', dietPlanResult.reason);
+        }
       }
       
       if (familySetup?.isAdmin) {

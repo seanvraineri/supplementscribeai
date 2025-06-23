@@ -69,6 +69,7 @@ import SnpCard from '@/components/SnpCard';
 import HealthScoreCard from '@/components/HealthScoreCard';
 import { generateReferralUrl, generateSignupUrl } from '@/lib/referral-utils';
 import ShareGraphics from '@/components/ShareGraphics';
+import DynamicTracker from '@/components/DynamicTracker';
 
 
 const supabase = createClient();
@@ -513,16 +514,15 @@ export default function DashboardPage() {
             .eq('user_id', user.id)
             .order('created_at', { ascending: false })
             .limit(1)
-            .single();
+            .maybeSingle(); // Changed from .single() to handle no results gracefully
 
           if (dietPlanError) {
-            if (dietPlanError.code !== 'PGRST116') { // Not found error is expected
-              console.warn('Diet plan fetch error:', dietPlanError);
-            }
+            console.warn('Diet plan fetch error:', dietPlanError);
           } else if (dietPlanData) {
             if (!isMounted) return;
             setDietPlan(dietPlanData.plan_details);
           }
+          // If dietPlanData is null, that's fine - user hasn't generated one yet
         } catch (error) {
           console.warn('Diet plan fetch failed:', error);
         }
@@ -2387,256 +2387,16 @@ export default function DashboardPage() {
 
   const renderTracking = () => (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-4xl font-bold text-dark-primary">Health Tracking</h1>
-        <p className="text-lg text-dark-secondary mt-1">
-          Track your symptoms, supplement intake, and health metrics over time.
-        </p>
+      {/* Header Section */}
+      <div className="text-center">
+        <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
+          AI-Powered Health Tracking
+        </h2>
+        <p className="text-dark-secondary">Personalized questions generated just for you based on your health profile</p>
       </div>
 
-      {/* Date Selector */}
-      <div className="flex items-center justify-between bg-dark-panel border border-dark-border rounded-xl p-6">
-        <div>
-          <h3 className="text-lg font-semibold text-dark-primary mb-1">Tracking Date</h3>
-          <p className="text-sm text-dark-secondary">Select the date you want to track</p>
-        </div>
-        <input 
-          type="date" 
-          value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
-          className="bg-dark-background border border-dark-border rounded-lg px-4 py-2 text-dark-primary"
-          max={new Date().toISOString().split('T')[0]}
-        />
-      </div>
-
-      {/* Supplements Tracking - Top Section */}
-      <div className="bg-dark-panel border border-dark-border rounded-xl p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <Pill className="w-6 h-6 text-dark-accent" />
-          <h3 className="text-xl font-semibold text-dark-primary">Daily Supplements</h3>
-        </div>
-        
-        {plan?.recommendations?.length > 0 ? (
-          <div className="flex items-center justify-between">
-            <p className="text-dark-secondary">Did you take all your supplements today?</p>
-            <button
-              onClick={() => toggleSupplements(!dailySupplementsTaken)}
-              className={`px-8 py-3 rounded-lg font-medium transition-all flex items-center gap-2 ${
-                dailySupplementsTaken
-                  ? 'bg-green-500 text-white'
-                  : 'bg-dark-border text-dark-secondary hover:bg-dark-accent hover:text-white'
-              }`}
-            >
-              <CheckCircle className="w-5 h-5" />
-              {dailySupplementsTaken ? 'All Taken ✓' : 'Mark as Taken'}
-            </button>
-          </div>
-        ) : (
-          <div className="text-center py-4">
-            <p className="text-dark-secondary mb-4">Generate your supplement plan first to track adherence.</p>
-            <Button 
-              onClick={() => setActiveTab('supplement-plan')}
-              className="bg-dark-accent hover:bg-dark-accent/80 text-white"
-            >
-              Generate Plan
-            </Button>
-          </div>
-        )}
-      </div>
-
-      {/* Main Symptoms Tracking */}
-      <div className="bg-dark-panel border border-dark-border rounded-xl p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <Activity className="w-6 h-6 text-dark-accent" />
-          <h3 className="text-xl font-semibold text-dark-primary">Track Your Symptoms</h3>
-        </div>
-        <p className="text-dark-secondary mb-6">Rate how you're feeling today on a scale of 1-10 (1 = worst, 10 = best)</p>
-        
-        <div className="grid md:grid-cols-2 gap-6">
-          {[
-            { name: 'Energy Level', icon: Zap, color: 'text-emerald-400' },
-            { name: 'Sleep Quality', icon: Moon, color: 'text-blue-400' },
-            { name: 'Mental Clarity', icon: Brain, color: 'text-purple-400' },
-            { name: 'Mood', icon: Heart, color: 'text-pink-400' },
-            { name: 'Digestive Health', icon: Leaf, color: 'text-green-400' },
-            { name: 'Anxiety Level', icon: AlertOctagon, color: 'text-red-400', reverse: true },
-            { name: 'Joint Pain', icon: Bone, color: 'text-orange-400', reverse: true },
-            { name: 'Stress Level', icon: CloudLightning, color: 'text-yellow-400', reverse: true }
-          ].map((symptom) => {
-            const IconComponent = symptom.icon;
-            return (
-              <div key={symptom.name} className="bg-dark-background border border-dark-border rounded-lg p-4 hover:bg-dark-border/50 transition-all">
-                <div className="flex items-center mb-3">
-                  <IconComponent className={`w-6 h-6 mr-3 ${symptom.color}`} />
-                  <h4 className="font-semibold text-dark-primary">{symptom.name}</h4>
-                </div>
-              
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-dark-secondary">{symptom.reverse ? 'High' : 'Low'}</span>
-                <div className="flex-1 relative">
-                  {/* Bloomberg-style Segmented Control */}
-                  <div className="relative bg-dark-background border border-dark-border rounded-lg p-1 h-10">
-                    {/* Background highlight for selected value */}
-                    {symptomRatings[symptom.name] && (
-                      <div 
-                        className="absolute top-1 bottom-1 bg-dark-accent rounded transition-all duration-200 ease-out"
-                        style={{
-                          left: `${((symptomRatings[symptom.name] - 1) * 10) + 0.25}%`,
-                          width: '9.5%'
-                        }}
-                      />
-                    )}
-                    
-                    {/* Clickable segments */}
-                    <div className="relative flex h-full">
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => (
-                        <button
-                          key={value}
-                          onClick={() => logSymptom(symptom.name, value)}
-                          className={`flex-1 relative z-10 text-sm font-medium rounded transition-colors duration-200 ${
-                            symptomRatings[symptom.name] === value
-                              ? 'text-white'
-                              : 'text-dark-secondary hover:text-dark-primary'
-                          }`}
-                        >
-                          {value}
-                        </button>
-                      ))}
-                    </div>
-                    
-                    {/* Subtle segment dividers */}
-                    <div className="absolute inset-y-1 flex pointer-events-none">
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
-                        <div key={i} className="flex-1 relative">
-                          <div className="absolute right-0 top-0 bottom-0 w-px bg-dark-border/30" />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <span className="text-sm text-dark-secondary">{symptom.reverse ? 'Low' : 'High'}</span>
-              </div>
-              
-              {symptomRatings[symptom.name] && (
-                <div className="mt-2 text-sm text-dark-accent">
-                  Rated: {symptomRatings[symptom.name]}/10
-                </div>
-              )}
-            </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Custom Symptoms - Bottom Section */}
-      <div className="bg-dark-panel border border-dark-border rounded-xl p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <Star className="w-6 h-6 text-dark-accent" />
-          <h3 className="text-xl font-semibold text-dark-primary">Add Custom Symptom</h3>
-        </div>
-        
-        <div className="flex gap-3 mb-6">
-          <input
-            type="text"
-            value={newCustomSymptom}
-            onChange={(e) => setNewCustomSymptom(e.target.value)}
-            placeholder="Type a custom symptom (e.g., Headache, Back Pain, Nausea...)"
-            className="flex-1 bg-dark-background border border-dark-border rounded-lg px-4 py-3 text-dark-primary placeholder-dark-secondary focus:outline-none focus:border-dark-accent"
-            onKeyPress={(e) => e.key === 'Enter' && addCustomSymptom()}
-          />
-          <Button
-            onClick={addCustomSymptom}
-            disabled={!newCustomSymptom.trim()}
-            className="px-6 py-3 bg-dark-accent hover:bg-dark-accent/80 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Add
-          </Button>
-        </div>
-        
-        {/* Custom Symptoms List */}
-        {customSymptoms.length > 0 && (
-          <div className="grid md:grid-cols-2 gap-4">
-            {customSymptoms.map((symptom) => (
-              <div key={symptom} className="bg-dark-background border border-dark-border rounded-lg p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center">
-                    <Edit3 className="w-5 h-5 mr-3 text-dark-accent" />
-                    <h4 className="font-semibold text-dark-primary">{symptom}</h4>
-                  </div>
-                  <button
-                    onClick={() => removeCustomSymptom(symptom)}
-                    className="text-red-400 hover:text-red-300 transition-colors"
-                  >
-                    <span className="text-sm">✕</span>
-                  </button>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-dark-secondary">Low</span>
-                  <div className="flex-1 relative">
-                    {/* Bloomberg-style Segmented Control */}
-                    <div className="relative bg-dark-background border border-dark-border rounded-lg p-1 h-10">
-                      {/* Background highlight for selected value */}
-                      {symptomRatings[symptom] && (
-                        <div 
-                          className="absolute top-1 bottom-1 bg-dark-accent rounded transition-all duration-200 ease-out"
-                          style={{
-                            left: `${((symptomRatings[symptom] - 1) * 10) + 0.25}%`,
-                            width: '9.5%'
-                          }}
-                        />
-                      )}
-                      
-                      {/* Clickable segments */}
-                      <div className="relative flex h-full">
-                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => (
-                          <button
-                            key={value}
-                            onClick={() => logSymptom(symptom, value)}
-                            className={`flex-1 relative z-10 text-sm font-medium rounded transition-colors duration-200 ${
-                              symptomRatings[symptom] === value
-                                ? 'text-white'
-                                : 'text-dark-secondary hover:text-dark-primary'
-                            }`}
-                          >
-                            {value}
-                          </button>
-                        ))}
-                      </div>
-                      
-                      {/* Subtle segment dividers */}
-                      <div className="absolute inset-y-1 flex pointer-events-none">
-                        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
-                          <div key={i} className="flex-1 relative">
-                            <div className="absolute right-0 top-0 bottom-0 w-px bg-dark-border/30" />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  <span className="text-sm text-dark-secondary">High</span>
-                </div>
-                
-                {symptomRatings[symptom] && (
-                  <div className="mt-2 text-sm text-dark-accent">
-                    Rated: {symptomRatings[symptom]}/10
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Loading State */}
-      {isTrackingLoading && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-dark-panel border border-dark-border rounded-xl p-8 text-center">
-            <div className="animate-spin w-8 h-8 border-2 border-dark-accent border-t-transparent rounded-full mx-auto mb-4"></div>
-            <p className="text-dark-primary">Loading tracking data...</p>
-          </div>
-        </div>
-      )}
+      {/* Dynamic Tracker Component */}
+      {user && <DynamicTracker userId={user.id} />}
     </div>
   );
 
