@@ -137,6 +137,76 @@ export default function HomePage() {
     show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 100, damping: 20 } },
   };
 
+  // Structured data for SEO and AI GEO
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "MedicalBusiness",
+    "name": "SupplementScribe",
+    "description": "AI-powered personalized nutrition and supplement recommendations based on genetics, biomarkers, and health analysis",
+    "url": "https://supplementscribe.ai",
+    "serviceType": "Personalized Nutrition Analysis",
+    "medicalSpecialty": ["Nutritional Medicine", "Personalized Medicine", "Preventive Medicine"],
+    "hasOfferCatalog": {
+      "@type": "OfferCatalog",
+      "name": "Personalized Supplement Services",
+      "itemListElement": [
+        {
+          "@type": "Offer",
+          "itemOffered": {
+            "@type": "Service",
+            "name": "DNA-Based Supplement Recommendations",
+            "description": "Genetic analysis for personalized supplement selection"
+          }
+        },
+        {
+          "@type": "Offer", 
+          "itemOffered": {
+            "@type": "Service",
+            "name": "Biomarker-Driven Nutrition Plans",
+            "description": "Custom nutrition based on lab values and health markers"
+          }
+        },
+        {
+          "@type": "Offer",
+          "itemOffered": {
+            "@type": "Service", 
+            "name": "Root Cause Health Analysis",
+            "description": "AI-powered analysis to identify underlying health issues"
+          }
+        }
+      ]
+    },
+    "mainEntity": {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Why don't supplements work for me?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Generic supplements fail because they ignore your unique genetics, biomarkers, and individual health needs. Our AI creates personalized supplement recommendations based on your specific biology."
+          }
+        },
+        {
+          "@type": "Question", 
+          "name": "Why am I tired all the time?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Chronic fatigue often stems from nutrient deficiencies, hormonal imbalances, or metabolic issues that vary by individual. Our personalized analysis identifies your specific root causes."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do you create personalized supplement recommendations?", 
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "We use AI to analyze your genetics, biomarkers, symptoms, and lifestyle to create custom 6-supplement packs from our catalog of 56 research-backed ingredients."
+          }
+        }
+      ]
+    }
+  };
+
   const faqItems = [
     {
       question: 'What is the Deep Health Analysis?',
@@ -177,12 +247,48 @@ export default function HomePage() {
 
   return (
     <main className="bg-dark-background text-dark-primary font-sans overflow-x-hidden">
+      {/* Structured Data for SEO & AI GEO */}
+      <script 
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
+      
       <Navigation />
       <ParallaxBackground />
       
       {/* Hero Section */}
       <section className="min-h-screen relative flex items-center justify-center pt-32 pb-24">
         <BackgroundAnimation />
+        
+        {/* SEO-Optimized Hidden Content for Search Engines & AI GEO */}
+        <div className="sr-only">
+          <h1>Why Don't Supplements Work? Personalized AI-Powered Solutions for Common Health Problems</h1>
+          <h2>Top Health Pain Points We Solve:</h2>
+          <ul>
+            <li>Why am I tired all the time? - Chronic fatigue and energy problems</li>
+            <li>Gut health destroying my life - Digestive issues and microbiome imbalances</li>
+            <li>Weight loss plateau won't budge - Stubborn weight and metabolism issues</li>
+            <li>Brain fog ruining my productivity - Cognitive function and mental clarity</li>
+            <li>Hormone chaos wreaking havoc - Hormonal imbalances and endocrine issues</li>
+            <li>Sleep problems stealing my energy - Insomnia and sleep quality issues</li>
+            <li>Supplement side effects nobody talks about - Adverse reactions to generic vitamins</li>
+            <li>Wasted thousands on useless supplements - Generic supplement failures</li>
+            <li>Normal blood work but feel terrible - Root cause analysis beyond standard tests</li>
+            <li>Doctors can't find what's wrong - Unexplained symptoms and health mysteries</li>
+          </ul>
+          <h2>Our AI-Powered Personalized Nutrition Solutions:</h2>
+          <ul>
+            <li>DNA-based supplement recommendations using genetic analysis</li>
+            <li>Personalized nutrition that actually works for your unique biology</li>
+            <li>Custom supplements tailored to your genetics and biomarkers</li>
+            <li>AI-powered health optimization and precision dosing</li>
+            <li>Biomarker-driven supplement selection from 56 research-backed ingredients</li>
+            <li>Root cause analysis to treat the source, not just symptoms</li>
+            <li>Personalized 6-supplement packs designed for your specific needs</li>
+          </ul>
+          <p>Stop wasting money on generic supplements that don't work. Our AI analyzes your genetics, biomarkers, and health profile to create personalized supplement recommendations that address your specific health concerns and root causes.</p>
+        </div>
+
         <motion.div 
           className="container mx-auto px-4 z-10 text-center"
           initial="hidden"
@@ -197,9 +303,15 @@ export default function HomePage() {
             },
           }}
         >
-          <div className="flex justify-center">
+          <div className="flex justify-center flex-col items-center">
+            {/* SEO H1 - Hidden but present for search engines */}
+            <h1 className="sr-only">
+              AI-Powered Personalized Supplement Plans Based on Deep Health Analysis
+            </h1>
+            
+            {/* Visible Animated Display - The beloved flipping text */}
             <AnimatePresence mode="wait">
-              <motion.h1
+              <motion.div
                 key={headlines[index]}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -208,7 +320,7 @@ export default function HomePage() {
                 className="text-center text-6xl font-bold tracking-tighter text-white sm:text-8xl"
               >
                 {headlines[index]}
-              </motion.h1>
+              </motion.div>
             </AnimatePresence>
           </div>
           <p className="mx-auto mt-6 max-w-2xl text-center text-lg leading-8 text-slate-200">
@@ -433,11 +545,11 @@ export default function HomePage() {
            <div className="relative flex overflow-hidden">
              <motion.div 
                className="flex"
-               animate={{ x: ['0%', '-100%'] }}
-               transition={{ ease: 'linear', duration: 25, repeat: Infinity }}
+               animate={{ x: ['0%', '-50%'] }}
+               transition={{ ease: 'linear', duration: 20, repeat: Infinity }}
              >
-               {testimonials.map((t, i) => (
-                  <div key={`p1-${i}`} className="flex-shrink-0 w-full md:w-1/2 lg:w-1/3 p-6">
+               {duplicatedTestimonials.map((t, i) => (
+                  <div key={`testimonial-${i}`} className="flex-shrink-0 w-full md:w-1/2 lg:w-1/3 p-6">
                      <div className="h-full bg-dark-panel p-8 rounded-2xl border border-dark-border shadow-lg">
                        <p className="text-lg mb-6 text-dark-primary">"{t.quote}"</p>
                        <p className="font-bold text-dark-primary">{t.name}</p>

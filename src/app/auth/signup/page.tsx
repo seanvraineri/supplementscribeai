@@ -273,7 +273,7 @@ export default function SignUpPage() {
             className="w-full h-12 text-base font-semibold border-2 border-dark-accent/50 text-dark-accent hover:bg-dark-accent/10 hover:border-dark-accent transition-all duration-200"
           >
             <Users className="w-5 h-5 mr-2" />
-            GET THE WHOLE FAM HEALTHY!
+            Get the Whole Family Healthy!
           </Button>
           
           {message && (

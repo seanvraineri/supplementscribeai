@@ -3,51 +3,61 @@
 import React from 'react'
 
 const BackgroundAnimation: React.FC = () => {
-  // More dramatic, emotionally-charged questions
-  const agonyOfUncertainty = [
-    'Deceived by wellness marketing?',
-    'Lost in the contradictions?',
-    'Is this science or a sales pitch?',
-    'Another influencer, another empty promise?',
-    'Drowning in a sea of "shoulds"?',
+  // High-traffic supplement pain points (millions of searches)
+  const supplementFailures = [
+    'Why don\'t supplements work for me?',
+    'Supplement side effects nobody talks about',
+    'Wasted $1000s on useless supplements',
+    'Generic vitamins making me feel worse',
+    'Taking 20 pills daily with zero results',
+    'Supplement cabinet graveyard of false hope',
   ]
 
-  const silentWarWithin = [
-    "Why do my results say 'normal' when I feel broken?",
-    'What if the root cause is still hiding?',
-    'Am I funding a multi-billion dollar placebo?',
-    "Is my body fighting a battle I can't see?",
-    "What does my DNA know that I don't?",
+  // Top health pain points (10M+ searches)
+  const healthPainPoints = [
+    'Why am I tired all the time?',
+    'Gut health destroying my life',
+    'Weight loss plateau won\'t budge',
+    'Brain fog ruining my productivity',
+    'Hormone chaos wreaking havoc',
+    'Sleep problems stealing my energy',
+    'Chronic fatigue mystery symptoms',
   ]
 
-  const frustrationOfFutility = [
-    'All this effort... for nothing?',
-    'Is your supplement cabinet a graveyard of hope?',
-    'Doing everything right, feeling all wrong?',
-    'Trapped in endless trial and error?',
-    "Is 'pill fatigue' your new reality?",
+  // Root cause frustrations (millions of searches)
+  const rootCauseFrustrations = [
+    'Normal blood work but feel terrible',
+    'Doctors can\'t find what\'s wrong',
+    'Generic advice isn\'t working',
+    'One-size-fits-all approach failing',
+    'Missing the real root cause',
+    'Treating symptoms not the source',
+    'My genetics hold the answers',
   ]
 
-  const glimmerOfPossibility = [
-    'What if your biology held the blueprint?',
-    'Could your data unlock your true potential?',
-    'Imagine a formula built just for you.',
-    "What if 'optimized' wasn't a fantasy?",
-    "Ready to know your body's secrets?",
+  // Personalized solution promises (high-intent searches)
+  const personalizedSolutions = [
+    'DNA-based supplement recommendations',
+    'Personalized nutrition actually works',
+    'Custom supplements for my genetics',
+    'AI-powered health optimization',
+    'Precision dosing based on my data',
+    'Finally supplements that work for ME',
+    'Biomarker-driven supplement selection',
   ]
 
   // Create rows with different data types
   const rows = [
-    { data: agonyOfUncertainty, delay: '0s', speed: '120s' },
-    { data: silentWarWithin, delay: '-15s', speed: '100s' },
-    { data: frustrationOfFutility, delay: '-30s', speed: '140s' },
-    { data: glimmerOfPossibility, delay: '-45s', speed: '110s' },
-    { data: agonyOfUncertainty, delay: '-60s', speed: '160s' },
-    { data: silentWarWithin, delay: '-75s', speed: '90s' },
-    { data: frustrationOfFutility, delay: '-90s', speed: '180s' },
-    { data: glimmerOfPossibility, delay: '-105s', speed: '95s' },
-    { data: agonyOfUncertainty, delay: '-120s', speed: '200s' },
-    { data: silentWarWithin, delay: '-135s', speed: '105s' }
+    { data: supplementFailures, delay: '0s', speed: '120s' },
+    { data: healthPainPoints, delay: '-15s', speed: '100s' },
+    { data: rootCauseFrustrations, delay: '-30s', speed: '140s' },
+    { data: personalizedSolutions, delay: '-45s', speed: '110s' },
+    { data: supplementFailures, delay: '-60s', speed: '160s' },
+    { data: healthPainPoints, delay: '-75s', speed: '90s' },
+    { data: rootCauseFrustrations, delay: '-90s', speed: '180s' },
+    { data: personalizedSolutions, delay: '-105s', speed: '95s' },
+    { data: supplementFailures, delay: '-120s', speed: '200s' },
+    { data: healthPainPoints, delay: '-135s', speed: '105s' }
   ]
 
   return (
@@ -67,7 +77,7 @@ const BackgroundAnimation: React.FC = () => {
               animationDuration: row.speed,
             }}
           >
-                         <div className="flex space-x-12 text-gray-500/30 text-sm font-mono tracking-wide">
+            <div className="flex space-x-12 text-gray-500/30 text-sm font-mono tracking-wide">
               {Array(8).fill(row.data).flat().map((item, itemIndex) => (
                 <span key={itemIndex} className="px-4">
                   {item}
@@ -78,9 +88,9 @@ const BackgroundAnimation: React.FC = () => {
         </div>
       ))}
       
-             {/* Bloomberg-style fade edges */}
-       <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-black via-black/80 to-transparent z-10" />
-       <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-black via-black/80 to-transparent z-10" />
+      {/* Bloomberg-style fade edges */}
+      <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-black via-black/80 to-transparent z-10" />
+      <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-black via-black/80 to-transparent z-10" />
     </div>
   )
 }

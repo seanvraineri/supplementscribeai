@@ -357,12 +357,12 @@ const sampleBlogPosts = [
     id: 23,
     title: "Are You Getting Real Value from Your Supplements? The Science of Personalized Optimization",
     excerpt: "Millions spend billions on supplements with little to show for it. Discover the science behind supplement effectiveness and how personalized optimization can transform your health investment into real results.",
-    category: "Supplement Optimization",
+    category: "Optimization",
     readTime: "7 min read",
     publishDate: "2025-06-23",
     author: "SupplementScribe Health Team",
     image: "/api/placeholder/600/400",
-    tags: ["Supplement Optimization", "Value", "Science", "Personalized", "Results"],
+    tags: ["Optimization", "Value", "Science", "Personalized", "Results"],
     featured: false,
     icon: TrendingUp,
     slug: "flushing-money-supplements-dna-truth"
@@ -383,7 +383,7 @@ const sampleBlogPosts = [
   }
 ];
 
-const categories = ["All", "Science", "Personal Story", "Health", "Longevity", "Skin Health", "Daily Wellness", "Skeptic Guide", "Preventive Care", "Health Guidance", "Gut Health", "Supplements", "Supplement Optimization", "Mental Health", "Family Health", "Women's Health", "Research", "Sleep Health", "Weight Loss"];
+const categories = ["All", "Science", "Personal Story", "Health", "Longevity", "Skin Health", "Daily Wellness", "Skeptic Guide", "Preventive Care", "Health Guidance", "Gut Health", "Supplements", "Optimization", "Mental Health", "Family Health", "Women's Health", "Research", "Sleep Health", "Weight Loss"];
 
 export default function ContentPage() {
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -428,9 +428,9 @@ export default function ContentPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
           >
-            <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div className="flex flex-col gap-6 items-center">
               {/* Search Bar */}
-              <div className="relative flex-1 max-w-md">
+              <div className="relative w-full max-w-md">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-dark-secondary" />
                 <input
                   type="text"
@@ -442,12 +442,12 @@ export default function ContentPage() {
               </div>
 
               {/* Category Filter */}
-              <div className="flex gap-2 flex-wrap">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 w-full max-w-4xl">
                 {categories.map((category) => (
                   <button
                     key={category}
                     onClick={() => setSelectedCategory(category)}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                    className={`px-3 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap ${
                       selectedCategory === category
                         ? 'bg-dark-accent text-white'
                         : 'bg-dark-panel border border-dark-border text-dark-secondary hover:border-dark-accent hover:text-dark-primary'
@@ -543,7 +543,7 @@ export default function ContentPage() {
                 {regularPosts.map((post, index) => (
                   <Link key={post.id} href={`/content/${post.slug}`}>
                     <motion.article
-                      className="bg-dark-panel border border-dark-border rounded-xl overflow-hidden hover:border-dark-accent/50 transition-all duration-300 cursor-pointer group"
+                      className="bg-dark-panel border border-dark-border rounded-xl overflow-hidden hover:border-dark-accent/50 transition-all duration-300 cursor-pointer group h-full flex flex-col"
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.6, delay: 0.1 * index }}
@@ -552,7 +552,7 @@ export default function ContentPage() {
                         <post.icon className="h-16 w-16 text-dark-accent/60" />
                       </div>
                       
-                      <div className="p-6">
+                      <div className="p-6 flex flex-col flex-grow">
                         <div className="flex items-center gap-4 mb-3">
                           <span className="px-2 py-1 bg-dark-border text-dark-secondary rounded text-xs font-medium">
                             {post.category}
@@ -567,7 +567,7 @@ export default function ContentPage() {
                           {post.title}
                         </h3>
                         
-                        <p className="text-dark-secondary text-sm mb-4 leading-relaxed line-clamp-3">
+                        <p className="text-dark-secondary text-sm mb-4 leading-relaxed line-clamp-3 flex-grow">
                           {post.excerpt}
                         </p>
                         
@@ -579,7 +579,7 @@ export default function ContentPage() {
                           ))}
                         </div>
                         
-                        <div className="flex items-center justify-between pt-3 border-t border-dark-border">
+                        <div className="flex items-center justify-between pt-3 border-t border-dark-border mt-auto">
                           <div className="flex items-center gap-2">
                             <div className="w-6 h-6 bg-dark-accent/20 rounded-full flex items-center justify-center">
                               <User className="h-3 w-3 text-dark-accent" />
