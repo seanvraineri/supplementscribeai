@@ -49,7 +49,9 @@ import {
   ChefHat,
   Users,
   Menu,
-  X
+  X,
+  CreditCard,
+  Package
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { SVGProps } from 'react';
@@ -206,6 +208,11 @@ export default function DashboardPage() {
   // Referral state
   const [copiedReferralCode, setCopiedReferralCode] = useState(false);
   const [copiedReferralUrl, setCopiedReferralUrl] = useState(false);
+  
+  // Subscription management state
+  const [subscriptionOrders, setSubscriptionOrders] = useState<any[]>([]);
+  const [isLoadingOrders, setIsLoadingOrders] = useState(false);
+  const [nextDeliveryDate, setNextDeliveryDate] = useState<string | null>(null);
   
   // Share graphics state
   const [showShareGraphics, setShowShareGraphics] = useState(false);
@@ -374,6 +381,19 @@ export default function DashboardPage() {
 
   useEffect(() => {
     let isMounted = true;
+    
+    // CRITICAL: Check if user just completed onboarding
+    if (typeof window !== 'undefined') {
+      const justCompletedOnboarding = sessionStorage.getItem('onboarding_completed') === 'true' || 
+                                     localStorage.getItem('onboarding_completed') === 'true';
+      
+      if (justCompletedOnboarding) {
+        console.log('🚫 DASHBOARD: User just completed onboarding - preventing any redirects back');
+        // Clear the flags after checking
+        sessionStorage.removeItem('onboarding_completed');
+        localStorage.removeItem('onboarding_completed');
+      }
+    }
     
     const fetchUserData = async () => {
       try {
@@ -624,6 +644,13 @@ export default function DashboardPage() {
       abortController.abort();
     };
   }, [user]);
+
+  // Load subscription orders for full subscription users
+  useEffect(() => {
+    if (profile?.subscription_tier === 'full') {
+      loadSubscriptionOrders();
+    }
+  }, [profile]);
 
   useEffect(() => {
     if (chatContainerRef.current) {
@@ -2437,7 +2464,7 @@ export default function DashboardPage() {
                 <Button
                   onClick={copyReferralCode}
                   variant="outline"
-                  className="px-4 py-3 border-dark-border hover:bg-dark-border"
+                  className="px-4 py-3 border-dark-border hover:bg-dark-border text-dark-primary hover:text-dark-primary bg-dark-panel"
                 >
                   {copiedReferralCode ? (
                     <Check className="h-4 w-4 text-green-400" />
@@ -2462,7 +2489,7 @@ export default function DashboardPage() {
                 <Button
                   onClick={copyReferralUrl}
                   variant="outline"
-                  className="px-4 py-3 border-dark-border hover:bg-dark-border"
+                  className="px-4 py-3 border-dark-border hover:bg-dark-border text-dark-primary hover:text-dark-primary bg-dark-panel"
                 >
                   {copiedReferralUrl ? (
                     <Check className="h-4 w-4 text-green-400" />
@@ -2502,7 +2529,7 @@ export default function DashboardPage() {
                 <Button 
                   onClick={() => window.location.reload()} 
                   variant="outline"
-                  className="border-dark-border text-dark-secondary hover:bg-dark-border"
+                  className="border-dark-border text-dark-primary hover:bg-dark-border hover:text-dark-primary bg-dark-panel"
                 >
                   Refresh Page
                 </Button>
@@ -2512,7 +2539,304 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* Account Settings Placeholder */}
+      {/* Subscription Management */}
+      <div className="bg-dark-panel border border-dark-border rounded-xl p-8">
+        <div className="flex items-center gap-3 mb-6">
+          <CreditCard className="h-6 w-6 text-dark-accent" />
+          <h3 className="text-2xl font-semibold text-dark-primary">Subscription & Orders</h3>
+        </div>
+        
+        {/* Current Plan */}
+        <div className="bg-dark-background border border-dark-border rounded-lg p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h4 className="text-lg font-semibold text-dark-primary">Current Plan</h4>
+              <p className="text-dark-secondary text-sm">Your active subscription tier</p>
+            </div>
+            <div className="text-right">
+              <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                profile?.subscription_tier === 'full' 
+                  ? 'bg-green-500/10 text-green-400 border border-green-500/20' 
+                  : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+              }`}>
+                {profile?.subscription_tier === 'full' ? 'Complete Package' : 'Software Only'}
+              </div>
+              <p className="text-dark-accent font-bold text-lg mt-1">
+                {profile?.subscription_tier === 'full' ? '$75.00/month' : '$19.99/month'}
+              </p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-dark-secondary">Plan Features:</p>
+              <ul className="space-y-1 text-sm text-dark-primary">
+                <li className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-400" />
+                  AI Health Analysis & Scoring
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-400" />
+                  Personalized Supplement Plans
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-400" />
+                  Custom Diet Plans & Groceries
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-400" />
+                  Health Tracking & Insights
+                </li>
+                {profile?.subscription_tier === 'full' && (
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-green-400" />
+                    <span className="font-medium text-dark-accent">Monthly Supplement Delivery</span>
+                  </li>
+                )}
+              </ul>
+            </div>
+            
+            {profile?.subscription_tier === 'full' && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-dark-secondary">Next Delivery:</p>
+                <div className="bg-dark-panel border border-dark-border rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Package className="h-4 w-4 text-dark-accent" />
+                    <span className="text-sm font-medium text-dark-primary">6-Supplement Pack</span>
+                  </div>
+                  <p className="text-xs text-dark-secondary">
+                    Estimated: {nextDeliveryDate ? 
+                      new Date(nextDeliveryDate).toLocaleDateString('en-US', { 
+                        month: 'long', 
+                        day: 'numeric', 
+                        year: 'numeric' 
+                      }) : 
+                      new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { 
+                        month: 'long', 
+                        day: 'numeric', 
+                        year: 'numeric' 
+                      })
+                    }
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Order History */}
+        {profile?.subscription_tier === 'full' && (
+          <div className="bg-dark-background border border-dark-border rounded-lg p-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="text-lg font-semibold text-dark-primary">Recent Orders</h4>
+              <Button 
+                variant="outline" 
+                className="text-sm border-dark-border hover:bg-dark-border text-dark-primary hover:text-dark-primary bg-dark-panel"
+                onClick={() => {
+                  // TODO: Implement order history modal or page
+                  alert('Order history feature coming soon!');
+                }}
+              >
+                View All Orders
+              </Button>
+            </div>
+            
+            {isLoadingOrders ? (
+              <div className="text-center py-6">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-dark-accent mx-auto mb-2"></div>
+                <p className="text-sm text-dark-secondary">Loading orders...</p>
+              </div>
+            ) : subscriptionOrders.length > 0 ? (
+              <div className="space-y-3">
+                {subscriptionOrders.slice(0, 3).map((order, index) => {
+                  const orderDate = new Date(order.order_date).toLocaleDateString();
+                  const statusColors = {
+                    pending: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
+                    processing: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+                    shipped: 'bg-green-500/10 text-green-400 border-green-500/20',
+                    delivered: 'bg-green-600/10 text-green-300 border-green-600/20',
+                    failed: 'bg-red-500/10 text-red-400 border-red-500/20',
+                    cancelled: 'bg-gray-500/10 text-gray-400 border-gray-500/20'
+                  };
+                  
+                  return (
+                    <div key={order.id} className="flex items-center justify-between p-4 bg-dark-panel border border-dark-border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-dark-accent/10 rounded-lg flex items-center justify-center">
+                          <Package className="h-5 w-5 text-dark-accent" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-dark-primary">6-Supplement Pack</p>
+                          <p className="text-sm text-dark-secondary">
+                            {order.shopify_order_id ? `Order #${order.shopify_order_id.slice(-6)}` : `Order #${order.id.slice(-6)}`} • {orderDate}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${statusColors[order.status as keyof typeof statusColors] || statusColors.pending}`}>
+                          {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                        </div>
+                        <p className="text-sm text-dark-accent font-medium mt-1">
+                          ${order.order_total ? Number(order.order_total).toFixed(2) : '75.00'}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-6">
+                <Package className="h-12 w-12 text-dark-secondary mx-auto mb-3 opacity-50" />
+                <p className="text-dark-secondary">No orders yet</p>
+                <p className="text-sm text-dark-secondary mt-1">Your first order will appear here after generation</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Billing & Payment */}
+        <div className="bg-dark-background border border-dark-border rounded-lg p-6 mb-6">
+          <h4 className="text-lg font-semibold text-dark-primary mb-4">Billing & Payment</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <p className="text-sm font-medium text-dark-secondary mb-2">Payment Method</p>
+              <div className="flex items-center gap-3 p-3 bg-dark-panel border border-dark-border rounded-lg">
+                <CreditCard className="h-5 w-5 text-dark-accent" />
+                <div>
+                  <p className="text-sm font-medium text-dark-primary">•••• •••• •••• 4242</p>
+                  <p className="text-xs text-dark-secondary">Expires 12/25</p>
+                </div>
+              </div>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-dark-secondary mb-2">Next Billing Date</p>
+              <div className="p-3 bg-dark-panel border border-dark-border rounded-lg">
+                <p className="text-sm font-medium text-dark-primary">
+                  {new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { 
+                    month: 'long', 
+                    day: 'numeric', 
+                    year: 'numeric' 
+                  })}
+                </p>
+                <p className="text-xs text-dark-secondary">
+                  ${profile?.subscription_tier === 'full' ? '75.00' : '19.99'} will be charged
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex gap-3 mt-4">
+            <Button 
+              variant="outline" 
+              className="border-dark-border hover:bg-dark-border text-dark-primary hover:text-dark-primary bg-dark-panel"
+              onClick={() => {
+                // TODO: Implement payment method update
+                alert('Payment method update coming soon!');
+              }}
+            >
+              Update Payment Method
+            </Button>
+            <Button 
+              variant="outline" 
+              className="border-dark-border hover:bg-dark-border text-dark-primary hover:text-dark-primary bg-dark-panel"
+              onClick={() => {
+                // TODO: Implement billing history
+                alert('Billing history feature coming soon!');
+              }}
+            >
+              View Billing History
+            </Button>
+          </div>
+        </div>
+
+        {/* Plan Management */}
+        <div className="bg-dark-background border border-dark-border rounded-lg p-6">
+          <h4 className="text-lg font-semibold text-dark-primary mb-4">Plan Management</h4>
+          
+          {profile?.subscription_tier === 'software_only' ? (
+            <div className="text-center py-6">
+              <Package className="h-12 w-12 text-dark-accent mx-auto mb-4" />
+              <h5 className="text-lg font-semibold text-dark-primary mb-2">Upgrade to Complete Package</h5>
+              <p className="text-dark-secondary mb-4">
+                Get monthly supplement delivery with your personalized recommendations
+              </p>
+              <div className="bg-dark-panel border border-dark-border rounded-lg p-4 mb-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-dark-primary">Complete Package</span>
+                  <span className="text-dark-accent font-bold">$75.00/month</span>
+                </div>
+                <p className="text-xs text-dark-secondary mt-1">
+                  Includes everything in Software Only + monthly supplement delivery
+                </p>
+              </div>
+              <Button 
+                className="bg-dark-accent text-white hover:bg-dark-accent/80"
+                onClick={() => {
+                  // TODO: Implement plan upgrade
+                  alert('Plan upgrade feature coming soon!');
+                }}
+              >
+                Upgrade Plan
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-dark-panel border border-dark-border rounded-lg">
+                <div>
+                  <p className="font-medium text-dark-primary">Pause Deliveries</p>
+                  <p className="text-sm text-dark-secondary">Temporarily pause your monthly supplement deliveries</p>
+                </div>
+                <Button 
+                  variant="outline" 
+                  className="border-dark-border hover:bg-dark-border text-dark-primary hover:text-dark-primary bg-dark-panel"
+                  onClick={() => {
+                    // TODO: Implement delivery pause
+                    alert('Delivery pause feature coming soon!');
+                  }}
+                >
+                  Pause
+                </Button>
+              </div>
+              
+              <div className="flex items-center justify-between p-4 bg-dark-panel border border-dark-border rounded-lg">
+                <div>
+                  <p className="font-medium text-dark-primary">Downgrade to Software Only</p>
+                  <p className="text-sm text-dark-secondary">Keep AI features, cancel supplement deliveries</p>
+                </div>
+                <Button 
+                  variant="outline" 
+                  className="border-dark-border hover:bg-dark-border text-orange-400 hover:text-orange-300 bg-dark-panel"
+                  onClick={() => {
+                    // TODO: Implement plan downgrade
+                    alert('Plan downgrade feature coming soon!');
+                  }}
+                >
+                  Downgrade
+                </Button>
+              </div>
+              
+              <div className="flex items-center justify-between p-4 bg-dark-panel border border-red-500/20 rounded-lg">
+                <div>
+                  <p className="font-medium text-red-400">Cancel Subscription</p>
+                  <p className="text-sm text-dark-secondary">Cancel your subscription and end all services</p>
+                </div>
+                <Button 
+                  variant="outline" 
+                  className="border-red-500/20 hover:bg-red-500/10 text-red-400 hover:text-red-300 bg-dark-panel"
+                  onClick={() => {
+                    // TODO: Implement subscription cancellation
+                    alert('Subscription cancellation feature coming soon!');
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Account Settings */}
       <div className="bg-dark-panel border border-dark-border rounded-xl p-8">
         <div className="flex items-center gap-3 mb-4">
           <Settings className="h-6 w-6 text-dark-secondary" />
@@ -3450,6 +3774,45 @@ export default function DashboardPage() {
       setProductHistory([]);
     } finally {
       setIsLoadingHistory(false);
+    }
+  };
+
+  const loadSubscriptionOrders = async () => {
+    if (!user || profile?.subscription_tier !== 'full') return;
+    
+    setIsLoadingOrders(true);
+    try {
+      const { data, error } = await supabase
+        .from('supplement_orders')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) {
+        console.error('Error loading subscription orders:', error);
+        setSubscriptionOrders([]);
+      } else {
+        setSubscriptionOrders(data || []);
+        
+        // Calculate next delivery date from most recent order
+        if (data && data.length > 0) {
+          const mostRecentOrder = data[0];
+          if (mostRecentOrder.next_order_date) {
+            setNextDeliveryDate(mostRecentOrder.next_order_date);
+          } else {
+            // Calculate 30 days from order date if next_order_date is null
+            const orderDate = new Date(mostRecentOrder.order_date);
+            const nextDate = new Date(orderDate.getTime() + (30 * 24 * 60 * 60 * 1000));
+            setNextDeliveryDate(nextDate.toISOString().split('T')[0]);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load subscription orders:', error);
+      setSubscriptionOrders([]);
+    } finally {
+      setIsLoadingOrders(false);
     }
   };
 

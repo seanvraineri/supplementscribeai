@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{{ shop.name }}</title>
+  <meta name="description" content="{{ page_description | escape }}">
+  
+  <!-- Redirect script for headless storefront -->
+  <script>
+    (function() {
+      // Get current URL and path
+      const currentPath = window.location.pathname;
+      const currentSearch = window.location.search;
+      
+      // Don't redirect checkout, cart, or admin pages
+      if (currentPath.includes('/checkout') || 
+          currentPath.includes('/cart') || 
+          currentPath.includes('/admin') ||
+          currentPath.includes('/account') ||
+          currentPath.includes('/policies')) {
+        return;
+      }
+      
+      // Detect if we're coming from a successful checkout
+      const isFromCheckout = document.referrer.includes('/checkout') || 
+                            currentSearch.includes('checkout') ||
+                            sessionStorage.getItem('shopify_checkout_completed');
+      
+      // Your app URL - dynamically detect port from 3000-3010
+      let appUrl = 'http://localhost:3000';
+      
+      // Try to detect the correct port from sessionStorage if available
+      const storedPort = sessionStorage.getItem('app_port');
+      if (storedPort) {
+        appUrl = `http://localhost:${storedPort}`;
+      }
+      
+      // If coming from checkout, redirect to payment-success page
+      if (isFromCheckout) {
+        sessionStorage.removeItem('shopify_checkout_completed');
+        window.location.href = `${appUrl}/payment-success`;
+        return;
+      }
+      
+      // For all other pages, redirect to homepage
+      window.location.href = appUrl;
+    })();
+  </script>
+</head>
+<body>
+  <div style="text-align: center; padding: 50px; font-family: Arial, sans-serif;">
+    <h1>Redirecting...</h1>
+    <p>You are being redirected to SupplementScribe AI.</p>
+    <p>If you are not redirected automatically, <a href="http://localhost:3000">click here</a>.</p>
+  </div>
+</body>
+</html> 

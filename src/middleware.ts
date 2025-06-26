@@ -79,6 +79,24 @@ export async function middleware(request: NextRequest) {
   // NEW USER ONBOARDING CHECK: Only redirect to onboarding if user is brand new
   // (has no profile at all) and trying to access dashboard
   if (user && request.nextUrl.pathname === '/dashboard') {
+    // Check if this is a redirect from onboarding completion (don't redirect back)
+    const referer = request.headers.get('referer')
+    const isFromOnboarding = referer && referer.includes('/onboarding')
+    
+    // Also check for onboarding completion cookie (set by the app)
+    const onboardingCompleted = request.cookies.get('onboarding_completed')?.value === 'true'
+    
+    // CRITICAL: NEVER REDIRECT BACK TO ONBOARDING IF USER IS COMING FROM ONBOARDING
+    // If coming from onboarding or just completed onboarding, let them through
+    if (isFromOnboarding || onboardingCompleted) {
+      console.log('🚫 PREVENTING ONBOARDING REDIRECT - User coming from onboarding or just completed')
+      // Clear the completion cookie after use
+      if (onboardingCompleted) {
+        response.cookies.delete('onboarding_completed')
+      }
+      return response
+    }
+    
     try {
       const { data: profile, error } = await supabase
         .from('user_profiles')
@@ -89,12 +107,16 @@ export async function middleware(request: NextRequest) {
       // If no profile exists at all (brand new user), redirect to onboarding
       // If profile exists but incomplete, let them see dashboard with banner
       if (error && error.code === 'PGRST116') { // No rows returned
+        console.log('🔄 Redirecting to onboarding - No profile found for new user')
         return NextResponse.redirect(new URL('/onboarding', request.url))
+      } else {
+        console.log('✅ Profile found - Allowing dashboard access')
       }
     } catch (error) {
       // If there's any error checking profile, let them through to dashboard
       // The dashboard will handle showing the onboarding banner
       console.warn('Profile check failed in middleware:', error)
+      console.log('✅ Profile check failed - Allowing dashboard access anyway')
     }
   }
 

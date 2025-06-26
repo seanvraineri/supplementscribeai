@@ -329,9 +329,15 @@ export async function saveOnboardingData(formData: unknown, familySetupData?: an
       }
     }
 
-    // ✅ SUCCESS: Generate supplement plan immediately
-    logger.success('Frictionless onboarding complete! Generating supplement plan');
+    // ✅ SUCCESS: Onboarding data saved - AI functions now called AFTER payment
+    logger.success('Onboarding data saved successfully! AI functions will be called after payment.');
     
+    // 🚧 PAYMENT GATE: AI functions moved to payment success handler
+    // The generate-plan and health-domains-analysis functions are now called
+    // in the payment success page AFTER payment is confirmed
+    
+    // COMMENTED OUT: AI generation now happens after payment
+    /*
     try {
       // Get user session token for authenticated edge function call
       const { data: { session } } = await supabase.auth.getSession();
@@ -383,6 +389,7 @@ export async function saveOnboardingData(formData: unknown, familySetupData?: an
       logger.error('Error generating plan', planError instanceof Error ? planError : { message: String(planError) });
       // Don't fail the onboarding if plan generation fails
     }
+    */
 
     // 🎯 SEND FAMILY INVITES if this is a family admin
     if (familySetupData?.isAdmin && familySetupData?.familyMembers?.length > 0) {
@@ -420,6 +427,191 @@ export async function saveOnboardingData(formData: unknown, familySetupData?: an
     return {
       success: false,
       error: error.message || 'An unexpected error occurred.',
+    };
+  }
+}
+
+// NEW FUNCTION: Generate AI content after payment
+export async function generateAIContentAfterPayment() {
+  const supabase = await createClient();
+  
+  try {
+    // Get user session token for authenticated edge function call
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session?.access_token) {
+      throw new Error('No session token available for plan generation');
+    }
+
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('No user found');
+    }
+
+    logger.info('Checking for user profile', { userId: user.id });
+
+    // Check if user profile exists (it should, since we saved it before payment)
+    const { data: profile, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('subscription_tier, full_name')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError) {
+      logger.error('Profile query error', profileError);
+      throw new Error(`Database error: ${profileError.message}`);
+    }
+
+    if (!profile) {
+      logger.error('No profile found for user', { userId: user.id });
+      
+      // Let's try to see if there are ANY profiles for this user
+      const { data: allProfiles, error: allProfilesError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', user.id);
+      
+      logger.error('All profiles check', { allProfiles, allProfilesError });
+      
+      throw new Error('User profile not found. Please complete onboarding first.');
+    }
+
+    logger.success('User profile found', { 
+      fullName: profile.full_name, 
+      subscriptionTier: profile.subscription_tier 
+    });
+
+    // Shipping address is already saved during onboarding before payment
+    // No need to update it here since we save onboarding data to Supabase first
+
+    logger.step('🚀 PARALLEL EXECUTION: Generating ALL AI content simultaneously');
+    
+    // 🎯 RUN ALL 4 AI FUNCTIONS IN PARALLEL FOR MAXIMUM SPEED
+    const aiGenerationPromises = [
+      // 1. Generate supplement plan
+      fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/generate-plan`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      }).then(async (response) => {
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Generate Plan: ${errorText}`);
+        }
+        return { function: 'generate-plan', success: true };
+      }).catch(error => ({ function: 'generate-plan', success: false, error: error.message })),
+
+      // 2. Generate health domains analysis
+      fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/health-domains-analysis`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      }).then(async (response) => {
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Health Domains: ${errorText}`);
+        }
+        return { function: 'health-domains-analysis', success: true };
+      }).catch(error => ({ function: 'health-domains-analysis', success: false, error: error.message })),
+
+      // 3. Generate health score
+      fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/health-score`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      }).then(async (response) => {
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Health Score: ${errorText}`);
+        }
+        return { function: 'health-score', success: true };
+      }).catch(error => ({ function: 'health-score', success: false, error: error.message })),
+
+      // 4. Generate diet plan
+      fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/generate-diet-plan`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      }).then(async (response) => {
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Diet Plan: ${errorText}`);
+        }
+        return { function: 'generate-diet-plan', success: true };
+      }).catch(error => ({ function: 'generate-diet-plan', success: false, error: error.message }))
+    ];
+
+    // Wait for ALL functions to complete (successful or failed)
+    const results = await Promise.allSettled(aiGenerationPromises);
+    
+    // Process results and log outcomes
+    let successCount = 0;
+    let failureCount = 0;
+    const failedFunctions: string[] = [];
+
+    results.forEach((result, index) => {
+      if (result.status === 'fulfilled') {
+        const functionResult = result.value;
+        if (functionResult.success) {
+          successCount++;
+          logger.success(`✅ ${functionResult.function} completed successfully`);
+        } else {
+          failureCount++;
+          failedFunctions.push(functionResult.function);
+          logger.error(`❌ ${functionResult.function} failed: ${'error' in functionResult ? functionResult.error : 'Unknown error'}`);
+        }
+      } else {
+        failureCount++;
+        const functionNames = ['generate-plan', 'health-domains-analysis', 'health-score', 'generate-diet-plan'];
+        failedFunctions.push(functionNames[index]);
+        logger.error(`❌ ${functionNames[index]} promise rejected: ${result.reason}`);
+      }
+    });
+
+    // Log summary
+    logger.success(`🎯 PARALLEL EXECUTION COMPLETE: ${successCount}/4 functions successful`);
+    
+    if (failureCount > 0) {
+      logger.warn(`⚠️ ${failureCount} functions failed: ${failedFunctions.join(', ')}`);
+      logger.info('Dashboard will show fallback messages for failed functions');
+    }
+
+    // Consider it successful if at least the supplement plan generated
+    // (since that's the core feature users pay for)
+    const planResult = results[0];
+    const planSuccessful = planResult.status === 'fulfilled' && 
+                          (planResult.value as any).success === true;
+
+    if (!planSuccessful) {
+      logger.error('❌ CRITICAL: Supplement plan generation failed - this is the core paid feature');
+      throw new Error('Failed to generate supplement plan - the core feature you paid for');
+    }
+
+    return { 
+      success: true, 
+      successfulFunctions: successCount,
+      failedFunctions: failedFunctions,
+      message: `AI content generation completed: ${successCount}/4 functions successful`
+    };
+
+  } catch (error: any) {
+    logger.error('Error generating AI content', error instanceof Error ? error : { message: String(error) });
+    return { 
+      success: false, 
+      error: error.message || 'Failed to generate AI content' 
     };
   }
 } 

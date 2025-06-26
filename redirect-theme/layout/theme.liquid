@@ -1,0 +1,175 @@
+<!doctype html>
+<html class="no-js" lang="{{ request.locale.iso_code }}">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="theme-color" content="">
+    <link rel="canonical" href="{{ canonical_url }}">
+    
+    <title>
+      {{ page_title }}
+      {%- if current_tags %} &ndash; tagged "{{ current_tags | join: ', ' }}"{% endif -%}
+      {%- if current_page != 1 %} &ndash; Page {{ current_page }}{% endif -%}
+      {%- unless page_title contains shop.name %} &ndash; {{ shop.name }}{% endunless -%}
+    </title>
+
+    {% if page_description %}
+      <meta name="description" content="{{ page_description | escape }}">
+    {% endif %}
+
+    {% render 'meta-tags' %}
+
+    <script src="{{ 'constants.js' | asset_url }}" defer="defer"></script>
+    <script src="{{ 'pubsub.js' | asset_url }}" defer="defer"></script>
+    <script src="{{ 'global.js' | asset_url }}" defer="defer"></script>
+
+    {{ content_for_header }}
+
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+      .redirect-container {
+        text-align: center;
+        padding: 50px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+      }
+      .spinner {
+        border: 4px solid rgba(255, 255, 255, 0.3);
+        border-top: 4px solid white;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 20px auto;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
+
+    <!-- Redirect script for headless storefront -->
+    <script>
+      (function() {
+        console.log('Redirect script running...');
+        console.log('Current URL:', window.location.href);
+        console.log('Referrer:', document.referrer);
+        
+        // Get current URL and path
+        const currentPath = window.location.pathname;
+        const currentSearch = window.location.search;
+        
+        // Don't redirect checkout, cart, or admin pages
+        if (currentPath.includes('/checkout') || 
+            currentPath.includes('/cart') || 
+            currentPath.includes('/admin') ||
+            currentPath.includes('/account') ||
+            currentPath.includes('/policies')) {
+          console.log('Skipping redirect for special page:', currentPath);
+          return;
+        }
+        
+        // Check multiple ways to detect if coming from checkout
+        const isFromCheckout = document.referrer.includes('/checkout') || 
+                              document.referrer.includes('checkout') ||
+                              currentSearch.includes('checkout') ||
+                              sessionStorage.getItem('shopify_checkout_completed') ||
+                              sessionStorage.getItem('pendingPayment') === 'true';
+        
+        console.log('Is from checkout?', isFromCheckout);
+        console.log('Pending payment?', sessionStorage.getItem('pendingPayment'));
+        
+        // Your app URL - dynamically detect port from 3000-3010
+        let appUrl = 'http://localhost:3002'; // Default to current port
+        
+        // Try to detect the correct port from sessionStorage if available
+        const storedPort = sessionStorage.getItem('app_port');
+        if (storedPort) {
+          appUrl = `http://localhost:${storedPort}`;
+        }
+        
+        console.log('App URL:', appUrl);
+        
+        // Always redirect to payment-success if there's pending payment data
+        if (sessionStorage.getItem('pendingPayment') === 'true' || 
+            sessionStorage.getItem('onboardingData')) {
+          console.log('Redirecting to payment-success...');
+          // Mark checkout as completed
+          sessionStorage.setItem('shopify_checkout_completed', 'true');
+          setTimeout(() => {
+            window.location.href = `${appUrl}/payment-success`;
+          }, 500);
+          return;
+        }
+        
+        // If coming from checkout, redirect to payment-success page
+        if (isFromCheckout) {
+          console.log('Redirecting to payment-success from checkout...');
+          sessionStorage.setItem('shopify_checkout_completed', 'true');
+          setTimeout(() => {
+            window.location.href = `${appUrl}/payment-success`;
+          }, 500);
+          return;
+        }
+        
+        // For all other pages, redirect to homepage
+        console.log('Redirecting to homepage...');
+        setTimeout(() => {
+          window.location.href = appUrl;
+        }, 1000);
+      })();
+    </script>
+  </head>
+
+  <body class="template-{{ template | replace: '.', ' ' | truncatewords: 1, '' | handle }}">
+    <a class="skip-to-content-link button visually-hidden" href="#MainContent">
+      {{ "accessibility.skip_to_text" | t }}
+    </a>
+
+    <div class="redirect-container">
+      <h1>{{ shop.name }}</h1>
+      <p>Processing your payment...</p>
+      <div class="spinner"></div>
+      <p><small>Redirecting to SupplementScribe AI...</small></p>
+    </div>
+
+    <main id="MainContent" class="content-for-layout focus-none" role="main" tabindex="-1">
+      {{ content_for_layout }}
+    </main>
+
+    {% comment %} Shopify scripts {% endcomment %}
+    <script>
+      window.shopUrl = '{{ request.origin }}';
+      window.routes = {
+        cart_add_url: '{{ routes.cart_add_url }}',
+        cart_change_url: '{{ routes.cart_change_url }}',
+        cart_update_url: '{{ routes.cart_update_url }}',
+        cart_url: '{{ routes.cart_url }}',
+        predictive_search_url: '{{ routes.predictive_search_url }}'
+      };
+
+      window.cartStrings = {
+        error: `{{ 'sections.cart.cart_error' | t }}`,
+        quantityError: `{{ 'sections.cart.cart_quantity_error_html' | t: quantity: '[quantity]' }}`
+      }
+
+      window.variantStrings = {
+        addToCart: `{{ 'products.product.add_to_cart' | t }}`,
+        soldOut: `{{ 'products.product.sold_out' | t }}`,
+        unavailable: `{{ 'products.product.unavailable' | t }}`,
+      }
+    </script>
+  </body>
+</html>

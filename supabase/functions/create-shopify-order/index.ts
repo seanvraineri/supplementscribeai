@@ -31,10 +31,12 @@ interface ShopifyOrderRequest {
       first_name?: string;
       last_name?: string;
       address1: string;
+      address2?: string;
       city: string;
       province: string;
       country: string;
       zip: string;
+      phone?: string;
     };
     financial_status: 'paid';
     tags: string;
@@ -92,6 +94,17 @@ Deno.serve(async (req) => {
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 403,
+      });
+    }
+
+    // Validate shipping address for supplement delivery
+    if (!profile.shipping_address_line1 || !profile.shipping_city || 
+        !profile.shipping_state || !profile.shipping_postal_code || !profile.shipping_country) {
+      return new Response(JSON.stringify({ 
+        error: 'Complete shipping address required for supplement delivery. Please update your profile.' 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
       });
     }
 
@@ -170,11 +183,13 @@ Deno.serve(async (req) => {
         shipping_address: {
           first_name: profile.full_name?.split(' ')[0] || 'Customer',
           last_name: profile.full_name?.split(' ').slice(1).join(' ') || '',
-          address1: '123 Main Street', // TODO: Add address fields to user_profiles
-          city: 'Anytown',
-          province: 'CA',
-          country: 'US',
-          zip: '12345'
+          address1: profile.shipping_address_line1 || '',
+          address2: profile.shipping_address_line2 || '',
+          city: profile.shipping_city || '',
+          province: profile.shipping_state || '',
+          country: profile.shipping_country || '',
+          zip: profile.shipping_postal_code || '',
+          phone: profile.shipping_phone || ''
         },
         financial_status: 'paid',
         tags: 'SupplementScribe AI, Monthly Subscription, OK Capsule'

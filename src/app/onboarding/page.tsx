@@ -27,6 +27,7 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, Sparkles, Brain, Heart, FileText, User, ChevronLeft, ChevronRight, Users } from 'lucide-react';
 import { logger } from '@/lib/logger';
+import { StripeCheckoutModal } from '@/components/payment/StripeCheckoutModal';
 
 // Fallback health score creation function
 async function createFallbackHealthScore(supabase: any, userId: string, onboardingData: any) {
@@ -176,6 +177,12 @@ export default function OnboardingPage() {
   const [familySetup, setFamilySetup] = useState<any>(null);
   const [familySetupLoaded, setFamilySetupLoaded] = useState(false);
   const familySetupProcessedRef = useRef(false);
+  const router = useRouter();
+
+  // Payment modal state
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [pendingOnboardingData, setPendingOnboardingData] = useState<OnboardingData | null>(null);
+  const [paymentCompleted, setPaymentCompleted] = useState(false);
 
   const [processingSteps, setProcessingSteps] = useState<ProcessingStep[]>([
     {
@@ -235,7 +242,6 @@ export default function OnboardingPage() {
       active: false
     }
   ]);
-  const router = useRouter();
 
   // Detect family setup from localStorage (only run once)
   useEffect(() => {
@@ -426,199 +432,87 @@ export default function OnboardingPage() {
     setIsSubmitting(true);
     
     try {
-      logger.info('Starting onboarding submission', { hasHealthGoals: data.healthGoals?.length > 0 });
+      logger.info('Saving onboarding data first', { 
+        hasHealthGoals: data.healthGoals?.length > 0,
+        subscriptionTier: data.subscription_tier 
+      });
       
-      // Step 1: Save Profile
-      updateProcessingStep('profile', false, true);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Step 2: Analysis
-      updateProcessingStep('profile', true, false);
-      updateProcessingStep('analyze', false, true);
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Step 3: Plan Generation
-      updateProcessingStep('analyze', true, false);
-      updateProcessingStep('plan', false, true);
-      
-      // Call the actual save function with family setup data
+      // Save onboarding data to Supabase first
       const result = await saveOnboardingData(data, familySetup);
       
-      if (result?.error) {
-        logger.error('Onboarding submission failed', { error: result.error });
-        alert(`Error saving profile: ${result.error}`);
-        setIsSubmitting(false); // Reset on error
-        return;
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to save onboarding data');
+      }
+      
+      logger.success('Onboarding data saved, showing payment modal');
+      
+      // Now show payment modal
+      setPendingOnboardingData(data);
+      setShowPaymentModal(true);
+      setIsSubmitting(false);
+      
+    } catch (error: any) {
+      logger.error('Failed to save onboarding data', error);
+      setIsSubmitting(false);
+      // Show error to user
+      alert('Failed to save your information. Please try again.');
+    }
+  };
+
+  const handlePaymentSuccess = () => {
+    // Payment successful - close modal and mark as completed
+    setShowPaymentModal(false);
+    setPaymentCompleted(true);
+    logger.success('Payment completed successfully');
+  };
+
+  const handlePaymentClose = () => {
+    setShowPaymentModal(false);
+    setPendingOnboardingData(null);
+  };
+
+  const onFinalSubmit = async () => {
+    if (!paymentCompleted) {
+      // Payment not completed yet, show payment modal
+      const data = form.getValues();
+      setPendingOnboardingData(data);
+      setShowPaymentModal(true);
+      return;
+    }
+
+    // Payment completed, start AI generation
+    setIsSubmitting(true);
+    
+    try {
+      logger.info('Starting AI generation after payment');
+      
+      // Import and call the AI generation function directly
+      const { generateAIContentAfterPayment } = await import('./actions');
+      const result = await generateAIContentAfterPayment();
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to generate plan');
       }
 
-      // Step 4: PARALLEL GENERATION - Run all functions simultaneously for speed!
-      updateProcessingStep('plan', true, false);
+      logger.success('AI generation completed, redirecting to dashboard');
       
-      // Get session once for all parallel operations
-          const { createClient } = await import('@/lib/supabase/client');
-          const supabase = createClient();
-          const { data: { session } } = await supabase.auth.getSession();
-          
-          if (!session) {
-        logger.warn('No session found, attempting refresh');
-            const { data: { session: refreshedSession } } = await supabase.auth.refreshSession();
-            if (!refreshedSession) {
-          throw new Error('Unable to authenticate for generating health data');
-            }
-          }
-          
-          const currentSession = session || (await supabase.auth.getSession()).data.session;
-          
-          if (currentSession) {
-        logger.info('🚀 Starting PARALLEL generation of all health data...');
-        
-        // Update all processing steps to show they're running
-        updateProcessingStep('health-score', false, true);
-        updateProcessingStep('health-domains', false, true);
-        updateProcessingStep('diet-plan', false, true);
-        
-        // Run all three functions in PARALLEL
-        const [healthScoreResult, healthDomainsResult, dietPlanResult] = await Promise.allSettled([
-          // 1. Health Score Generation
-          (async () => {
-            try {
-              logger.step('📊 Generating health score...');
-              const response = await supabase.functions.invoke('health-score', {
-              headers: {
-                Authorization: `Bearer ${currentSession.access_token}`,
-              },
-            });
-            
-              if (response.error) {
-                throw response.error;
-              }
-              
-              logger.success('✅ Health score generated');
-              updateProcessingStep('health-score', true, false);
-              return response;
-            } catch (error) {
-              logger.error('Health score generation failed:', error instanceof Error ? error : { message: String(error) });
-              // Try fallback
-                 const { data: { user } } = await supabase.auth.getUser();
-                 if (user) {
-                   await createFallbackHealthScore(supabase, user.id, data);
-                logger.success('✅ Fallback health score created');
-                updateProcessingStep('health-score', true, false);
-              }
-              throw error;
-            }
-          })(),
-          
-          // 2. Health Domains Analysis
-          (async () => {
-            try {
-              logger.step('🧬 Analyzing health domains...');
-              const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/health-domains-analysis`, {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Bearer ${currentSession.access_token}`,
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ userId: currentSession.user.id }),
-              });
-              
-              if (!response.ok) {
-                throw new Error(`Health domains failed: ${response.status}`);
-              }
-              
-              logger.success('✅ Health domains analyzed');
-              updateProcessingStep('health-domains', true, false);
-              return response;
-            } catch (error) {
-              logger.error('Health domains analysis failed:', error instanceof Error ? error : { message: String(error) });
-              updateProcessingStep('health-domains', true, false); // Mark complete anyway
-              throw error;
-            }
-          })(),
-          
-          // 3. Diet Plan Generation
-          (async () => {
-            try {
-              logger.step('🍽️ Creating personalized diet plan...');
-              const response = await supabase.functions.invoke('generate-diet-plan', {
-                headers: {
-                  Authorization: `Bearer ${currentSession.access_token}`,
-                },
-              });
-              
-              if (response.error) {
-                throw response.error;
-              }
-              
-              if (response.data?.success) {
-                logger.success('✅ Diet plan created');
-                updateProcessingStep('diet-plan', true, false);
-              }
-              
-              return response;
-            } catch (error) {
-              logger.error('Diet plan generation failed:', error instanceof Error ? error : { message: String(error) });
-              updateProcessingStep('diet-plan', true, false); // Mark complete anyway
-              throw error;
-            }
-          })()
-        ]);
-        
-        // Log results
-        const successCount = [healthScoreResult, healthDomainsResult, dietPlanResult]
-          .filter(result => result.status === 'fulfilled').length;
-        
-        logger.info(`🎯 Parallel generation complete: ${successCount}/3 successful`);
-        
-        // Log any failures for debugging
-        if (healthScoreResult.status === 'rejected') {
-          logger.warn('Health score failed but continuing:', healthScoreResult.reason);
-        }
-        if (healthDomainsResult.status === 'rejected') {
-          logger.warn('Health domains failed but continuing:', healthDomainsResult.reason);
-        }
-        if (dietPlanResult.status === 'rejected') {
-          logger.warn('Diet plan failed but continuing:', dietPlanResult.reason);
-        }
-      }
+      // CRITICAL: Mark onboarding as completed to prevent redirect loops
+      sessionStorage.setItem('onboarding_completed', 'true');
+      localStorage.setItem('onboarding_completed', 'true');
       
-      if (familySetup?.isAdmin) {
-        updateProcessingStep('family-setup', false, true);
-        logger.step('Setting up family invite links');
-        
-        try {
-          // Store family member data for dashboard access
-          // The actual invite link generation will happen in the dashboard
-          logger.success('Family setup prepared - invite links will be available in dashboard');
-          await new Promise(resolve => setTimeout(resolve, 1500));
-          updateProcessingStep('family-setup', true, false);
-        } catch (familyError) {
-          logger.error('Family setup error', familyError instanceof Error ? familyError : { message: String(familyError) });
-          // Don't fail onboarding for family setup issues
-          updateProcessingStep('family-setup', true, false);
-        }
-      }
+      // Set completion cookie to help middleware
+      document.cookie = 'onboarding_completed=true; path=/; max-age=300'; // 5 minutes
       
-      // Step 6: Complete
-      updateProcessingStep('complete', true, false);
+      // EXPLICIT: Never allow redirect back to onboarding after this point
+      console.log('🚫 ONBOARDING COMPLETED - Redirecting to dashboard, preventing any future onboarding redirects');
       
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Clear family setup data from localStorage after successful onboarding
-      if (familySetup) {
-        localStorage.removeItem('familySetup');
-        localStorage.removeItem('familyJoin');
-        setFamilySetup(null);
-        setFamilySetupLoaded(false);
-        familySetupProcessedRef.current = false;
-      }
-      
-      logger.success('Frictionless onboarding completed successfully');
+      // Success! Redirect to dashboard immediately and reliably
       router.push('/dashboard');
-    } catch (error) {
-      logger.error('Error submitting onboarding', error instanceof Error ? error : { message: String(error) });
-      alert('An error occurred while saving your information. Please try again.');
-      setIsSubmitting(false); // Reset on error
+
+    } catch (err: any) {
+      logger.error('AI generation failed', err);
+      setIsSubmitting(false);
+      alert('Failed to generate your plan. Please try again or contact support.');
     }
   };
 
@@ -692,7 +586,7 @@ export default function OnboardingPage() {
     } else if (step < totalSteps) {
       nextStep();
     } else {
-      form.handleSubmit(onSubmit)();
+      onFinalSubmit();
     }
   };
 
@@ -735,7 +629,11 @@ export default function OnboardingPage() {
   const isLastStep = step === totalSteps;
 
   const getNextLabel = () => {
-    if (isLastStep) return form.formState.isSubmitting ? 'Creating Plan...' : 'Submit & Create My Plan';
+    if (isLastStep) {
+      if (form.formState.isSubmitting) return 'Creating Plan...';
+      if (!paymentCompleted) return 'Complete Payment & Create Plan';
+      return 'Generate My Personalized Plan';
+    }
     if ([1, 2, 7, 8, 9, 10, 11].includes(step)) return 'Continue';
     return 'Next';
   }
@@ -792,6 +690,15 @@ export default function OnboardingPage() {
           </form>
         </FormProvider>
       </div>
+      {showPaymentModal && pendingOnboardingData && (
+        <StripeCheckoutModal
+          isOpen={showPaymentModal}
+          onClose={handlePaymentClose}
+          selectedTier={pendingOnboardingData.subscription_tier}
+          onboardingData={pendingOnboardingData}
+          onPaymentSuccess={handlePaymentSuccess}
+        />
+      )}
     </div>
   );
 } 
