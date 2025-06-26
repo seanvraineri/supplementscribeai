@@ -325,6 +325,58 @@ Deno.serve(async (req) => {
 
     console.log('Successfully stored supplement plan');
 
+    // 🚀 AUTOMATIC ORDER CREATION: Create Shopify order for full subscription users
+    let orderCreationResult = null;
+    if (profile.subscription_tier === 'full') {
+      try {
+        console.log('🛒 Creating automatic supplement order for full subscription user...');
+        
+        // Extract supplement names from the plan
+        const supplementNames = planDetails.recommendations.map((rec: any) => rec.supplement);
+        
+        // Get the plan ID that was just created
+        const { data: newPlan, error: planQueryError } = await supabase
+          .from('supplement_plans')
+          .select('id')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+        
+        if (planQueryError || !newPlan) {
+          console.error('❌ Could not retrieve plan ID for order creation:', planQueryError);
+        } else {
+          // Call the create-shopify-order function
+          const orderResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/create-shopify-order`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`
+            },
+            body: JSON.stringify({
+              userId: userId,
+              supplementPlanId: newPlan.id,
+              supplements: supplementNames
+            })
+          });
+          
+          if (orderResponse.ok) {
+            orderCreationResult = await orderResponse.json();
+            console.log('✅ Automatic order created successfully:', orderCreationResult.shopifyOrderId);
+          } else {
+            const errorText = await orderResponse.text();
+            console.error('❌ Order creation failed:', errorText);
+            // Don't fail plan generation if order creation fails
+          }
+        }
+      } catch (orderError) {
+        console.error('❌ Order creation error (not failing plan):', orderError);
+        // Continue with plan generation even if order creation fails
+      }
+    } else {
+      console.log('ℹ️ User has software-only subscription - no automatic order created');
+    }
+
     // 🧠 SURGICAL ADDITION: Store AI-detected symptom patterns for memory synchronization
     try {
       console.log('🧬 Storing symptom patterns for AI memory synchronization...');
@@ -414,9 +466,19 @@ Deno.serve(async (req) => {
       plan: planDetails,
       message: 'Ultimate personalized 6-supplement pack generated',
       personalization_tier: personalizationTier,
+      order: orderCreationResult ? {
+        created: true,
+        shopifyOrderId: orderCreationResult.shopifyOrderId,
+        nextOrderDate: orderCreationResult.nextOrderDate,
+        message: 'Automatic supplement delivery initiated'
+      } : {
+        created: false,
+        reason: profile.subscription_tier === 'full' ? 'Order creation failed' : 'Software-only subscription'
+      },
       debug: {
         userId,
         profileExists: !!profile,
+        subscriptionTier: profile.subscription_tier,
         healthDataCounts: {
           allergies: healthHistory.allergies.length,
           conditions: healthHistory.conditions.length,

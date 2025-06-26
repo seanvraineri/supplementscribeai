@@ -1,0 +1,257 @@
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from 'jsr:@supabase/supabase-js@2';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+interface CreateOrderRequest {
+  userId: string;
+  supplementPlanId: string;
+  supplements: string[]; // Array of 6 supplement names
+}
+
+interface ShopifyOrderRequest {
+  order: {
+    line_items: Array<{
+      variant_id: number;
+      quantity: number;
+      properties: Array<{
+        name: string;
+        value: string;
+      }>;
+    }>;
+    customer: {
+      email: string;
+      first_name?: string;
+      last_name?: string;
+    };
+    shipping_address: {
+      first_name?: string;
+      last_name?: string;
+      address1: string;
+      city: string;
+      province: string;
+      country: string;
+      zip: string;
+    };
+    financial_status: 'paid';
+    tags: string;
+  };
+}
+
+Deno.serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
+  try {
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    const { userId, supplementPlanId, supplements }: CreateOrderRequest = await req.json();
+
+    console.log('Creating Shopify order for user:', userId);
+    console.log('Supplements:', supplements);
+
+    // Validate input
+    if (!userId || !supplementPlanId || !supplements || supplements.length !== 6) {
+      return new Response(JSON.stringify({ 
+        error: 'Invalid request: userId, supplementPlanId, and exactly 6 supplements required' 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      });
+    }
+
+    // Get user profile for shipping info
+    const { data: profile, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (profileError || !profile) {
+      console.error('User profile not found:', profileError);
+      return new Response(JSON.stringify({ 
+        error: 'User profile not found' 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 404,
+      });
+    }
+
+    // Check if user has full subscription
+    if (profile.subscription_tier !== 'full') {
+      return new Response(JSON.stringify({ 
+        error: 'Order creation only available for full subscription users' 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 403,
+      });
+    }
+
+    // Check for existing order today (prevent duplicates)
+    const today = new Date().toISOString().split('T')[0];
+    const { data: existingOrder } = await supabase
+      .from('supplement_orders')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('order_date', today)
+      .single();
+
+    if (existingOrder) {
+      return new Response(JSON.stringify({ 
+        error: 'Order already created today',
+        orderId: existingOrder.id 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 409,
+      });
+    }
+
+    // Convert supplement names to OK Capsule format (lowercase with hyphens)
+    const formatSupplementName = (name: string): string => {
+      return name.toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, '')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+    };
+
+    // Create line item properties for the 6 supplements
+    const lineItemProperties = supplements.map((supplement, index) => ({
+      name: `supplement_${index + 1}`,
+      value: formatSupplementName(supplement)
+    }));
+
+    // Add custom pack title
+    lineItemProperties.push({
+      name: 'pack_title',
+      value: `${profile.full_name || 'Custom'} Personalized Pack`
+    });
+
+    // Shopify API configuration
+    const shopifyStore = Deno.env.get('SHOPIFY_STORE_NAME');
+    const shopifyToken = Deno.env.get('SHOPIFY_ACCESS_TOKEN');
+    const shopifyApiVersion = Deno.env.get('SHOPIFY_API_VERSION') || '2023-10';
+
+    if (!shopifyStore || !shopifyToken) {
+      console.error('Missing Shopify configuration');
+      return new Response(JSON.stringify({ 
+        error: 'Shopify configuration missing' 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      });
+    }
+
+    // OK Capsule pack product details (from our testing)
+    const PACK_VARIANT_ID = 42843874787411; // "Allergy Pack" variant ID
+    const PACK_PRICE = 75.00; // $75 for the complete package
+
+    // Create Shopify order
+    const orderData: ShopifyOrderRequest = {
+      order: {
+        line_items: [{
+          variant_id: PACK_VARIANT_ID,
+          quantity: 1,
+          properties: lineItemProperties
+        }],
+        customer: {
+          email: `user-${userId}@supplementscribe.ai`, // Use consistent test email
+          first_name: profile.full_name?.split(' ')[0] || 'Customer',
+          last_name: profile.full_name?.split(' ').slice(1).join(' ') || ''
+        },
+        shipping_address: {
+          first_name: profile.full_name?.split(' ')[0] || 'Customer',
+          last_name: profile.full_name?.split(' ').slice(1).join(' ') || '',
+          address1: '123 Main Street', // TODO: Add address fields to user_profiles
+          city: 'Anytown',
+          province: 'CA',
+          country: 'US',
+          zip: '12345'
+        },
+        financial_status: 'paid',
+        tags: 'SupplementScribe AI, Monthly Subscription, OK Capsule'
+      }
+    };
+
+    console.log('Creating Shopify order with data:', JSON.stringify(orderData, null, 2));
+
+    const shopifyResponse = await fetch(`https://${shopifyStore}.myshopify.com/admin/api/${shopifyApiVersion}/orders.json`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Shopify-Access-Token': shopifyToken,
+      },
+      body: JSON.stringify(orderData),
+    });
+
+    if (!shopifyResponse.ok) {
+      const errorText = await shopifyResponse.text();
+      console.error('Shopify API error:', errorText);
+      return new Response(JSON.stringify({ 
+        error: 'Failed to create Shopify order',
+        details: errorText 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      });
+    }
+
+    const shopifyOrder = await shopifyResponse.json();
+    console.log('Shopify order created:', shopifyOrder.order.id);
+
+    // Calculate next order date (30 days from now)
+    const nextOrderDate = new Date();
+    nextOrderDate.setDate(nextOrderDate.getDate() + 30);
+
+    // Store order in our database
+    const { data: orderRecord, error: orderError } = await supabase
+      .from('supplement_orders')
+      .insert({
+        user_id: userId,
+        supplement_plan_id: supplementPlanId,
+        shopify_order_id: shopifyOrder.order.id.toString(),
+        order_date: today,
+        next_order_date: nextOrderDate.toISOString().split('T')[0],
+        subscription_tier: 'full',
+        status: 'pending',
+        order_total: PACK_PRICE
+      })
+      .select()
+      .single();
+
+    if (orderError) {
+      console.error('Failed to store order record:', orderError);
+      // Order was created in Shopify but not stored locally - log for manual cleanup
+      console.error('MANUAL CLEANUP NEEDED: Shopify order', shopifyOrder.order.id, 'not stored locally');
+    }
+
+    return new Response(JSON.stringify({ 
+      success: true,
+      shopifyOrderId: shopifyOrder.order.id,
+      orderRecord: orderRecord,
+      supplements: supplements,
+      nextOrderDate: nextOrderDate.toISOString().split('T')[0],
+      message: 'Supplement order created successfully'
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+
+  } catch (error: any) {
+    console.error('Error in create-shopify-order function:', error);
+    return new Response(JSON.stringify({ 
+      error: error.message || 'Internal server error',
+      stack: error.stack
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 500,
+    });
+  }
+}); 

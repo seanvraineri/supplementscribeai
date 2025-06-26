@@ -215,6 +215,19 @@ export default function DashboardPage() {
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
+  // Sidebar navigation items
+  const sidebarItems = [
+    { id: 'dashboard', icon: Home, label: 'Dashboard' },
+    { id: 'supplement-plan', icon: Pill, label: 'Supplement Plan' },
+    { id: 'diet-groceries', icon: Apple, label: 'Diet & Groceries' },
+    { id: 'analysis', icon: BarChart3, label: 'Comprehensive Analysis' },
+    { id: 'tracking', icon: Activity, label: 'Tracking' },
+    { id: 'ai-chat', icon: MessageSquare, label: 'AI Chat' },
+    { id: 'product-checker', icon: Search, label: 'Product Checker' },
+    { id: 'study-buddy', icon: BookOpen, label: 'Study Buddy' },
+    { id: 'settings', icon: Settings, label: 'Settings' },
+  ];
+
   // Automatically scroll chat to bottom
   useEffect(() => {
     if (chatContainerRef.current) {
@@ -946,20 +959,6 @@ export default function DashboardPage() {
     }
     return productName;
   };
-
-
-
-  const sidebarItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: Home },
-    { id: 'supplement-plan', label: 'Supplement Plan', icon: Pill },
-    { id: 'diet-groceries', label: 'Diet & Groceries', icon: Apple },
-    { id: 'analysis', label: 'Comprehensive Analysis', icon: BarChart3 },
-    { id: 'tracking', label: 'Tracking', icon: Activity },
-    { id: 'ai-chat', label: 'AI Chat', icon: MessageSquare },
-    { id: 'product-checker', label: 'Product Checker', icon: Search },
-    { id: 'study-buddy', label: 'Study Buddy', icon: BookOpen },
-    { id: 'settings', label: 'Settings', icon: Settings },
-  ];
 
   const renderDashboardContent = () => (
     <div className="h-full flex flex-col space-y-6">
