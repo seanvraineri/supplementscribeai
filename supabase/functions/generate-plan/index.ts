@@ -1910,6 +1910,272 @@ function analyzeRootCausePatterns(activeProblems: any[], profile: any, healthHis
     });
   }
   
+  // SLEEP DISORDER PATTERN - Safe sleep supplements only
+  const sleepSigns = activeProblems.filter(p => 
+    ['sleep_quality', 'energy_levels', 'brain_fog', 'mood_changes'].includes(p.key)
+  );
+  
+  const hasSleepIssues = 
+    sleepSigns.some(s => s.key === 'sleep_quality') || // Must have sleep quality issues
+    // Check medical conditions for sleep disorders
+    healthHistory.conditions.some((condition: string) => 
+      condition.toLowerCase().includes('sleep apnea') || 
+      condition.toLowerCase().includes('insomnia') ||
+      condition.toLowerCase().includes('restless leg')
+    ) ||
+    // Check medications for sleep-affecting drugs
+    healthHistory.medications.some((medication: string) => 
+      medication.toLowerCase().includes('sleep') || 
+      medication.toLowerCase().includes('melatonin') ||
+      medication.toLowerCase().includes('ambien')
+    );
+  
+  if (hasSleepIssues) {
+    const allSleepIndicators = [
+      ...sleepSigns.map(s => s.problem),
+      ...healthHistory.conditions.filter((c: string) => 
+        c.toLowerCase().includes('sleep apnea') || c.toLowerCase().includes('insomnia')
+      ),
+      ...(healthHistory.medications.some((m: string) => m.toLowerCase().includes('sleep')) ? ['Taking sleep medications'] : [])
+    ];
+    
+    patterns.push({
+      pattern_name: 'SLEEP DISORDER',
+      symptoms: allSleepIndicators,
+      synergistic_supplements: ['Magnesium', 'Melatonin', 'Theanine'],
+      root_cause_explanation: 'Sleep disruption affecting energy, cognition, and mood - DETECTED from multiple sources'
+    });
+  }
+  
+  // TOXIC BURDEN PATTERN - Safe detox supplements only
+  const toxicSigns = activeProblems.filter(p => 
+    ['brain_fog', 'energy_levels', 'skin_issues', 'digestive_issues', 'joint_pain'].includes(p.key)
+  );
+  
+  const hasToxicBurden = 
+    toxicSigns.length >= 3 || // Multiple system involvement
+    // Check user-entered biomarkers for toxic exposure
+    (profile.known_biomarkers && (
+      profile.known_biomarkers.toLowerCase().includes('heavy metal') || 
+      profile.known_biomarkers.toLowerCase().includes('mercury') ||
+      profile.known_biomarkers.toLowerCase().includes('lead') ||
+      profile.known_biomarkers.toLowerCase().includes('cadmium')
+    )) ||
+    // Check medical conditions for toxin-related issues
+    healthHistory.conditions.some((condition: string) => 
+      condition.toLowerCase().includes('chemical sensitivity') || 
+      condition.toLowerCase().includes('mcs') ||
+      condition.toLowerCase().includes('environmental illness')
+    );
+  
+  if (hasToxicBurden) {
+    const allToxicIndicators = [
+      ...toxicSigns.map(s => s.problem),
+      ...(profile.known_biomarkers && profile.known_biomarkers.toLowerCase().includes('heavy metal') ? ['Heavy metal exposure (user-entered)'] : []),
+      ...healthHistory.conditions.filter((c: string) => 
+        c.toLowerCase().includes('chemical sensitivity') || c.toLowerCase().includes('environmental illness')
+      )
+    ];
+    
+    patterns.push({
+      pattern_name: 'TOXIC BURDEN',
+      symptoms: allToxicIndicators,
+      synergistic_supplements: ['NAC', 'Vitamin C', 'Glutathione'],
+      root_cause_explanation: 'Accumulated toxins affecting multiple body systems - DETECTED from multiple sources'
+    });
+  }
+  
+  // ADRENAL FATIGUE PATTERN - Safe adaptogenic supplements
+  const adrenalSigns = activeProblems.filter(p => 
+    ['energy_levels', 'stress_levels', 'sugar_cravings', 'mood_changes', 'sleep_quality'].includes(p.key)
+  );
+  
+  const hasAdrenalFatigue = 
+    adrenalSigns.length >= 3 || // Multiple stress-related symptoms
+    // Check user-entered biomarkers for adrenal markers
+    (profile.known_biomarkers && (
+      profile.known_biomarkers.toLowerCase().includes('cortisol') || 
+      profile.known_biomarkers.toLowerCase().includes('dhea') ||
+      profile.known_biomarkers.toLowerCase().includes('adrenal')
+    )) ||
+    // Check medical conditions for stress-related issues
+    healthHistory.conditions.some((condition: string) => 
+      condition.toLowerCase().includes('adrenal') || 
+      condition.toLowerCase().includes('chronic fatigue') ||
+      condition.toLowerCase().includes('burnout')
+    );
+  
+  if (hasAdrenalFatigue) {
+    const allAdrenalIndicators = [
+      ...adrenalSigns.map(s => s.problem),
+      ...(profile.known_biomarkers && profile.known_biomarkers.toLowerCase().includes('cortisol') ? ['Cortisol dysregulation (user-entered)'] : []),
+      ...healthHistory.conditions.filter((c: string) => 
+        c.toLowerCase().includes('adrenal') || c.toLowerCase().includes('chronic fatigue')
+      )
+    ];
+    
+    patterns.push({
+      pattern_name: 'ADRENAL FATIGUE',
+      symptoms: allAdrenalIndicators,
+      synergistic_supplements: ['Ashwagandha', 'Rhodiola', 'Vitamin C'],
+      root_cause_explanation: 'Chronic stress overwhelming adrenal function - DETECTED from multiple sources'
+    });
+  }
+  
+  // NUTRITIONAL DEFICIENCY PATTERN - Safe basic nutrients
+  const deficiencySigns = activeProblems.filter(p => 
+    ['energy_levels', 'immune_system', 'brain_fog', 'mood_changes', 'skin_issues'].includes(p.key)
+  );
+  
+  const hasNutritionalDeficiencies = 
+    deficiencySigns.length >= 2 ||
+    // Check user-entered biomarkers for specific deficiencies
+    (profile.known_biomarkers && (
+      profile.known_biomarkers.toLowerCase().includes('vitamin d') || 
+      profile.known_biomarkers.toLowerCase().includes('b12') ||
+      profile.known_biomarkers.toLowerCase().includes('iron') ||
+      profile.known_biomarkers.toLowerCase().includes('magnesium') ||
+      profile.known_biomarkers.toLowerCase().includes('zinc')
+    )) ||
+    // Check medical conditions that commonly cause deficiencies
+    healthHistory.conditions.some((condition: string) => 
+      condition.toLowerCase().includes('anemia') || 
+      condition.toLowerCase().includes('malabsorption') ||
+      condition.toLowerCase().includes('celiac')
+    );
+  
+  if (hasNutritionalDeficiencies) {
+    const allDeficiencyIndicators = [
+      ...deficiencySigns.map(s => s.problem),
+      ...(profile.known_biomarkers && profile.known_biomarkers.toLowerCase().includes('vitamin d') ? ['Vitamin D deficiency (user-entered)'] : []),
+      ...(profile.known_biomarkers && profile.known_biomarkers.toLowerCase().includes('b12') ? ['B12 deficiency (user-entered)'] : []),
+      ...(profile.known_biomarkers && profile.known_biomarkers.toLowerCase().includes('iron') ? ['Iron deficiency (user-entered)'] : []),
+      ...healthHistory.conditions.filter((c: string) => 
+        c.toLowerCase().includes('anemia') || c.toLowerCase().includes('malabsorption')
+      )
+    ];
+    
+    patterns.push({
+      pattern_name: 'NUTRITIONAL DEFICIENCY',
+      symptoms: allDeficiencyIndicators,
+      synergistic_supplements: ['Vitamin D', 'Vitamin B12', 'Easy Iron'],
+      root_cause_explanation: 'Multiple nutrient deficiencies affecting energy and health - DETECTED from multiple sources'
+    });
+  }
+  
+  // HYPOTHYROID DYSFUNCTION PATTERN - Safe thyroid support supplements ONLY
+  const hypothyroidSigns = activeProblems.filter(p => 
+    ['energy_levels', 'weight_management', 'brain_fog', 'mood_changes'].includes(p.key)
+  );
+  
+  const hasHypothyroidIssues = 
+    hypothyroidSigns.length >= 3 || // Multiple hypothyroid symptoms
+    // Check user-entered biomarkers for hypothyroid markers (HIGH TSH, LOW T3/T4)
+    (profile.known_biomarkers && (
+      (profile.known_biomarkers.toLowerCase().includes('tsh') && profile.known_biomarkers.toLowerCase().includes('high')) ||
+      (profile.known_biomarkers.toLowerCase().includes('t3') && profile.known_biomarkers.toLowerCase().includes('low')) ||
+      (profile.known_biomarkers.toLowerCase().includes('t4') && profile.known_biomarkers.toLowerCase().includes('low'))
+    )) ||
+    // Check medical conditions for hypothyroid conditions
+    healthHistory.conditions.some((condition: string) => 
+      condition.toLowerCase().includes('hypothyroid') || 
+      condition.toLowerCase().includes('hashimoto') ||
+      condition.toLowerCase().includes('underactive thyroid')
+    );
+  
+  if (hasHypothyroidIssues) {
+    const allHypothyroidIndicators = [
+      ...hypothyroidSigns.map(s => s.problem),
+      ...(profile.known_biomarkers && profile.known_biomarkers.toLowerCase().includes('tsh') && profile.known_biomarkers.toLowerCase().includes('high') ? ['High TSH (user-entered)'] : []),
+      ...healthHistory.conditions.filter((c: string) => 
+        c.toLowerCase().includes('hypothyroid') || c.toLowerCase().includes('hashimoto')
+      )
+    ];
+    
+    patterns.push({
+      pattern_name: 'HYPOTHYROID DYSFUNCTION',
+      symptoms: allHypothyroidIndicators,
+      synergistic_supplements: ['Ashwagandha', 'Vitamin D', 'Zinc'],
+      root_cause_explanation: 'Underactive thyroid affecting metabolism and energy - DETECTED from multiple sources'
+    });
+  }
+  
+  // HYPERTHYROID DYSFUNCTION PATTERN - Safe calming supplements ONLY (NO thyroid stimulants)
+  const hyperthyroidSigns = activeProblems.filter(p => 
+    ['stress_levels', 'sleep_quality', 'mood_changes'].includes(p.key)
+  );
+  
+  const hasHyperthyroidIssues = 
+    // Check user-entered biomarkers for hyperthyroid markers (LOW TSH, HIGH T3/T4)
+    (profile.known_biomarkers && (
+      (profile.known_biomarkers.toLowerCase().includes('tsh') && profile.known_biomarkers.toLowerCase().includes('low')) ||
+      (profile.known_biomarkers.toLowerCase().includes('t3') && profile.known_biomarkers.toLowerCase().includes('high')) ||
+      (profile.known_biomarkers.toLowerCase().includes('t4') && profile.known_biomarkers.toLowerCase().includes('high'))
+    )) ||
+    // Check medical conditions for hyperthyroid conditions
+    healthHistory.conditions.some((condition: string) => 
+      condition.toLowerCase().includes('hyperthyroid') || 
+      condition.toLowerCase().includes('graves') ||
+      condition.toLowerCase().includes('overactive thyroid')
+    );
+  
+  if (hasHyperthyroidIssues) {
+    const allHyperthyroidIndicators = [
+      ...hyperthyroidSigns.map(s => s.problem),
+      ...(profile.known_biomarkers && profile.known_biomarkers.toLowerCase().includes('tsh') && profile.known_biomarkers.toLowerCase().includes('low') ? ['Low TSH (user-entered)'] : []),
+      ...healthHistory.conditions.filter((c: string) => 
+        c.toLowerCase().includes('hyperthyroid') || c.toLowerCase().includes('graves')
+      )
+    ];
+    
+    patterns.push({
+      pattern_name: 'HYPERTHYROID DYSFUNCTION',
+      symptoms: allHyperthyroidIndicators,
+      synergistic_supplements: ['Magnesium', 'Theanine', 'Omega-3'],
+      root_cause_explanation: 'Overactive thyroid requiring calming support - DETECTED from multiple sources'
+    });
+  }
+  
+  // CHRONIC INFECTION PATTERN - Safe immune support supplements
+  const infectionSigns = activeProblems.filter(p => 
+    ['energy_levels', 'immune_system', 'joint_pain', 'brain_fog', 'mood_changes'].includes(p.key)
+  );
+  
+  const hasChronicInfection = 
+    infectionSigns.length >= 3 || // Multiple infection-related symptoms
+    // Check medical conditions for chronic infections
+    healthHistory.conditions.some((condition: string) => 
+      condition.toLowerCase().includes('lyme') || 
+      condition.toLowerCase().includes('epstein barr') ||
+      condition.toLowerCase().includes('chronic fatigue') ||
+      condition.toLowerCase().includes('fibromyalgia') ||
+      condition.toLowerCase().includes('candida') ||
+      condition.toLowerCase().includes('sibo')
+    ) ||
+    // Check medications for chronic infection treatments
+    healthHistory.medications.some((medication: string) => 
+      medication.toLowerCase().includes('antibiotic') || 
+      medication.toLowerCase().includes('antiviral') ||
+      medication.toLowerCase().includes('antifungal')
+    );
+  
+  if (hasChronicInfection) {
+    const allInfectionIndicators = [
+      ...infectionSigns.map(s => s.problem),
+      ...healthHistory.conditions.filter((c: string) => 
+        c.toLowerCase().includes('lyme') || c.toLowerCase().includes('epstein barr') || c.toLowerCase().includes('chronic fatigue')
+      ),
+      ...(healthHistory.medications.some((m: string) => m.toLowerCase().includes('antibiotic')) ? ['Long-term antibiotic use'] : [])
+    ];
+    
+    patterns.push({
+      pattern_name: 'CHRONIC INFECTION',
+      symptoms: allInfectionIndicators,
+      synergistic_supplements: ['Vitamin C', 'Vitamin D', 'Zinc'],
+      root_cause_explanation: 'Chronic infection burden affecting immune system and energy - DETECTED from multiple sources'
+    });
+  }
+  
   return patterns;
 }
 

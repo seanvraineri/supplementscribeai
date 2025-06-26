@@ -32,7 +32,8 @@ ON public.user_health_domains_analysis(user_id, created_at DESC);
 
 ALTER TABLE public.user_health_domains_analysis ENABLE ROW LEVEL SECURITY;
 
--- Create comprehensive policy
+-- Create comprehensive policy (safe version)
+DROP POLICY IF EXISTS "user_health_domains_analysis_policy" ON public.user_health_domains_analysis;
 CREATE POLICY "user_health_domains_analysis_policy" ON public.user_health_domains_analysis
 FOR ALL
 USING (auth.uid() = user_id) 
@@ -56,6 +57,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_update_user_health_domains_analysis_updated_at ON public.user_health_domains_analysis;
 CREATE TRIGGER trigger_update_user_health_domains_analysis_updated_at
     BEFORE UPDATE ON public.user_health_domains_analysis
     FOR EACH ROW

@@ -7,8 +7,12 @@
 -- Enable the pg_cron extension if not already enabled
 CREATE EXTENSION IF NOT EXISTS pg_cron;
 
--- Remove any existing cron job with the same name
-SELECT cron.unschedule('daily-tracker-automation');
+-- Remove any existing cron job with the same name (safe version)
+SELECT CASE 
+  WHEN EXISTS(SELECT 1 FROM cron.job WHERE jobname = 'daily-tracker-automation') 
+  THEN cron.unschedule('daily-tracker-automation')
+  ELSE false 
+END;
 
 -- Schedule daily tracker automation to run every day at 4 AM EDT (8 AM UTC)
 -- This ensures all users have fresh questions when they wake up
