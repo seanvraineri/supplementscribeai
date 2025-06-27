@@ -116,7 +116,7 @@ const ShipIcon = (props: SVGProps<SVGSVGElement>) => (
 
 const headlines = [
   { text: 'Stop Wasting $2,000+ on Supplements That Don\'t Work', color: '#f87171' }, // red-400
-  { text: 'Get What $50,000 Lab Tests Would Tell You', color: '#4ade80' }, // green-400
+  { text: 'Get What $15,000+ Lab Tests Would Tell You', color: '#4ade80' }, // green-400
   { text: 'Finally Know Your Body\'s Secret Blueprint', color: '#60a5fa' }, // blue-400
 ];
 
