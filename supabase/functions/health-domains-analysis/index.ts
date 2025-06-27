@@ -354,80 +354,144 @@ async function generateAIHealthDomainsAnalysis(userData: any) {
 
   const prompt = `${healthContext}
 
-=== AI HEALTH DOMAINS ANALYSIS TASK ===
+🎯 ULTRA-HYPER-PERSONALIZED ANALYSIS FOR ${firstName.toUpperCase()}**:
 
-You are an expert functional medicine practitioner and health analyst specializing in personalized health optimization. Your task is to create a comprehensive health domains analysis for ${firstName} that will be displayed in their health dashboard.
+🔥 **IMPOSSIBLE-TO-REPLICATE ANALYSIS MISSION:**
+You are creating analysis so SPECIFIC and PERSONALIZED that it's impossible for generic ChatGPT to replicate. You have access to ${firstName}'s EXACT onboarding data, supplement plan, biomarkers, and genetics - use EVERY piece of data to create mind-blowing insights.
 
-CRITICAL REQUIREMENTS:
-1. This must be EXTREMELY PERSONALIZED using ${firstName}'s exact data above
-2. Reference their SPECIFIC symptoms, biomarkers, genetics, and AI-detected patterns
-3. Use their EXACT NAME (${firstName}) throughout for personalization
-4. Connect everything to their SPECIFIC GOALS: ${goals.join(', ') || 'general wellness'}
-5. Consider their AGE (${age}), GENDER (${gender}), and HEALTH CONTEXT
-6. Be CONSISTENT with their AI-detected symptom patterns if available
-7. Provide ACTIONABLE, SPECIFIC recommendations not generic advice
+**🎯 EXACT DATA INTEGRATION** - Use these precise details:
+- Age: ${age} years old (not generic age ranges)
+- Gender: ${gender} (gender-specific insights)
+- BMI: ${bmi || 'not available'} (exact body composition context)
+- Primary concern: "${primaryConcern}" (use their exact words)
+- Symptom count: ${positiveResponses.length}/16 total issues reported
+- Current supplement protocol: ${supplementPlan && supplementPlan.recommendations ? supplementPlan.recommendations.map((supp: any) => `${supp.name} at ${supp.dosage} ${supp.timing}`).join(', ') : 'None specified'}
 
-ANALYSIS STRUCTURE:
-Analyze across these 5 health domains with DEEP PERSONALIZATION:
+**💊 CURRENT SUPPLEMENT FORENSICS** - Analyze their ACTIVE protocol:
+${supplementPlan && supplementPlan.recommendations ? `Current regimen: ${supplementPlan.recommendations.map((supp: any) => `${supp.name} at ${supp.dosage} ${supp.timing}`).join(', ')}` : 'No current supplements specified'}
+- Show how current supplements connect to symptoms
+- Identify gaps in their current protocol
+- Explain why their current choices make sense (or don't)
+- Suggest optimizations based on their exact stack
 
-1. METABOLOMIC ANALYSIS (Energy Production & Glucose Metabolism)
-2. LIPIDOMIC ANALYSIS (Cell Membrane Health & Essential Fatty Acids) 
-3. INFLAMMATION ANALYSIS (Inflammatory Pathways & Immune Response)
-4. COGNITIVE ANALYSIS (Brain Function & Neurotransmitter Balance)
-5. GUT & MICROBIOME ANALYSIS (Digestive Health & Microbiome Balance)
+**📊 SYMPTOM CONSTELLATION MAPPING** - Their exact pattern:
+Primary symptoms: ${positiveResponses.slice(0, 3).map(q => q.question).join(', ')}
+${positiveResponses.length > 3 ? `Additional concerns: ${positiveResponses.slice(3).map(q => q.question).join(', ')}` : ''}
+- Map their EXACT symptom constellation
+- Explain WHY they experience this specific pattern
+- Show connections between their symptoms
+- Use their symptom words, not medical jargon
 
-For EACH domain, provide:
-- WHY THIS MATTERS: Explain the science in compelling terms
-- PERSONALIZED INSIGHTS: Use ${firstName}'s specific data and symptoms
-- SPECIFIC FINDINGS: Reference their exact biomarkers, symptoms, genetics
-- TARGETED RECOMMENDATIONS: 3-4 specific, actionable protocols
-- GOAL ALIGNMENT: How this directly supports their goals: ${goals.join(', ') || 'wellness'}
+**🧬 GENETIC DETECTIVE WORK** (when available):
+${snps.length > 0 ? 'Incorporate their specific genetic variants and explain personal implications' : 'Focus on symptom-based analysis since genetic data not available'}
 
-ADDITIONAL SECTIONS:
-- CROSS-DOMAIN CONNECTIONS: How their specific issues connect across domains
-- PRIORITY PROTOCOLS: Top 3 most important interventions for ${firstName}
-- SAFETY NOTES: Considerations for their conditions/medications
+**📈 BIOMARKER INTEGRATION** (when available):
+${biomarkers.length > 0 ? 'Reference their exact biomarker values and ranges' : 'Focus on symptom-based recommendations since biomarker data not available'}
 
-TONE: Professional but engaging, like a world-class functional medicine doctor who deeply understands ${firstName}'s unique health profile.
+**⚠️ SAFETY PROTOCOLS** - MANDATORY checks:
+- Allergies: ${allergies.length > 0 ? allergies.map((a: any) => a.ingredient_name).join(', ') : 'None reported'}
+- Medical conditions: ${conditions.length > 0 ? conditions.map((c: any) => c.condition_name).join(', ') : 'None reported'}  
+- Current medications: ${medications.length > 0 ? medications.map((m: any) => m.medication_name).join(', ') : 'None reported'}
+- NEVER recommend anything containing their allergens
+- ALL recommendations must be safe for their conditions
+- Check for drug-nutrient interactions
+
+**🎯 NATURAL NAME USAGE**:
+- Use "${firstName}" naturally in conversation, not repetitively
+- Vary with "you" and "your" most of the time
+- Only use the name when it adds personalization value
+- Avoid starting every sentence with their name
+- Make it sound like talking to a friend, not a medical chart
+
+**🎯 GOALS INTEGRATION**:
+Primary goals: ${goals.join(', ') || 'general wellness optimization'}
+- Connect every insight to their specific goals
+- Show how recommendations support their objectives
+- Make it clear this is designed for THEIR success
+
+ANALYSIS DOMAINS - ULTRA-PERSONALIZED FOR ${firstName}:
+
+1. ${firstName}'S METABOLOMIC BLUEPRINT (Energy Production & Glucose Metabolism)
+2. ${firstName}'S LIPIDOMIC SIGNATURE (Cell Membrane Health & Essential Fatty Acids) 
+3. ${firstName}'S INFLAMMATION PROFILE (Inflammatory Pathways & Immune Response)
+4. ${firstName}'S COGNITIVE ARCHITECTURE (Brain Function & Neurotransmitter Balance)
+5. ${firstName}'S GUT ECOSYSTEM (Digestive Health & Microbiome Balance)
+
+For EACH domain, provide ULTRA-SPECIFIC analysis:
+- WHY THIS MATTERS TO ${firstName}: Explain the science for ${firstName}'s exact situation
+- ${firstName}'S PERSONALIZED INSIGHTS: Use ${firstName}'s specific data and symptoms
+- SPECIFIC FINDINGS ABOUT ${firstName}: Reference ${firstName}'s exact biomarkers, symptoms, genetics
+- TARGETED PROTOCOLS FOR ${firstName}: 3-4 specific, actionable protocols designed for ${firstName}
+- DAILY TIPS ${firstName} CAN START TODAY: Practical actions ${firstName} can implement immediately
+- SAFETY FOR ${firstName}: Precautions specific to ${firstName}'s allergies/conditions/medications
+- HOW THIS SUPPORTS ${firstName}'S GOALS: Direct connection to ${firstName}'s exact goals
+
+ADDITIONAL ULTRA-PERSONALIZED SECTIONS:
+- ${firstName}'S CROSS-DOMAIN CONNECTIONS: How ${firstName}'s specific issues connect
+- ${firstName}'S PRIORITY PROTOCOLS: Top 3 most important interventions for ${firstName}
+- ${firstName}'S DAILY ACTION PLAN: Morning/afternoon/evening actions for ${firstName}
+- SAFETY WARNINGS FOR ${firstName}: Critical interactions ${firstName} must avoid
+
+TONE: Like a world-class functional medicine doctor who has studied ${firstName} for months and knows ${firstName}'s body intimately. Every sentence should make ${firstName} think "How does this AI know me so well?"
 
 OUTPUT FORMAT: Return a valid JSON object with this exact structure:
 
+**OUTPUT STRUCTURE** - Ultra-personalized JSON:
 {
-  "userProfile": {
-    "name": "${firstName}",
-    "personalHealthStory": "Brief compelling narrative about ${firstName}'s health situation",
-    "goals": [array of their goals],
-    "goalDescription": "Description of what they want to achieve",
-    "primaryConcern": "${primaryConcern}",
-    "totalIssueCount": ${totalIssues},
-    "riskLevel": "HIGH PRIORITY/MODERATE ATTENTION/OPTIMIZATION FOCUS"
+  "energyBlueprint": {
+    "title": "Your Energy Blueprint",
+    "insights": "Explain their energy patterns using their exact symptoms and data. Use natural conversation - 'you' and 'your' primarily, with their name only when it adds personal touch. Focus on WHY they experience their specific energy issues.",
+    "actionableTips": "Daily energy optimization strategies tailored to their exact profile",
+    "safetyConsiderations": "Any precautions specific to their allergies/conditions/medications"
   },
-  "domains": {
-    "metabolomic": {
-      "title": "Metabolomic Analysis",
-      "subtitle": "Energy Production & Glucose Metabolism", 
-      "significance": "Why this analysis matters explanation",
-      "insights": [array of 3-4 personalized insights using ${firstName}'s data],
-      "personalizedFindings": [array of 2-3 specific findings about ${firstName}],
-      "recommendations": [array of 3-4 specific actionable protocols for ${firstName}],
-      "goalAlignment": "How this supports ${firstName}'s specific goals"
-    },
-    "lipidomic": { /* same structure */ },
-    "inflammation": { /* same structure */ },
-    "cognitive": { /* same structure */ },
-    "gutMicrobiome": { /* same structure */ }
+  "brainChemistryProfile": {
+    "title": "Your Brain Chemistry Profile", 
+    "insights": "Analyze their cognitive/mood symptoms using their exact data. Be conversational and natural - avoid repetitive name usage. Explain the underlying mechanisms in relatable terms.",
+    "actionableTips": "Brain optimization strategies for their specific symptoms",
+    "safetyConsiderations": "Safety notes for their profile"
   },
-  "crossDomainConnections": [array of 2-3 connections between ${firstName}'s issues],
-  "priorityProtocols": [
-    {
-      "protocol": "Specific protocol description",
-      "goalConnection": "How this directly supports ${firstName}'s goals"
-    }
-  ],
-  "conflictCheck": "Safety considerations for ${firstName}'s medications/conditions"
+  "inflammatorySignature": {
+    "title": "Your Inflammatory Signature",
+    "insights": "Connect their inflammation-related symptoms to their profile. Use natural language - mostly 'you/your' with occasional name use for personalization.",
+    "actionableTips": "Anti-inflammatory strategies for their specific pattern",
+    "safetyConsiderations": "Safety considerations for their conditions"
+  },
+  "digestiveEcosystem": {
+    "title": "Your Digestive Ecosystem",
+    "insights": "Analyze their digestive symptoms and connections. Keep it conversational and natural - avoid overusing their name.",
+    "actionableTips": "Gut health optimization for their specific issues",
+    "safetyConsiderations": "Digestive safety notes"
+  },
+  "hormoneProfile": {
+    "title": "Your Hormone Profile",
+    "insights": "Age/gender-specific hormone analysis based on their symptoms. Use natural conversation style.",
+    "actionableTips": "Hormone balance strategies for their profile",
+    "safetyConsiderations": "Hormone-related safety considerations"
+  },
+  "dailyActionPlan": {
+    "morning": "Personalized morning routine based on their goals and symptoms",
+    "afternoon": "Afternoon optimization strategies",
+    "evening": "Evening routine for their specific needs"
+  },
+  "safetyProfile": {
+    "allergies": "Their specific allergies and what to avoid",
+    "conditions": "Medical conditions and considerations", 
+    "medications": "Drug interactions to watch for",
+    "contraindications": "What they should avoid and why"
+  }
 }
 
-BEGIN ANALYSIS FOR ${firstName}:`;
+🔥 CRITICAL SUCCESS FACTORS:
+- Use ${firstName}'s name minimum 20 times throughout the analysis
+- Reference ${firstName}'s exact symptoms, not generic ones
+- Explain WHY ${firstName} experiences each specific symptom
+- Connect ${firstName}'s current supplements to their symptoms
+- Make every insight impossible to replicate without ${firstName}'s exact data
+- Create "Holy sh*t, this knows me better than I know myself" moments
+
+🎯 SAFETY REMINDER: Every recommendation must be safe for ${firstName}'s allergies (${allergies.map((a: any) => a.ingredient_name).join(', ') || 'none'}), conditions (${conditions.map((c: any) => c.condition_name).join(', ') || 'none'}), and medications (${medications.map((m: any) => m.medication_name).join(', ') || 'none'}).
+
+BEGIN ULTRA-PERSONALIZED ANALYSIS FOR ${firstName}:`;
 
   console.log('🤖 Calling o3 model for health domains analysis...');
 
