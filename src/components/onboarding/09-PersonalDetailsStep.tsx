@@ -25,101 +25,101 @@ export function PersonalDetailsStep() {
     <div className="space-y-6 w-full max-w-lg mx-auto text-left">
       {/* Personal Details */}
       <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-dark-secondary">Full Name</label>
-            <input 
-              {...register('fullName')}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-1">
+          <label className="text-sm font-medium text-dark-secondary">Full Name</label>
+          <input 
+            {...register('fullName')}
               onChange={handleNameChange}
-              placeholder="Your name"
-              className="w-full px-4 py-2.5 bg-dark-panel border-2 border-dark-border rounded-lg placeholder:text-dark-secondary/60 focus:border-dark-accent focus:ring-2 focus:ring-dark-accent/30 transition-all"
-            />
+            placeholder="Your name"
+            className="w-full px-4 py-2.5 bg-dark-panel border-2 border-dark-border rounded-lg placeholder:text-dark-secondary/60 focus:border-dark-accent focus:ring-2 focus:ring-dark-accent/30 transition-all"
+          />
             {errors.fullName && (
               <p className="text-red-400 text-xs">{errors.fullName.message}</p>
             )}
-          </div>
-          
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-dark-secondary">Age</label>
-            <input 
-              {...register('age')}
-              type="number" 
-              placeholder="Age" 
-              className="w-full px-4 py-2.5 bg-dark-panel border-2 border-dark-border rounded-lg placeholder:text-dark-secondary/60 focus:border-dark-accent focus:ring-2 focus:ring-dark-accent/30 transition-all"
-            />
-            {errors.age && (
-              <p className="text-red-400 text-xs">{errors.age.message}</p>
-            )}
-          </div>
-        </div>
-        
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-dark-secondary">Gender</label>
-          <div className="grid grid-cols-3 gap-2">
-            {['male', 'female', 'other'].map(g => (
-              <button
-                key={g}
-                type="button"
-                onClick={() => setValue('gender', g, { shouldValidate: true, shouldDirty: true })}
-                className={`py-2.5 rounded-lg border-2 transition-all text-sm font-medium
-                  ${gender === g
-                    ? 'bg-dark-accent/10 border-dark-accent text-dark-accent'
-                    : 'bg-dark-panel border-dark-border text-dark-secondary hover:border-dark-border/70'
-                  }`
-                }
-              >
-                {g.charAt(0).toUpperCase() + g.slice(1)}
-              </button>
-            ))}
-          </div>
-          {errors.gender && (
-            <p className="text-red-400 text-xs">{errors.gender.message}</p>
-          )}
-        </div>
-        
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-dark-secondary">Height</label>
-            <div className="flex items-center gap-2">
-              <input 
-                {...register('height_ft')}
-                type="number" 
-                placeholder="5" 
-                className="w-full px-4 py-2.5 bg-dark-panel border-2 border-dark-border rounded-lg placeholder:text-dark-secondary/60 focus:border-dark-accent focus:ring-2 focus:ring-dark-accent/30 transition-all"
-              />
-              <span className="text-sm text-dark-secondary">ft</span>
-            </div>
-            {errors.height_ft && (
-              <p className="text-red-400 text-xs">{errors.height_ft.message}</p>
-            )}
-          </div>
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-dark-secondary">&nbsp;</label>
-            <div className="flex items-center gap-2">
-              <input 
-                {...register('height_in')}
-                type="number" 
-                placeholder="8" 
-                className="w-full px-4 py-2.5 bg-dark-panel border-2 border-dark-border rounded-lg placeholder:text-dark-secondary/60 focus:border-dark-accent focus:ring-2 focus:ring-dark-accent/30 transition-all"
-              />
-              <span className="text-sm text-dark-secondary">in</span>
-            </div>
-            {errors.height_in && (
-              <p className="text-red-400 text-xs">{errors.height_in.message}</p>
-            )}
-          </div>
         </div>
         
         <div className="space-y-1">
-          <label className="text-sm font-medium text-dark-secondary">Weight</label>
+          <label className="text-sm font-medium text-dark-secondary">Age</label>
+          <input 
+            {...register('age')}
+            type="number" 
+            placeholder="Age" 
+            className="w-full px-4 py-2.5 bg-dark-panel border-2 border-dark-border rounded-lg placeholder:text-dark-secondary/60 focus:border-dark-accent focus:ring-2 focus:ring-dark-accent/30 transition-all"
+          />
+            {errors.age && (
+              <p className="text-red-400 text-xs">{errors.age.message}</p>
+            )}
+        </div>
+      </div>
+      
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-dark-secondary">Gender</label>
+        <div className="grid grid-cols-3 gap-2">
+          {['male', 'female', 'other'].map(g => (
+            <button
+              key={g}
+              type="button"
+              onClick={() => setValue('gender', g, { shouldValidate: true, shouldDirty: true })}
+              className={`py-2.5 rounded-lg border-2 transition-all text-sm font-medium
+                ${gender === g
+                  ? 'bg-dark-accent/10 border-dark-accent text-dark-accent'
+                  : 'bg-dark-panel border-dark-border text-dark-secondary hover:border-dark-border/70'
+                }`
+              }
+            >
+              {g.charAt(0).toUpperCase() + g.slice(1)}
+            </button>
+          ))}
+        </div>
+          {errors.gender && (
+            <p className="text-red-400 text-xs">{errors.gender.message}</p>
+          )}
+      </div>
+      
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-1">
+          <label className="text-sm font-medium text-dark-secondary">Height</label>
           <div className="flex items-center gap-2">
             <input 
-              {...register('weight_lbs')}
+              {...register('height_ft')}
               type="number" 
-              placeholder="150" 
+              placeholder="5" 
               className="w-full px-4 py-2.5 bg-dark-panel border-2 border-dark-border rounded-lg placeholder:text-dark-secondary/60 focus:border-dark-accent focus:ring-2 focus:ring-dark-accent/30 transition-all"
             />
-            <span className="text-sm text-dark-secondary">lbs</span>
+            <span className="text-sm text-dark-secondary">ft</span>
+          </div>
+            {errors.height_ft && (
+              <p className="text-red-400 text-xs">{errors.height_ft.message}</p>
+            )}
+        </div>
+        <div className="space-y-1">
+          <label className="text-sm font-medium text-dark-secondary">&nbsp;</label>
+          <div className="flex items-center gap-2">
+            <input 
+              {...register('height_in')}
+              type="number" 
+              placeholder="8" 
+              className="w-full px-4 py-2.5 bg-dark-panel border-2 border-dark-border rounded-lg placeholder:text-dark-secondary/60 focus:border-dark-accent focus:ring-2 focus:ring-dark-accent/30 transition-all"
+            />
+            <span className="text-sm text-dark-secondary">in</span>
+          </div>
+            {errors.height_in && (
+              <p className="text-red-400 text-xs">{errors.height_in.message}</p>
+            )}
+        </div>
+      </div>
+      
+      <div className="space-y-1">
+        <label className="text-sm font-medium text-dark-secondary">Weight</label>
+        <div className="flex items-center gap-2">
+          <input 
+            {...register('weight_lbs')}
+            type="number" 
+            placeholder="150" 
+            className="w-full px-4 py-2.5 bg-dark-panel border-2 border-dark-border rounded-lg placeholder:text-dark-secondary/60 focus:border-dark-accent focus:ring-2 focus:ring-dark-accent/30 transition-all"
+          />
+          <span className="text-sm text-dark-secondary">lbs</span>
           </div>
           {errors.weight_lbs && (
             <p className="text-red-400 text-xs">{errors.weight_lbs.message}</p>

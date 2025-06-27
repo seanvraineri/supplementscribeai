@@ -115,8 +115,9 @@ const ShipIcon = (props: SVGProps<SVGSVGElement>) => (
 );
 
 const headlines = [
-  'Stop Guessing.',
-  'Start Knowing.',
+  { text: 'Stop Wasting $2,000+ on Supplements That Don\'t Work', color: '#f87171' }, // red-400
+  { text: 'Get What $50,000 Lab Tests Would Tell You', color: '#4ade80' }, // green-400
+  { text: 'Finally Know Your Body\'s Secret Blueprint', color: '#60a5fa' }, // blue-400
 ];
 
 export default function HomePage() {
@@ -125,7 +126,7 @@ export default function HomePage() {
   useEffect(() => {
     const interval = setInterval(() => {
       setIndex((prevIndex) => (prevIndex + 1) % headlines.length);
-    }, 3000); // Change headline every 3 seconds
+    }, 2000); // Changed to 2 seconds for dopamine hits
 
     return () => clearInterval(interval);
   }, []);
@@ -309,39 +310,120 @@ export default function HomePage() {
               AI-Powered Personalized Supplement Plans Based on Deep Health Analysis
             </h1>
             
-            {/* Visible Animated Display - The beloved flipping text */}
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={headlines[index]}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.5 }}
-                className="text-center text-6xl font-bold tracking-tighter text-white sm:text-8xl"
-              >
-                {headlines[index]}
-              </motion.div>
-            </AnimatePresence>
-          </div>
-          <p className="mx-auto mt-6 max-w-2xl text-center text-lg leading-8 text-slate-200">
-            Deep Health Analysis identifies what's depleting you. 
-            Precision supplement formula restores what's missing.
+                        {/* Visible Animated Display - The beloved flipping text */}
+            <div className="h-32 md:h-40 lg:h-48 xl:h-56 flex items-center justify-center">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={headlines[index].text}
+                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                  transition={{ duration: 0.5 }}
+                  className="text-center text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tighter leading-tight"
+                  style={{ color: headlines[index].color }}
+                >
+                  {headlines[index].text}
+                </motion.div>
+              </AnimatePresence>
+            </div>
+                      </div>
+            <p className="mx-auto mt-12 max-w-2xl text-center text-lg md:text-xl leading-8 text-slate-200">
+            What Doctors Can't Tell You (But Should)
+          </p>
+          <p className="mx-auto mt-2 max-w-3xl text-center text-sm md:text-base leading-7 text-slate-300 px-4">
+            We reverse-engineer your body's needs from symptoms → Find the 6 missing pieces → Skip everything else
           </p>
 
-          <div className="flex justify-center">
-            <Link href="/onboarding">
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mt-8 px-4">
+            <Link href="/auth/signup">
               <Button
                 variant="default"
-                className="mt-8 bg-dark-accent hover:bg-dark-accent/90"
+                className="w-full sm:w-auto bg-dark-accent hover:bg-dark-accent/90 text-dark-background font-bold px-8 py-4 text-lg whitespace-nowrap"
                 size="lg"
               >
-                Find My Perfect Formula{' '}
+                <span className="hidden sm:inline">Unlock My Body's Blueprint</span>
+                <span className="sm:hidden">Get My Blueprint</span>{' '}
                 <ChevronsRight className="ml-2 h-5 w-5" />
+              </Button>
+            </Link>
+            <Link href="/design-preview">
+              <Button
+                variant="outline"
+                className="w-full sm:w-auto border-dark-accent border-2 text-dark-accent hover:bg-dark-accent hover:text-dark-background px-8 py-4 text-lg whitespace-nowrap font-semibold"
+                size="lg"
+              >
+                See The Analysis{' '}
+                <Search className="ml-2 h-5 w-5" />
               </Button>
             </Link>
           </div>
         </motion.div>
       </section>
+
+      <FloatingPanel>
+        {/* Value Shock Section */}
+        <section className="py-12 md:py-16 bg-dark-background border-t border-dark-border">
+          <div className="container mx-auto px-4 md:px-6 max-w-6xl">
+            <div className="text-center mb-8 md:mb-12">
+              <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-4 md:mb-6 px-2">
+                What Usually Costs $50,000+ in Lab Tests
+              </h2>
+              <p className="text-base md:text-lg text-gray-400 max-w-3xl mx-auto px-2">
+                We've cracked the code on expensive functional medicine testing. Get the same insights for 99% less.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+              <div className="bg-dark-panel p-4 md:p-6 rounded-2xl border border-dark-border">
+                <h3 className="text-lg md:text-xl font-bold text-red-400 mb-3">Traditional Route</h3>
+                <div className="space-y-2 text-gray-300 text-sm md:text-base">
+                  <p>• Comprehensive Metabolic Panel: $2,500</p>
+                  <p>• Nutrient Deficiency Testing: $3,200</p>
+                  <p>• Hormone Analysis: $4,800</p>
+                  <p>• Genetic Testing: $1,500</p>
+                  <p>• Functional Medicine Consult: $800/session</p>
+                  <p>• Custom Supplement Formulation: $500/month</p>
+                </div>
+                <div className="mt-4 pt-4 border-t border-dark-border">
+                  <p className="text-red-400 font-bold text-base md:text-lg">Total: $50,000+/year</p>
+                </div>
+              </div>
+              <div className="bg-dark-panel p-4 md:p-6 rounded-2xl border border-dark-accent relative">
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-dark-accent text-dark-background px-3 md:px-4 py-1 rounded-full text-xs md:text-sm font-bold">
+                  BREAKTHROUGH
+                </div>
+                <h3 className="text-lg md:text-xl font-bold text-green-400 mb-3 mt-2">SupplementScribe</h3>
+                <div className="space-y-2 text-gray-300 text-sm md:text-base">
+                  <p>• Deep Symptom Pattern Analysis: ✓</p>
+                  <p>• Nutrient Gap Identification: ✓</p>
+                  <p>• Metabolic Pathway Mapping: ✓</p>
+                  <p>• Genetic Predisposition Insights: ✓</p>
+                  <p>• Personalized Protocol: ✓</p>
+                  <p>• Monthly Optimization: ✓</p>
+                </div>
+                <div className="mt-4 pt-4 border-t border-dark-border">
+                  <p className="text-green-400 font-bold text-base md:text-lg">Total: $89/month</p>
+                </div>
+              </div>
+              <div className="bg-dark-panel p-4 md:p-6 rounded-2xl border border-dark-border">
+                <h3 className="text-lg md:text-xl font-bold text-blue-400 mb-3">The Difference</h3>
+                <div className="space-y-3 text-gray-300">
+                  <p className="text-xl md:text-2xl font-bold text-white">99.8% Savings</p>
+                  <div className="space-y-2 text-sm md:text-base">
+                    <p>• No waiting for lab results</p>
+                    <p>• No expensive doctor visits</p>
+                    <p>• No guesswork or trial-and-error</p>
+                    <p>• Instant access to insights</p>
+                    <p>• Continuously adaptive</p>
+                  </div>
+                </div>
+                <div className="mt-4 pt-4 border-t border-dark-border">
+                  <p className="text-blue-400 font-bold text-sm md:text-base">Same Results, Fraction of Cost</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </FloatingPanel>
 
       <FloatingPanel>
         {/* Trusted by Section */}

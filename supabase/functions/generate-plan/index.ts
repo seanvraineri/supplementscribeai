@@ -24,22 +24,95 @@ interface SupplementRecommendation {
   };
 }
 
-// Supplement interaction matrix to prevent conflicting recommendations
+// 🛡️ COMPREHENSIVE SUPPLEMENT INTERACTIONS - ALL 56 SUPPLEMENTS
 const SUPPLEMENT_INTERACTIONS: Record<string, string[]> = {
+  // ✅ EXISTING INTERACTIONS (Keep these - they work!)
   'Easy Iron': ['Calcium Citrate', 'Zinc', 'Magnesium'],
   'Calcium Citrate': ['Easy Iron', 'Zinc', 'Magnesium'],
   'Zinc': ['Easy Iron', 'Calcium Citrate', 'Chromium'],
   'Magnesium': ['Easy Iron', 'Calcium Citrate'],
   'Chromium': ['Zinc'],
+  
+  // 🆕 EXPANDED MINERAL INTERACTIONS
+  'Trace Minerals': ['Easy Iron', 'Calcium Citrate', 'Zinc'],
+  'Boron': ['Calcium Citrate', 'Magnesium'],
+  
+  // 🆕 AMINO ACID INTERACTIONS
+  'Glutamine': ['Tyrosine', 'Arginine'], // Competition for transport
+  'Tyrosine': ['Glutamine', 'Theanine'], // Both affect neurotransmitters
+  'Theanine': ['Tyrosine', 'DHEA'], // Calming vs stimulating
+  'Arginine': ['Glutamine', 'Citrulline'], // Same pathway
+  'Citrulline': ['Arginine'], // Same pathway
+  'Carnitine': ['BCAA'], // Metabolic competition
+  'BCAA': ['Carnitine'], // Metabolic competition
+  
+  // 🆕 NEUROTRANSMITTER INTERACTIONS
+  'DHEA': ['Theanine', 'Melatonin'], // Stimulating vs calming
+  'Rhodiola': ['Ashwagandha'], // Both adaptogenic - may over-stimulate
+  'Ashwagandha': ['Rhodiola', 'DHEA'], // Calming vs stimulating
+  
+  // 🆕 SLEEP/ENERGY INTERACTIONS
+  'Melatonin': ['DHEA', 'Cordyceps'], // Sleep vs energy
+  'Melatonin SR': ['DHEA', 'Cordyceps'], // Sleep vs energy
+  'Cordyceps': ['Melatonin', 'Melatonin SR'], // Energy vs sleep
+  'Herbal Sleep Blend': ['DHEA', 'Cordyceps'], // Sleep vs energy
+  
+  // 🆕 BLOOD SUGAR INTERACTIONS
+  'Berberine': ['Chromium'], // Both lower glucose - risk of hypoglycemia
+  'Green Coffee Extract': ['Berberine'], // Both affect glucose
+  'Fenugreek': ['Berberine', 'Chromium'], // Blood sugar effects
+  
+  // 🆕 ANTIOXIDANT SYNERGIES (Safe together but watch doses)
+  'CoQ10': [], // Generally safe with everything
+  'Alpha Lipoic Acid': [], // Generally safe with everything
+  'NAC': [], // Generally safe with everything
+  'Resveratrol': [], // Generally safe with everything
+  'Quercetin': [], // Generally safe with everything
+  'Turmeric': [], // Generally safe with everything
+  
+  // 🆕 B-VITAMIN INTERACTIONS
+  'Methyl B-Complex': [], // Generally safe - contains multiple B vitamins
+  'Vitamin B12': [], // Generally safe
+  'Biotin': [], // Generally safe
+  
+  // 🆕 OTHER VITAMINS
+  'Vitamin D': ['Calcium Citrate'], // Both affect calcium metabolism
+  'D Complex': ['Calcium Citrate'], // Contains D3+K2, affects calcium
+  'Vitamin C': [], // Generally safe with everything
+  'Vitamin E': [], // Generally safe with everything
+  
+  // 🆕 DIGESTIVE SUPPLEMENTS
+  'Complete Probiotic': [], // Generally safe with everything
+  'Digestive Enzymes': [], // Generally safe with everything
+  'Soothing Fiber': [], // Generally safe with everything
+  'Triphala': [], // Generally safe with everything
+  
+  // 🆕 SPECIALTY SUPPLEMENTS
+  'Lion\'s Mane': [], // Generally safe
+  'Mushroom Immune': [], // Generally safe
+  'Milk Thistle': [], // Generally safe
+  'Green Tea Extract': ['Berberine'], // Both affect metabolism
+  'Elderberry': [], // Generally safe
+  'Ginger Root': [], // Generally safe
+  'Hyaluronic Acid': [], // Generally safe
+  'NR': [], // Generally safe
+  'DIM': [], // Generally safe
+  'Vegan Glucosamine': [], // Generally safe
+  'Forslean': ['Berberine'], // Both affect metabolism
+  'Tribulus': ['DHEA'], // Both affect hormones
+  'Big Libido': ['DHEA'], // Both affect hormones
+  'Creatine': [], // Generally safe
+  'Protein Powder': [], // Generally safe
 };
 
-// Critical supplement contraindications - conditions where supplements should be avoided
+// 🚨 COMPREHENSIVE SUPPLEMENT CONTRAINDICATIONS - CRITICAL SAFETY MATRIX
 const SUPPLEMENT_CONTRAINDICATIONS: Record<string, {
   avoid_conditions: string[];
   warning_signs: string[];
   safety_note: string;
 }> = {
-  'L-Glutamine': {
+  // ✅ EXISTING CRITICAL CONTRAINDICATION (Keep this!)
+  'Glutamine': {
     avoid_conditions: [
       'cancer', 'tumor', 'malignancy', 'oncology', 'chemotherapy',
       'liver disease', 'cirrhosis', 'hepatic encephalopathy', 'liver failure',
@@ -55,6 +128,107 @@ const SUPPLEMENT_CONTRAINDICATIONS: Record<string, {
       'bipolar disorder or schizophrenia (especially if unstable)'
     ],
     safety_note: 'L-Glutamine should be avoided in cancer history, liver/kidney disease, seizure disorders, and unstable psychiatric conditions due to potential safety risks.'
+  },
+  
+  // 🆕 EXPANDED CONTRAINDICATIONS
+  'DHEA': {
+    avoid_conditions: [
+      'prostate cancer', 'breast cancer', 'hormone-sensitive cancer',
+      'prostate enlargement', 'BPH', 'benign prostatic hyperplasia',
+      'pregnancy', 'breastfeeding', 'trying to conceive'
+    ],
+    warning_signs: [
+      'history of hormone-sensitive cancers',
+      'prostate problems',
+      'unexplained mood changes or aggression',
+      'irregular menstrual cycles'
+    ],
+    safety_note: 'DHEA can affect hormone levels and should be avoided in hormone-sensitive conditions.'
+  },
+  
+  'Berberine': {
+    avoid_conditions: [
+      'pregnancy', 'breastfeeding',
+      'diabetes with insulin', 'hypoglycemia',
+      'low blood pressure', 'hypotension'
+    ],
+    warning_signs: [
+      'taking diabetes medications',
+      'history of low blood sugar episodes',
+      'dizziness or fainting spells'
+    ],
+    safety_note: 'Berberine can significantly lower blood sugar and blood pressure.'
+  },
+  
+  'Green Coffee Extract': {
+    avoid_conditions: [
+      'anxiety disorder', 'panic disorder',
+      'high blood pressure', 'hypertension',
+      'heart arrhythmia', 'irregular heartbeat',
+      'pregnancy', 'breastfeeding'
+    ],
+    warning_signs: [
+      'caffeine sensitivity',
+      'heart palpitations',
+      'severe anxiety or panic attacks'
+    ],
+    safety_note: 'Contains caffeine and can worsen anxiety or heart conditions.'
+  },
+  
+  'Melatonin': {
+    avoid_conditions: [
+      'autoimmune disease', 'lupus', 'rheumatoid arthritis',
+      'depression', 'severe depression',
+      'pregnancy', 'breastfeeding'
+    ],
+    warning_signs: [
+      'worsening mood or depression',
+      'daytime drowsiness',
+      'morning grogginess lasting hours'
+    ],
+    safety_note: 'Can worsen depression and affect immune system.'
+  },
+  
+  'Melatonin SR': {
+    avoid_conditions: [
+      'autoimmune disease', 'lupus', 'rheumatoid arthritis',
+      'depression', 'severe depression',
+      'pregnancy', 'breastfeeding'
+    ],
+    warning_signs: [
+      'worsening mood or depression',
+      'persistent daytime drowsiness',
+      'morning brain fog lasting hours'
+    ],
+    safety_note: 'Sustained release can cause prolonged effects and worsen depression.'
+  },
+  
+  'Green Tea Extract': {
+    avoid_conditions: [
+      'liver disease', 'hepatitis',
+      'anxiety disorder', 'panic disorder',
+      'iron deficiency anemia',
+      'pregnancy', 'breastfeeding'
+    ],
+    warning_signs: [
+      'liver problems',
+      'iron deficiency',
+      'caffeine sensitivity'
+    ],
+    safety_note: 'High doses can affect liver function and iron absorption.'
+  },
+  
+  'Easy Iron': {
+    avoid_conditions: [
+      'hemochromatosis', 'iron overload',
+      'thalassemia', 'sideroblastic anemia'
+    ],
+    warning_signs: [
+      'family history of iron overload',
+      'unexplained fatigue with normal iron levels',
+      'joint pain and bronze skin coloration'
+    ],
+    safety_note: 'Iron supplementation dangerous in iron overload conditions.'
   }
 };
 
@@ -628,7 +802,7 @@ PERSONALIZATION TIER: ${tier}
   prompt += `🏆 TIER 1 - IMPOSSIBLE FROM FOOD (Always prioritize for supplement pack):\n`;
   prompt += `• Vitamin D - Need 100+ salmon fillets daily to get therapeutic dose\n`;
   prompt += `• Magnesium - Food sources blocked by oxalates, soil depletion\n`;
-  prompt += `• Omega-3 EPA/DHA - Need 2+ lbs fish daily + mercury concerns\n`;
+  prompt += `• Omega 3 EPA/DHA - Need 2+ lbs fish daily + mercury concerns\n`;
   prompt += `• Vitamin B12 - Absorption declines with age, stomach acid issues\n`;
   prompt += `• Methyl B-Complex - MTHFR variants can't use food folate\n`;
   prompt += `• Zinc - Soil depletion + phytates block absorption\n\n`;
@@ -681,23 +855,37 @@ PERSONALIZATION TIER: ${tier}
   prompt += `\n=== 🔍 LIFESTYLE ASSESSMENT (16 Yes/No Health Questions) ===\n`;
   prompt += `These questions ask about health problems. "YES" means they HAVE the problem.\n\n`;
   
+  // 🎯 COMPREHENSIVE LIFESTYLE PROBLEMS MAPPING - ALL 56 SUPPLEMENTS INTELLIGENTLY MAPPED
   const lifestyleProblems = [
-    { key: 'energy_levels', problem: 'Often feels tired or low energy', supplements: ['Easy Iron', 'Methyl B-Complex', 'CoQ10'] },
-    { key: 'effort_fatigue', problem: 'Physical activity feels more difficult than it should', supplements: ['CoQ10', 'Magnesium', 'Easy Iron'] },
-    { key: 'caffeine_effect', problem: 'Relies on caffeine to get through the day', supplements: ['Methyl B-Complex', 'Rhodiola', 'Magnesium'] },
-    { key: 'digestive_issues', problem: 'Experiences digestive discomfort regularly', supplements: ['Complete Probiotic', 'Digestive Enzymes', 'Zinc'] },
-    { key: 'stress_levels', problem: 'Feels stressed or anxious frequently', supplements: ['Magnesium', 'Theanine', 'Ashwagandha'] },
-    { key: 'sleep_quality', problem: 'Has trouble falling asleep or staying asleep', supplements: ['Magnesium', 'Melatonin', 'Theanine'] },
-    { key: 'mood_changes', problem: 'Experiences mood swings or irritability', supplements: ['Omega-3', 'Magnesium', 'Methyl B-Complex'] },
-    { key: 'brain_fog', problem: 'Experiences brain fog or difficulty concentrating', supplements: ['Methyl B-Complex', 'Omega-3', 'Lion\'s Mane'] },
-    { key: 'sugar_cravings', problem: 'Craves sugar or processed foods', supplements: ['Chromium', 'Berberine', 'Methyl B-Complex'] },
-    { key: 'skin_issues', problem: 'Has skin problems (acne, dryness, sensitivity)', supplements: ['Zinc', 'Vitamin E', 'Omega-3'] },
-    { key: 'joint_pain', problem: 'Experiences joint pain or stiffness', supplements: ['Turmeric', 'Omega-3', 'Vitamin D'] },
-    { key: 'immune_system', problem: 'Gets sick more often than they\'d like', supplements: ['Vitamin C', 'Vitamin D', 'Zinc'] },
-    { key: 'workout_recovery', problem: 'Takes longer to recover from workouts', supplements: ['Protein Powder', 'Magnesium', 'CoQ10'] },
-    { key: 'food_sensitivities', problem: 'Certain foods make them feel unwell', supplements: ['Digestive Enzymes', 'Complete Probiotic', 'Quercetin'] },
-    { key: 'weight_management', problem: 'Difficult to maintain healthy weight', supplements: ['Berberine', 'Chromium', 'Green Tea Extract'] },
-    { key: 'medication_history', problem: 'Has been prescribed ADHD/Anxiety meds that haven\'t worked', supplements: ['Magnesium', 'Methyl B-Complex', 'Omega-3'] }
+    // ✅ EXISTING MAPPINGS (Keep these - they work!)
+    { key: 'energy_levels', problem: 'Often feels tired or low energy', supplements: ['Easy Iron', 'Methyl B-Complex', 'CoQ10', 'Cordyceps', 'Rhodiola'] },
+    { key: 'effort_fatigue', problem: 'Physical activity feels more difficult than it should', supplements: ['CoQ10', 'Magnesium', 'Easy Iron', 'Creatine', 'BCAA'] },
+    { key: 'caffeine_effect', problem: 'Relies on caffeine to get through the day', supplements: ['Methyl B-Complex', 'Rhodiola', 'Magnesium', 'Ashwagandha'] },
+    { key: 'digestive_issues', problem: 'Experiences digestive discomfort regularly', supplements: ['Complete Probiotic', 'Digestive Enzymes', 'Zinc', 'Triphala', 'Soothing Fiber', 'Ginger Root'] },
+    { key: 'stress_levels', problem: 'Feels stressed or anxious frequently', supplements: ['Magnesium', 'Theanine', 'Ashwagandha', 'Rhodiola'] },
+    { key: 'sleep_quality', problem: 'Has trouble falling asleep or staying asleep', supplements: ['Magnesium', 'Melatonin', 'Theanine', 'Herbal Sleep Blend', 'Melatonin SR'] },
+    { key: 'mood_changes', problem: 'Experiences mood swings or irritability', supplements: ['Omega 3', 'Magnesium', 'Methyl B-Complex', 'Vitamin D'] },
+    { key: 'brain_fog', problem: 'Experiences brain fog or difficulty concentrating', supplements: ['Methyl B-Complex', 'Omega 3', 'Lion\'s Mane', 'Alpha Lipoic Acid', 'Tyrosine'] },
+    { key: 'sugar_cravings', problem: 'Craves sugar or processed foods', supplements: ['Chromium', 'Berberine', 'Methyl B-Complex', 'Alpha Lipoic Acid'] },
+    { key: 'skin_issues', problem: 'Has skin problems (acne, dryness, sensitivity)', supplements: ['Zinc', 'Vitamin E', 'Omega 3', 'Biotin', 'Hyaluronic Acid'] },
+    { key: 'joint_pain', problem: 'Experiences joint pain or stiffness', supplements: ['Turmeric', 'Omega 3', 'Vitamin D', 'Vegan Glucosamine', 'Boron'] },
+    { key: 'immune_system', problem: 'Gets sick more often than they\'d like', supplements: ['Vitamin C', 'Vitamin D', 'Zinc', 'Elderberry', 'Mushroom Immune', 'NAC'] },
+    { key: 'workout_recovery', problem: 'Takes longer to recover from workouts', supplements: ['Protein Powder', 'Magnesium', 'CoQ10', 'Creatine', 'BCAA', 'Citrulline'] },
+    { key: 'food_sensitivities', problem: 'Certain foods make them feel unwell', supplements: ['Digestive Enzymes', 'Complete Probiotic', 'Quercetin', 'NAC'] },
+    { key: 'weight_management', problem: 'Difficult to maintain healthy weight', supplements: ['Berberine', 'Chromium', 'Green Tea Extract', 'Green Coffee Extract', 'Forslean'] },
+    { key: 'medication_history', problem: 'Has been prescribed ADHD/Anxiety meds that haven\'t worked', supplements: ['Magnesium', 'Methyl B-Complex', 'Omega 3', 'Theanine'] },
+    
+    // 🆕 EXPANDED MAPPINGS - Additional symptoms to cover all 56 supplements
+    { key: 'heart_health', problem: 'Family history of heart disease or high cholesterol', supplements: ['CoQ10', 'Omega 3', 'Berberine', 'Magnesium', 'Resveratrol'] },
+    { key: 'liver_health', problem: 'Drinks alcohol regularly or concerned about liver health', supplements: ['Milk Thistle', 'NAC', 'Alpha Lipoic Acid', 'Turmeric'] },
+    { key: 'hormone_balance', problem: 'Hormonal imbalances or low libido', supplements: ['DHEA', 'Big Libido', 'Tribulus', 'DIM', 'Boron'] },
+    { key: 'anti_aging', problem: 'Concerned about aging and longevity', supplements: ['NR', 'Resveratrol', 'CoQ10', 'Alpha Lipoic Acid', 'Hyaluronic Acid'] },
+    { key: 'muscle_building', problem: 'Trying to build muscle or improve strength', supplements: ['Creatine', 'BCAA', 'Protein Powder', 'Carnitine', 'HMB'] },
+    { key: 'blood_sugar', problem: 'Blood sugar issues or prediabetes', supplements: ['Berberine', 'Chromium', 'Alpha Lipoic Acid', 'Fenugreek'] },
+    { key: 'inflammation', problem: 'Chronic inflammation or inflammatory conditions', supplements: ['Turmeric', 'Omega 3', 'Quercetin', 'Resveratrol', 'NAC'] },
+    { key: 'detox_support', problem: 'Environmental toxin exposure or detox needs', supplements: ['NAC', 'Milk Thistle', 'Alpha Lipoic Acid', 'Glutamine'] },
+    { key: 'cognitive_health', problem: 'Memory concerns or wanting to optimize brain function', supplements: ['Lion\'s Mane', 'Omega 3', 'Alpha Lipoic Acid', 'Tyrosine'] },
+    { key: 'circulation', problem: 'Poor circulation or cardiovascular support needed', supplements: ['Citrulline', 'Arginine', 'Ginger Root', 'CoQ10'] }
   ];
 
   const activeProblems: any[] = [];
@@ -736,7 +924,7 @@ PERSONALIZATION TIER: ${tier}
     prompt += `\n🚨 CRITICAL USER-ENTERED BIOMARKER DATA:\n`;
     prompt += `"${profile.known_biomarkers}"\n`;
     prompt += `🔴 MANDATORY: Treat any out-of-range values as HIGH PRIORITY requiring targeted supplements.\n`;
-    prompt += `📊 Parse specific values - use Berberine for cholesterol/glucose, Omega-3 for inflammation, etc.\n`;
+    prompt += `📊 Parse specific values - use Berberine for cholesterol/glucose, Omega 3 for inflammation, etc.\n`;
   }
 
   // 🔥 ROOT CAUSE PATTERN DETECTION - Look for COMBINATIONS, not isolated symptoms
@@ -804,19 +992,28 @@ PERSONALIZATION TIER: ${tier}
     // 🚨 CRITICAL SUPPLEMENT CONTRAINDICATIONS CHECK
     prompt += `\n=== 🚨 CRITICAL SUPPLEMENT SAFETY CONTRAINDICATIONS ===\n`;
     
-    // Check for L-Glutamine contraindications
-    const hasGlutamineContraindication = healthHistory.conditions.some((condition: string) => 
-      SUPPLEMENT_CONTRAINDICATIONS['L-Glutamine'].avoid_conditions.some((avoid: string) => 
-        condition.toLowerCase().includes(avoid.toLowerCase())
-      )
-    );
+    // 🚨 COMPREHENSIVE CONTRAINDICATION CHECKING - ALL DANGEROUS SUPPLEMENTS
+    const contraindications: string[] = [];
     
-    if (hasGlutamineContraindication) {
-      prompt += `🚫 L-GLUTAMINE CONTRAINDICATED: Patient has medical conditions that make L-Glutamine unsafe.\n`;
-      prompt += `⚠️ NEVER recommend L-Glutamine due to: ${healthHistory.conditions.join(', ')}\n`;
-      prompt += `Safety Note: ${SUPPLEMENT_CONTRAINDICATIONS['L-Glutamine'].safety_note}\n`;
-    } else {
+    // Check each supplement for contraindications
+    Object.keys(SUPPLEMENT_CONTRAINDICATIONS).forEach(supplement => {
+      const hasContraindication = healthHistory.conditions.some((condition: string) => 
+        SUPPLEMENT_CONTRAINDICATIONS[supplement].avoid_conditions.some((avoid: string) => 
+          condition.toLowerCase().includes(avoid.toLowerCase())
+        )
+      );
+      
+      if (hasContraindication) {
+        contraindications.push(supplement);
+        prompt += `🚫 ${supplement.toUpperCase()} CONTRAINDICATED: ${SUPPLEMENT_CONTRAINDICATIONS[supplement].safety_note}\n`;
+        prompt += `⚠️ NEVER recommend ${supplement} due to: ${healthHistory.conditions.join(', ')}\n`;
+      }
+    });
+    
+    if (contraindications.length === 0) {
       prompt += `✅ No major contraindications detected for available supplements.\n`;
+    } else {
+      prompt += `\n🔴 CRITICAL: ${contraindications.length} supplements are CONTRAINDICATED - avoid at all costs!\n`;
     }
   }
   if (healthHistory.medications.length > 0) {
@@ -936,7 +1133,7 @@ ENERGY SYNERGY STACK (if mitochondrial dysfunction):
 • CoQ10 + Magnesium + Easy Iron (cellular energy production)
 
 INFLAMMATION SYNERGY STACK (if joint pain/skin issues):
-• Omega-3 + Turmeric + Vitamin D (anti-inflammatory cascade)
+• Omega 3 + Turmeric + Vitamin D (anti-inflammatory cascade)
 
 GUT HEALING SYNERGY STACK (if digestive issues):
 • Complete Probiotic + Digestive Enzymes + Zinc (gut repair & function)
@@ -1875,7 +2072,7 @@ function analyzeRootCausePatterns(activeProblems: any[], profile: any, healthHis
     patterns.push({
       pattern_name: 'INFLAMMATORY CASCADE',
       symptoms: allInflammatoryIndicators,
-      synergistic_supplements: ['Omega-3', 'Turmeric', 'Vitamin D'],
+      synergistic_supplements: ['Omega 3', 'Turmeric', 'Vitamin D'],
       root_cause_explanation: 'Chronic systemic inflammation affecting multiple body systems - DETECTED from multiple sources'
     });
   }
@@ -2143,7 +2340,7 @@ function analyzeRootCausePatterns(activeProblems: any[], profile: any, healthHis
     patterns.push({
       pattern_name: 'HYPERTHYROID DYSFUNCTION',
       symptoms: allHyperthyroidIndicators,
-      synergistic_supplements: ['Magnesium', 'Theanine', 'Omega-3'],
+              synergistic_supplements: ['Magnesium', 'Theanine', 'Omega 3'],
       root_cause_explanation: 'Overactive thyroid requiring calming support - DETECTED from multiple sources'
     });
   }
@@ -2257,7 +2454,7 @@ function detectNeurotransmitterExcess(activeProblems: any[], noProblems: any[], 
       neurotransmitter: 'SEROTONIN',
       indicators: serotoninIndicators,
       avoid_supplements: ['5-HTP', 'Tryptophan'],
-      safe_alternatives: ['Magnesium', 'Vitamin D', 'Omega-3']
+              safe_alternatives: ['Magnesium', 'Vitamin D', 'Omega 3']
     });
   }
   

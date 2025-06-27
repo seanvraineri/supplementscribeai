@@ -2983,7 +2983,7 @@ export default function DashboardPage() {
           type="url"
           value={productUrl}
           onChange={(e) => setProductUrl(e.target.value)}
-          placeholder="Paste product URL from Amazon, iHerb, etc."
+          placeholder="Paste direct product link"
           className="flex-grow bg-dark-panel border border-dark-border rounded-md px-4 py-2 text-dark-primary placeholder-dark-secondary focus:ring-2 focus:ring-dark-accent focus:outline-none"
           disabled={isCheckingProduct}
         />

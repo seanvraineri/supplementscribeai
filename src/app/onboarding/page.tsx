@@ -456,7 +456,7 @@ export default function OnboardingPage() {
       setIsSubmitting(false);
       // Show error to user
       alert('Failed to save your information. Please try again.');
-    }
+            }
   };
 
   const handlePaymentSuccess = () => {
@@ -478,7 +478,7 @@ export default function OnboardingPage() {
       setPendingOnboardingData(data);
       setShowPaymentModal(true);
       return;
-    }
+            }
 
     // Payment completed, start AI generation
     setIsSubmitting(true);
@@ -489,11 +489,11 @@ export default function OnboardingPage() {
       // Import and call the AI generation function directly
       const { generateAIContentAfterPayment } = await import('./actions');
       const result = await generateAIContentAfterPayment();
-
+              
       if (!result.success) {
         throw new Error(result.error || 'Failed to generate plan');
-      }
-
+              }
+              
       logger.success('AI generation completed, redirecting to dashboard');
       
       // CRITICAL: Mark onboarding as completed to prevent redirect loops

@@ -108,22 +108,28 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Check for existing order today (prevent duplicates)
+    // Check if user can order (monthly rate limiting - prevents spam)
     const today = new Date().toISOString().split('T')[0];
-    const { data: existingOrder } = await supabase
+    const { data: lastOrder } = await supabase
       .from('supplement_orders')
-      .select('id')
+      .select('order_date, next_order_date, shopify_order_id')
       .eq('user_id', userId)
-      .eq('order_date', today)
+      .order('order_date', { ascending: false })
+      .limit(1)
       .single();
 
-    if (existingOrder) {
+    if (lastOrder && lastOrder.next_order_date && today < lastOrder.next_order_date) {
+      const nextOrderDate = new Date(lastOrder.next_order_date);
+      const todayDate = new Date(today);
+      const daysUntilNext = Math.ceil((nextOrderDate.getTime() - todayDate.getTime()) / (1000 * 60 * 60 * 24));
+      
       return new Response(JSON.stringify({ 
-        error: 'Order already created today',
-        orderId: existingOrder.id 
+        error: 'Monthly order limit reached. Next order available in ' + daysUntilNext + ' days.',
+        nextOrderDate: lastOrder.next_order_date,
+        lastOrderId: lastOrder.shopify_order_id
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 409,
+        status: 429,
       });
     }
 

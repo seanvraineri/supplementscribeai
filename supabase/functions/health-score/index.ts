@@ -179,15 +179,15 @@ SCORING CATEGORIES (based on onboarding data):
 - Known health issues
 
 SCORING GUIDELINES (ENCOURAGING & RETENTION-FOCUSED):
-- 90-100: Exceptional health (0-2 areas for optimization)
-- 80-89: Great health (3-5 areas for optimization) 
-- 70-79: Good health (6-8 areas for optimization)
-- 60-69: Fair health (9-11 areas for optimization)
-- 50-59: Needs attention (12+ areas for optimization)
+- 95-100: Exceptional health (0-2 areas for optimization)
+- 85-94: Great health (3-5 areas for optimization) 
+- 75-84: Good health (6-8 areas for optimization)
+- 65-74: Fair health (9-11 areas for optimization)
+- 55-64: Needs attention (12+ areas for optimization)
 
 Count "yes" answers as areas for optimization, not problems.
 Count "no" answers as health strengths to celebrate.
-Most users will score 75-85. Focus on progress potential and encouragement.
+Most users will score 80-90. Focus on progress potential and encouragement.
 
 SPECIFIC HOLISTIC RECOMMENDATION MAPPING (use these for their "yes" answers):
 - Digestive issues → "Eat 1 cup fermented vegetables daily + chew each bite 30 times + avoid eating 3 hours before bed"
@@ -395,9 +395,9 @@ ${profile.health_goals?.length > 0 ? profile.health_goals.join(', ') : 'Not spec
 
 **PERSONALIZED SCORING FOR ${profile.full_name?.toUpperCase() || 'THIS USER'}:**
 - Current issue count (${lifestyleIssues.length}) suggests encouraging score should be: ${
-  lifestyleIssues.length > 10 ? '65-75' : 
-  lifestyleIssues.length > 6 ? '75-82' :
-  lifestyleIssues.length > 3 ? '80-88' : '85-95'
+  lifestyleIssues.length > 10 ? '70-80' : 
+  lifestyleIssues.length > 6 ? '80-87' :
+  lifestyleIssues.length > 3 ? '85-93' : '90-100'
 }
 - Age factor (${profile.age}): ${profile.age && profile.age > 50 ? 'Reduce score by 5-10 points' : profile.age && profile.age < 25 ? 'Can add 5 points' : 'Neutral factor'}
 - Primary concern severity: ${profile.primary_health_concern ? 'Significant concern requiring attention' : 'No major specific concern'}
@@ -421,7 +421,7 @@ FOCUS ON ENCOURAGEMENT: Give scores that motivate users to take action. ${profil
 
 function createFallbackHealthScore(profile: any): any {
   // Simple fallback scoring if AI parsing fails
-  let score = 85; // Start higher (was 75)
+  let score = 100; // Start from perfect health baseline
   
   // Count lifestyle issues (Yes answers) and build specific holistic recommendations
   const issueMapping = {
