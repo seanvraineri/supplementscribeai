@@ -74,7 +74,7 @@ export async function GET() {
     }));
 
     // Create a mapping object for easy AI integration
-    const supplementMap = {};
+    const supplementMap: Record<string, any> = {};
     supplementCatalog.forEach((supplement: any) => {
       supplementMap[supplement.title] = {
         variantId: supplement.firstVariantId,

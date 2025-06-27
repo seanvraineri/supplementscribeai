@@ -28,6 +28,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, Sparkles, Brain, Heart, FileText, User, ChevronLeft, ChevronRight, Users } from 'lucide-react';
 import { logger } from '@/lib/logger';
 import { StripeCheckoutModal } from '@/components/payment/StripeCheckoutModal';
+import { UpsellModal } from '@/components/payment/UpsellModal';
 
 // Fallback health score creation function
 async function createFallbackHealthScore(supabase: any, userId: string, onboardingData: any) {
@@ -183,6 +184,10 @@ export default function OnboardingPage() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [pendingOnboardingData, setPendingOnboardingData] = useState<OnboardingData | null>(null);
   const [paymentCompleted, setPaymentCompleted] = useState(false);
+
+  // Upsell modal state - for Software Only users
+  const [showUpsellModal, setShowUpsellModal] = useState(false);
+  const [customerName, setCustomerName] = useState('');
 
   const [processingSteps, setProcessingSteps] = useState<ProcessingStep[]>([
     {
@@ -444,11 +449,21 @@ export default function OnboardingPage() {
         throw new Error(result.error || 'Failed to save onboarding data');
       }
       
-      logger.success('Onboarding data saved, showing payment modal');
+      logger.success('Onboarding data saved');
       
-      // Now show payment modal
+      // Store data for later use
       setPendingOnboardingData(data);
-      setShowPaymentModal(true);
+      setCustomerName(data.fullName || 'there');
+      
+      // UPSELL LOGIC: Show upsell modal for Software Only users
+      if (data.subscription_tier === 'software_only') {
+        logger.info('Software Only user - showing upsell modal');
+        setShowUpsellModal(true);
+      } else {
+        logger.info('Complete Package user - going straight to payment');
+        setShowPaymentModal(true);
+      }
+      
       setIsSubmitting(false);
       
     } catch (error: any) {
@@ -456,7 +471,7 @@ export default function OnboardingPage() {
       setIsSubmitting(false);
       // Show error to user
       alert('Failed to save your information. Please try again.');
-            }
+    }
   };
 
   const handlePaymentSuccess = () => {
@@ -469,6 +484,37 @@ export default function OnboardingPage() {
   const handlePaymentClose = () => {
     setShowPaymentModal(false);
     setPendingOnboardingData(null);
+  };
+
+  // Upsell modal handlers
+  const handleUpgradeToComplete = () => {
+    logger.info('User chose to upgrade to Complete Package');
+    
+    // Update the subscription tier in the pending data
+    if (pendingOnboardingData) {
+      const updatedData = { ...pendingOnboardingData, subscription_tier: 'full' };
+      setPendingOnboardingData(updatedData);
+      
+      // Update the form data as well
+      form.setValue('subscription_tier', 'full');
+    }
+    
+    // Close upsell modal and show payment modal
+    setShowUpsellModal(false);
+    setShowPaymentModal(true);
+  };
+
+  const handleContinueWithSoftware = () => {
+    logger.info('User chose to continue with Software Only');
+    
+    // Close upsell modal and show payment modal with original Software Only plan
+    setShowUpsellModal(false);
+    setShowPaymentModal(true);
+  };
+
+  const handleUpsellClose = () => {
+    // If they close the upsell modal, default to continuing with Software Only
+    handleContinueWithSoftware();
   };
 
   const onFinalSubmit = async () => {
@@ -699,6 +745,15 @@ export default function OnboardingPage() {
           onPaymentSuccess={handlePaymentSuccess}
         />
       )}
+      
+      {/* Upsell Modal - Only for Software Only users */}
+      <UpsellModal
+        isOpen={showUpsellModal}
+        onClose={handleUpsellClose}
+        onUpgrade={handleUpgradeToComplete}
+        onContinueWithSoftware={handleContinueWithSoftware}
+        customerName={customerName}
+      />
     </div>
   );
 } 
