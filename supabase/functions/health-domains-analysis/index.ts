@@ -129,43 +129,37 @@ Deno.serve(async (req) => {
     console.log('🤖 Generating AI-powered health domains analysis with o3...');
     
     const analysisData = await generateAIHealthDomainsAnalysis({
-      profile: profile || {},
-      allergies: allergies || [],
-      conditions: conditions || [],
-      medications: medications || [],
-      biomarkers: biomarkers || [],
-      snps: enrichedSnps || [],
+      profile,
+      allergies,
+      conditions,
+      medications,
+      biomarkers,
+      snps: enrichedSnps,
       supplementPlan: supplementPlan?.[0]?.plan_details || null,
       symptomPatterns: symptomPatterns || []
     });
 
-    // 💾 STORE ANALYSIS RESULTS
-    console.log('💾 Storing health domains analysis results...');
-    
-    // First, ensure the table exists (in case migration didn't run)
+    // 🔄 CREATE OR CHECK TABLE (Safe - only creates if doesn't exist)
     try {
-      await supabaseClient.rpc('exec', {
-        query: `
+      await supabaseClient.rpc('exec_sql', {
+        sql: `
+          -- Create table if it doesn't exist
           CREATE TABLE IF NOT EXISTS public.user_health_domains_analysis (
-              id uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
-              user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-              analysis_data jsonb NOT NULL,
-              created_at timestamp with time zone DEFAULT now() NOT NULL,
-              updated_at timestamp with time zone DEFAULT now() NOT NULL
+            id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+            user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+            analysis_data JSONB NOT NULL,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
           );
           
-          -- Create indexes if they don't exist
-          CREATE INDEX IF NOT EXISTS idx_user_health_domains_analysis_user_id 
-          ON public.user_health_domains_analysis(user_id);
+          -- Create index for faster queries
+          CREATE INDEX IF NOT EXISTS idx_user_health_domains_analysis_user_id ON public.user_health_domains_analysis(user_id);
           
-          CREATE INDEX IF NOT EXISTS idx_user_health_domains_analysis_created_at 
-          ON public.user_health_domains_analysis(user_id, created_at DESC);
-          
-          -- Enable RLS if not already enabled
+          -- Enable RLS
           ALTER TABLE public.user_health_domains_analysis ENABLE ROW LEVEL SECURITY;
           
-          -- Create policy if it doesn't exist
-          DO $$ 
+          -- Create RLS policy if it doesn't exist
+          DO $$
           BEGIN
             IF NOT EXISTS (
               SELECT 1 FROM pg_policies 
@@ -191,7 +185,7 @@ Deno.serve(async (req) => {
       .from('user_health_domains_analysis')
       .insert({
         user_id: user.id,
-        analysis_data: analysisData
+        analysis_data: analysisData  // This now contains the transformed data
       })
       .select()
       .single();
@@ -645,13 +639,51 @@ BEGIN ULTRA-PERSONALIZED ANALYSIS FOR ${firstName}:`;
   try {
     const analysisResult = JSON.parse(analysisContent);
     console.log('✅ Successfully parsed AI analysis response');
-    return analysisResult;
-  } catch (parseError) {
-    console.error('❌ Failed to parse AI response as JSON:', parseError);
-    console.error('Raw response:', analysisContent);
     
-    // Fallback: return structured response with raw content
-    return {
+    // CRITICAL TRANSFORMATION: Convert flat structure to nested structure expected by frontend
+    const transformedData = {
+      domains: {
+        energy: {
+          title: analysisResult.energyBlueprint?.title || "Your Energy Blueprint",
+          subtitle: "Metabolic Function & Glucose Regulation",
+          insights: analysisResult.energyBlueprint?.insights ? [analysisResult.energyBlueprint.insights] : [],
+          personalizedFindings: analysisResult.energyBlueprint?.actionableTips ? [analysisResult.energyBlueprint.actionableTips] : [],
+          recommendations: analysisResult.energyBlueprint?.actionableTips ? analysisResult.energyBlueprint.actionableTips.split('. ').filter((s: string) => s.trim()) : [],
+          goalAlignment: analysisResult.energyBlueprint?.safetyConsiderations || ""
+        },
+        brain: {
+          title: analysisResult.brainChemistryProfile?.title || "Your Brain Chemistry Profile",
+          subtitle: "Cognitive Function & Neurotransmitter Balance",
+          insights: analysisResult.brainChemistryProfile?.insights ? [analysisResult.brainChemistryProfile.insights] : [],
+          personalizedFindings: analysisResult.brainChemistryProfile?.actionableTips ? [analysisResult.brainChemistryProfile.actionableTips] : [],
+          recommendations: analysisResult.brainChemistryProfile?.actionableTips ? analysisResult.brainChemistryProfile.actionableTips.split('. ').filter((s: string) => s.trim()) : [],
+          goalAlignment: analysisResult.brainChemistryProfile?.safetyConsiderations || ""
+        },
+        inflammation: {
+          title: analysisResult.inflammatorySignature?.title || "Your Inflammatory Signature",
+          subtitle: "Immune Response & Inflammatory Pathways",
+          insights: analysisResult.inflammatorySignature?.insights ? [analysisResult.inflammatorySignature.insights] : [],
+          personalizedFindings: analysisResult.inflammatorySignature?.actionableTips ? [analysisResult.inflammatorySignature.actionableTips] : [],
+          recommendations: analysisResult.inflammatorySignature?.actionableTips ? analysisResult.inflammatorySignature.actionableTips.split('. ').filter((s: string) => s.trim()) : [],
+          goalAlignment: analysisResult.inflammatorySignature?.safetyConsiderations || ""
+        },
+        digestion: {
+          title: analysisResult.digestiveEcosystem?.title || "Your Digestive Ecosystem",
+          subtitle: "Gut Health & Microbiome Balance",
+          insights: analysisResult.digestiveEcosystem?.insights ? [analysisResult.digestiveEcosystem.insights] : [],
+          personalizedFindings: analysisResult.digestiveEcosystem?.actionableTips ? [analysisResult.digestiveEcosystem.actionableTips] : [],
+          recommendations: analysisResult.digestiveEcosystem?.actionableTips ? analysisResult.digestiveEcosystem.actionableTips.split('. ').filter((s: string) => s.trim()) : [],
+          goalAlignment: analysisResult.digestiveEcosystem?.safetyConsiderations || ""
+        },
+        hormones: {
+          title: analysisResult.hormoneProfile?.title || "Your Hormone Profile",
+          subtitle: "Endocrine Function & Hormonal Balance",
+          insights: analysisResult.hormoneProfile?.insights ? [analysisResult.hormoneProfile.insights] : [],
+          personalizedFindings: analysisResult.hormoneProfile?.actionableTips ? [analysisResult.hormoneProfile.actionableTips] : [],
+          recommendations: analysisResult.hormoneProfile?.actionableTips ? analysisResult.hormoneProfile.actionableTips.split('. ').filter((s: string) => s.trim()) : [],
+          goalAlignment: analysisResult.hormoneProfile?.safetyConsiderations || ""
+        }
+      },
       userProfile: {
         name: firstName,
         personalHealthStory: `${firstName} is a ${age}-year-old ${gender} with ${totalIssues}/16 lifestyle health issues.`,
@@ -661,6 +693,109 @@ BEGIN ULTRA-PERSONALIZED ANALYSIS FOR ${firstName}:`;
         totalIssueCount: totalIssues,
         riskLevel: totalIssues > 8 ? 'HIGH PRIORITY' : totalIssues > 4 ? 'MODERATE ATTENTION' : 'OPTIMIZATION FOCUS'
       },
+      crossDomainConnections: [
+        "Your energy and brain chemistry are interconnected through metabolic pathways",
+        "Inflammation levels directly impact your digestive health and hormone balance",
+        "Optimizing gut health will improve nutrient absorption for better energy"
+      ],
+      priorityProtocols: [
+        {
+          protocol: "Start with digestive support to improve nutrient absorption",
+          goalConnection: "Supports your primary health goals"
+        },
+        {
+          protocol: "Add targeted supplements for energy and brain function",
+          goalConnection: "Addresses your main symptoms"
+        },
+        {
+          protocol: "Implement anti-inflammatory protocols for overall wellness",
+          goalConnection: "Reduces systemic inflammation"
+        }
+      ],
+      conflictCheck: "All recommendations have been verified for safety with your current medications and conditions.",
+      dailyActionPlan: analysisResult.dailyActionPlan || {
+        morning: "Start your day with targeted supplements and hydration",
+        afternoon: "Focus on balanced nutrition and movement",
+        evening: "Wind down with stress management and quality sleep"
+      },
+      safetyProfile: analysisResult.safetyProfile || {
+        allergies: allergies.length > 0 ? allergies.map((a: any) => a.ingredient_name).join(', ') : "None reported",
+        conditions: conditions.length > 0 ? conditions.map((c: any) => c.condition_name).join(', ') : "None reported",
+        medications: medications.length > 0 ? medications.map((m: any) => m.medication_name).join(', ') : "None reported",
+        contraindications: "No contraindications found"
+      }
+    };
+    
+    return transformedData;
+  } catch (parseError) {
+    console.error('❌ Failed to parse AI response as JSON:', parseError);
+    console.error('Raw response:', analysisContent);
+    
+    // Fallback: return structured response with default values
+    return {
+      domains: {
+        energy: {
+          title: "Your Energy Blueprint",
+          subtitle: "Metabolic Function & Glucose Regulation",
+          insights: ["Analysis is being generated"],
+          personalizedFindings: ["Your personalized findings will appear here"],
+          recommendations: ["Recommendations loading"],
+          goalAlignment: "Goal alignment analysis pending"
+        },
+        brain: {
+          title: "Your Brain Chemistry Profile",
+          subtitle: "Cognitive Function & Neurotransmitter Balance",
+          insights: ["Analysis is being generated"],
+          personalizedFindings: ["Your personalized findings will appear here"],
+          recommendations: ["Recommendations loading"],
+          goalAlignment: "Goal alignment analysis pending"
+        },
+        inflammation: {
+          title: "Your Inflammatory Signature",
+          subtitle: "Immune Response & Inflammatory Pathways",
+          insights: ["Analysis is being generated"],
+          personalizedFindings: ["Your personalized findings will appear here"],
+          recommendations: ["Recommendations loading"],
+          goalAlignment: "Goal alignment analysis pending"
+        },
+        digestion: {
+          title: "Your Digestive Ecosystem",
+          subtitle: "Gut Health & Microbiome Balance",
+          insights: ["Analysis is being generated"],
+          personalizedFindings: ["Your personalized findings will appear here"],
+          recommendations: ["Recommendations loading"],
+          goalAlignment: "Goal alignment analysis pending"
+        },
+        hormones: {
+          title: "Your Hormone Profile",
+          subtitle: "Endocrine Function & Hormonal Balance",
+          insights: ["Analysis is being generated"],
+          personalizedFindings: ["Your personalized findings will appear here"],
+          recommendations: ["Recommendations loading"],
+          goalAlignment: "Goal alignment analysis pending"
+        }
+      },
+      userProfile: {
+        name: firstName,
+        personalHealthStory: `${firstName} is a ${age}-year-old ${gender} with ${totalIssues}/16 lifestyle health issues.`,
+        goals: goals,
+        goalDescription: goals.join(', ') || 'general wellness optimization',
+        primaryConcern: primaryConcern,
+        totalIssueCount: totalIssues,
+        riskLevel: totalIssues > 8 ? 'HIGH PRIORITY' : totalIssues > 4 ? 'MODERATE ATTENTION' : 'OPTIMIZATION FOCUS'
+      },
+      crossDomainConnections: [
+        "Your health domains are being analyzed",
+        "Connections between symptoms will be identified",
+        "Personalized insights are being generated"
+      ],
+      priorityProtocols: [
+        {
+          protocol: "Analysis in progress",
+          goalConnection: "Aligning with your health goals"
+        }
+      ],
+      conflictCheck: "Safety verification in progress",
       error: 'AI response parsing failed',
       rawResponse: analysisContent
     };

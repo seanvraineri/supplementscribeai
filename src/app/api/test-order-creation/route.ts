@@ -10,12 +10,19 @@ export async function POST(request: NextRequest) {
       supplements
     });
 
+    // Use local Supabase for testing
+    const isLocal = process.env.NODE_ENV === 'development';
+    const supabaseUrl = isLocal ? 'http://127.0.0.1:54321' : process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = isLocal ? 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' : process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    console.log('Using Supabase URL:', supabaseUrl);
+
     // Call the Supabase Edge Function
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/create-shopify-order`, {
+    const response = await fetch(`${supabaseUrl}/functions/v1/create-shopify-order`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`
+        'Authorization': `Bearer ${supabaseKey}`
       },
       body: JSON.stringify({
         userId,

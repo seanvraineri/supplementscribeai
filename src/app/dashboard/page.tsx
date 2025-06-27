@@ -583,66 +583,44 @@ export default function DashboardPage() {
     };
   }, [router]);
 
-  // Load health domains analysis
-  useEffect(() => {
-    let isMounted = true;
-    const abortController = new AbortController();
+  // Load health domains analysis function (extracted for reuse)
+  const loadHealthDomains = async () => {
+    if (!user) return;
     
-    const loadHealthDomains = async () => {
-      if (!user || !isMounted) return;
+    setDomainsLoading(true);
+    setDomainsError(null);
+    
+    try {
+      // Simple, scalable query - get the most recent analysis for this user
+      const { data: storedAnalysis, error } = await supabase
+        .from('user_health_domains_analysis')
+        .select('analysis_data, created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .maybeSingle(); // Use maybeSingle() instead of limit(1) - handles no results gracefully
       
-      setDomainsLoading(true);
-      setDomainsError(null);
-      
-      try {
-        // 🔄 FETCH STORED HEALTH DOMAINS ANALYSIS FROM DATABASE
-        // Instead of calling the function every time, fetch stored results
-        const { data: storedAnalysis, error } = await supabase
-          .from('user_health_domains_analysis')
-          .select('analysis_data, created_at')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
-
-        if (!isMounted) return; // Component unmounted
-        
-        if (error) {
-          if (error.code === 'PGRST116') {
-            // No analysis found - user hasn't completed onboarding or analysis hasn't been generated yet
-            console.log('No health domains analysis found - may need to generate');
-            setDomainsError('No health domains analysis found. Complete onboarding to generate your analysis.');
-          } else {
-            console.error('Health domains analysis database error:', error);
-            setDomainsError(error.message || 'Failed to load health domains analysis');
-          }
-          return;
-        }
-
-        if (storedAnalysis?.analysis_data) {
-          console.log('Health domains data loaded from database:', storedAnalysis.analysis_data);
-          setDomainsData(storedAnalysis.analysis_data);
-        } else {
-          setDomainsError('No analysis data found. Please complete onboarding to generate your analysis.');
-        }
-      } catch (error: any) {
-        if (!isMounted || error.name === 'AbortError') return;
-        console.error('Health domains analysis loading error:', error);
-        setDomainsError(error.message || 'Failed to load health domains analysis');
-      } finally {
-        if (isMounted) {
-          setDomainsLoading(false);
-        }
+      if (error) {
+        console.error('Health domains analysis error:', error);
+        setDomainsError('Failed to load analysis');
+        return;
       }
-    };
 
+      if (storedAnalysis?.analysis_data) {
+        setDomainsData(storedAnalysis.analysis_data);
+      } else {
+        setDomainsError('No health domains analysis found. Complete onboarding to generate your analysis.');
+      }
+    } catch (error: any) {
+      console.error('Health domains analysis loading error:', error);
+      setDomainsError('Failed to load analysis');
+    } finally {
+      setDomainsLoading(false);
+    }
+  };
+
+  // Load health domains analysis on mount
+  useEffect(() => {
     loadHealthDomains();
-    
-    // Cleanup function
-    return () => {
-      isMounted = false;
-      abortController.abort();
-    };
   }, [user]);
 
   // Load subscription orders for full subscription users
@@ -1617,40 +1595,33 @@ export default function DashboardPage() {
             <Button 
               onClick={async () => {
                 if (isNotFoundError) {
+                  setDomainsLoading(true);
+                  setDomainsError(null);
+                  
                   try {
-                    setIsLoading(true);
-                    const supabase = createClient();
-                    const { data: { session } } = await supabase.auth.getSession();
+                    // Generate new analysis
+                    const { data, error } = await supabase.functions.invoke('health-domains-analysis');
+
+                    if (error) throw error;
                     
-                    if (session) {
-                      const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/health-domains-analysis`, {
-                        method: 'POST',
-                        headers: {
-                          'Authorization': `Bearer ${session.access_token}`,
-                          'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ userId: session.user.id }),
-                      });
-                      
-                      if (response.ok) {
-                        window.location.reload();
-                      } else {
-                        throw new Error(`Failed to generate analysis: ${response.status}`);
-                      }
-                    }
-                  } catch (error) {
-                    console.error('Failed to generate health domains analysis:', error);
+                    // Display the results immediately
+                    setDomainsData(data);
+                    
+                    // Also refresh from database after a moment to ensure persistence
+                    setTimeout(loadHealthDomains, 2000);
+                  } catch (error: any) {
+                    setDomainsError(`Failed to generate analysis: ${error.message}`);
                   } finally {
-                    setIsLoading(false);
+                    setDomainsLoading(false);
                   }
                 } else {
-                  window.location.reload();
+                  loadHealthDomains();
                 }
               }} 
-              className="bg-dark-accent text-white hover:bg-dark-accent/80"
-              disabled={isLoading}
+              className="bg-dark-accent text-white hover:bg-dark-accent/80 disabled:opacity-50"
+              disabled={domainsLoading}
             >
-              {isLoading ? 'Generating...' : (isNotFoundError ? 'Generate Analysis' : 'Try Again')}
+              {domainsLoading ? 'Generating...' : (isNotFoundError ? 'Generate Analysis' : 'Try Again')}
             </Button>
           </div>
         </div>
@@ -1924,11 +1895,32 @@ export default function DashboardPage() {
         {/* Refresh Button */}
         <div className="text-center">
           <Button 
-            onClick={() => window.location.reload()}
-            className="bg-dark-accent text-white hover:bg-dark-accent/80 px-8 py-3"
+            onClick={async () => {
+              setDomainsLoading(true);
+              setDomainsError(null);
+              
+              try {
+                // Generate new analysis
+                const { data, error } = await supabase.functions.invoke('health-domains-analysis');
+
+                if (error) throw error;
+                
+                // Display the results immediately
+                setDomainsData(data);
+                
+                // Also refresh from database after a moment to ensure persistence
+                setTimeout(loadHealthDomains, 2000);
+              } catch (error: any) {
+                setDomainsError(`Failed to generate analysis: ${error.message}`);
+              } finally {
+                setDomainsLoading(false);
+              }
+            }}
+            disabled={domainsLoading}
+            className="bg-dark-accent text-white hover:bg-dark-accent/80 px-8 py-3 disabled:opacity-50"
           >
             <Sparkles className="h-5 w-5 mr-2" />
-            Refresh Analysis
+            {domainsLoading ? 'Generating...' : 'Refresh Analysis'}
           </Button>
         </div>
       </div>

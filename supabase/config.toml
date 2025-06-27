@@ -292,8 +292,11 @@ inspector_port = 8083
 # The Deno major version to use.
 deno_version = 1
 
-# [edge_runtime.secrets]
-# secret_key = "env(SECRET_VALUE)"
+[edge_runtime.secrets]
+SHOPIFY_STORE_NAME = "env(SHOPIFY_STORE_NAME)"
+SHOPIFY_ACCESS_TOKEN = "env(SHOPIFY_ACCESS_TOKEN)"
+SHOPIFY_API_VERSION = "env(SHOPIFY_API_VERSION)"
+SHOPIFY_STOREFRONT_ACCESS_TOKEN = "env(SHOPIFY_STOREFRONT_ACCESS_TOKEN)"
 
 [analytics]
 enabled = true
