@@ -274,6 +274,32 @@ Make recommendations ULTRA-SPECIFIC with exact dosages, timing, and protocols ba
       // Don't fail the request if database save fails
     }
 
+    // 🔍 QUALITY MONITORING (Zero Risk - Never Breaks Functionality)
+    try {
+      const qualityJudgeUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/quality-judge`;
+      fetch(qualityJudgeUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': req.headers.get('Authorization') || '',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          function_name: 'health-score',
+          user_data: {
+            age: profile?.age,
+            gender: profile?.gender,
+            primary_concern: profile?.primary_health_concern,
+            total_symptoms: [profile?.energy_levels, profile?.brain_fog, profile?.digestive_issues, profile?.stress_levels, profile?.mood_changes].filter(s => s === 'yes').length,
+            has_conditions: conditions && conditions.length > 0,
+            has_medications: medications && medications.length > 0
+          },
+          ai_response: healthAnalysis
+        })
+      }).catch(() => {}); // Silent fail - never break functionality
+    } catch (e) {
+      // Quality monitoring failure never affects user experience
+    }
+
     return new Response(JSON.stringify(healthAnalysis), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

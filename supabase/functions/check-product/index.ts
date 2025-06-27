@@ -636,6 +636,33 @@ SCORING MUST REFLECT ACTUAL COMPATIBILITY - BE HARSH ON MISMATCHES!`
         // Continue with the response even if history save fails
       }
 
+      // 🔍 QUALITY MONITORING (Zero Risk - Never Breaks Functionality)
+      try {
+        const qualityJudgeUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/quality-judge`;
+        fetch(qualityJudgeUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': req.headers.get('Authorization') || '',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            function_name: 'check-product',
+            user_data: {
+              age: userProfile?.age,
+              gender: userProfile?.gender,
+              product_url: productUrl,
+              has_allergies: userAllergies && userAllergies.length > 0,
+              has_conditions: userConditions && userConditions.length > 0,
+              has_biomarkers: userBiomarkers && userBiomarkers.length > 0,
+              has_genetics: userSnps && userSnps.length > 0
+            },
+            ai_response: analysis
+          })
+        }).catch(() => {}); // Silent fail - never break functionality
+      } catch (e) {
+        // Quality monitoring failure never affects user experience
+      }
+
       return new Response(JSON.stringify(analysis), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });

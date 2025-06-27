@@ -329,6 +329,33 @@ Deno.serve(async (req) => {
 
     console.log('Successfully stored diet plan');
 
+    // 🔍 QUALITY MONITORING (Zero Risk - Never Breaks Functionality)
+    try {
+      const qualityJudgeUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/quality-judge`;
+      fetch(qualityJudgeUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': req.headers.get('Authorization') || '',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          function_name: 'generate-diet-plan',
+          user_data: {
+            age: profile?.age,
+            gender: profile?.gender,
+            dietary_preference: profile?.dietary_preference,
+            primary_concern: profile?.primary_health_concern,
+            has_allergies: allergies && allergies.length > 0,
+            has_biomarkers: biomarkers && biomarkers.length > 0,
+            has_genetics: enrichedSnps && enrichedSnps.length > 0
+          },
+          ai_response: planDetails
+        })
+      }).catch(() => {}); // Silent fail - never break functionality
+    } catch (e) {
+      // Quality monitoring failure never affects user experience
+    }
+
     return new Response(JSON.stringify({
       success: true,
       message: 'Diet plan generated successfully',

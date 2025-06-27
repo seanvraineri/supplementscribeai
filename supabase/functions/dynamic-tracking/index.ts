@@ -249,6 +249,29 @@ Make every question feel like a breakthrough moment in understanding their healt
       .update({ last_question_refresh: new Date().toISOString() })
       .eq('id', userId);
 
+    // 🔍 QUALITY MONITORING (Zero Risk - Never Breaks Functionality)
+    try {
+      const qualityJudgeUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/quality-judge`;
+      fetch(qualityJudgeUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + Deno.env.get('SUPABASE_ANON_KEY'),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          function_name: 'dynamic-tracking-questions',
+          user_data: {
+            user_id: userId,
+            context_available: !!userContext,
+            questions_generated: questions.length
+          },
+          ai_response: { questions: insertedQuestions }
+        })
+      }).catch(() => {}); // Silent fail - never break functionality
+    } catch (e) {
+      // Quality monitoring failure never affects user experience
+    }
+
     return new Response(JSON.stringify({ 
       success: true, 
       questions: insertedQuestions 
@@ -398,6 +421,29 @@ Make it feel like a breakthrough moment in understanding their health!
 
     if (insertError) {
       console.error('Insert insight error:', insertError);
+    }
+
+    // 🔍 QUALITY MONITORING (Zero Risk - Never Breaks Functionality)
+    try {
+      const qualityJudgeUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/quality-judge`;
+      fetch(qualityJudgeUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + Deno.env.get('SUPABASE_ANON_KEY'),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          function_name: 'dynamic-tracking-insights',
+          user_data: {
+            user_id: userId,
+            responses_count: responses.length,
+            data_period_days: 7
+          },
+          ai_response: { insight: insightText }
+        })
+      }).catch(() => {}); // Silent fail - never break functionality
+    } catch (e) {
+      // Quality monitoring failure never affects user experience
     }
 
     return new Response(JSON.stringify({ 

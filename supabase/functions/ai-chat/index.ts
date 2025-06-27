@@ -1847,6 +1847,32 @@ Deno.serve(async (req) => {
       }
     })();
 
+    // 🔍 QUALITY MONITORING (Zero Risk - Never Breaks Functionality)
+    try {
+      const qualityJudgeUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/quality-judge`;
+      fetch(qualityJudgeUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': req.headers.get('Authorization') || '',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          function_name: 'ai-chat',
+          user_data: {
+            age: profile?.age,
+            gender: profile?.gender,
+            primary_concern: profile?.primary_health_concern,
+            user_message: message,
+            has_biomarkers: biomarkers && biomarkers.length > 0,
+            has_genetics: enrichedSnps && enrichedSnps.length > 0
+          },
+          ai_response: aiResponse
+        })
+      }).catch(() => {}); // Silent fail - never break functionality
+    } catch (e) {
+      // Quality monitoring failure never affects user experience
+    }
+
     return new Response(JSON.stringify({
       response: aiResponse,
       conversation_id: currentConversationId,

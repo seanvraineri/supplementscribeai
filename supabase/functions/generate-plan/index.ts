@@ -1,5 +1,6 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { checkRateLimit, getRateLimitHeaders } from '../rate-limiter/index.ts';
+import { judgePersonalization, logQualityMetrics } from '../quality-judge/index.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -460,6 +461,17 @@ Deno.serve(async (req) => {
       console.error('⚠️ AI context refresh warning (not failing plan):', contextError);
       // Don't fail plan generation if context refresh fails
     }
+
+    // 🎯 SIMPLE QUALITY MONITORING (ZERO RISK)
+    console.log('🎯 QUALITY METRICS:', {
+      function: 'generate-plan',
+      user_id: userId,
+      personalization_tier: personalizationTier,
+      supplement_count: planDetails?.recommendations?.length || 0,
+      has_biomarkers: labData.length > 0,
+      has_genetics: geneticData.length > 0,
+      timestamp: new Date().toISOString()
+    });
 
     return new Response(JSON.stringify({ 
       success: true, 

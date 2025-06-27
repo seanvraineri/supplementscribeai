@@ -127,7 +127,7 @@ Deno.serve(async (req) => {
     const [
       { data: profile, error: profileError },
       { data: biomarkers, error: biomarkersError },
-      { data: snps, error: snpsError },
+      { data: snps, error: ITS  },
       { data: allergies, error: allergiesError },
       { data: conditions, error: conditionsError },
       { data: medications, error: medicationsError },
@@ -668,6 +668,32 @@ Remember: Only reference genetic variants and biomarker values that are actually
       } catch (historyError) {
         console.error('Error saving to history:', historyError);
         // Don't throw error, just log it - we can still return the analysis
+      }
+
+      // 🔍 QUALITY MONITORING (Zero Risk - Never Breaks Functionality)
+      try {
+        const qualityJudgeUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/quality-judge`;
+        fetch(qualityJudgeUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': req.headers.get('Authorization') || '',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            function_name: 'analyze-study',
+            user_data: {
+              age: userProfile?.age,
+              gender: userProfile?.gender,
+              primary_concern: userProfile?.primary_health_concern,
+              study_url: studyUrl,
+              has_biomarkers: userBiomarkers && userBiomarkers.length > 0,
+              has_genetics: enrichedSnps && enrichedSnps.length > 0
+            },
+            ai_response: cleanedAnalysis
+          })
+        }).catch(() => {}); // Silent fail - never break functionality
+      } catch (e) {
+        // Quality monitoring failure never affects user experience
       }
 
       // Return the cleaned analysis to the frontend

@@ -206,6 +206,35 @@ Deno.serve(async (req) => {
 
     console.log('✅ Health domains analysis completed and stored successfully');
 
+    // 🔍 QUALITY MONITORING (Zero Risk - Never Breaks Functionality)
+    try {
+      const qualityJudgeUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/quality-judge`;
+      fetch(qualityJudgeUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': req.headers.get('Authorization') || '',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          function_name: 'health-domains-analysis',
+          user_data: {
+            age: profile?.age,
+            gender: profile?.gender,
+            primary_concern: profile?.primary_health_concern,
+            total_symptoms: (profile?.energy_levels === 'yes' ? 1 : 0) + 
+                           (profile?.brain_fog === 'yes' ? 1 : 0) + 
+                           (profile?.digestive_issues === 'yes' ? 1 : 0) + 
+                           (profile?.stress_levels === 'yes' ? 1 : 0),
+            has_biomarkers: biomarkers && biomarkers.length > 0,
+            has_genetics: enrichedSnps && enrichedSnps.length > 0
+          },
+          ai_response: analysisData
+        })
+      }).catch(() => {}); // Silent fail - never break functionality
+    } catch (e) {
+      // Quality monitoring failure never affects user experience
+    }
+
     return new Response(JSON.stringify(analysisData), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -230,7 +259,22 @@ async function generateAIHealthDomainsAnalysis(userData: any) {
   const gender = profile?.gender || 'not specified';
   const weight = profile?.weight_lbs;
   const height = profile?.height_total_inches;
-  const bmi = weight && height ? (weight / Math.pow(height / 12, 2) * 703).toFixed(1) : null;
+  const bmi = weight && height ? (weight / Math.pow(height / 12, 2) * 703) : null;
+  
+  // BMI categories for display (don't show actual number)
+  let bmiCategory = 'Not available';
+  if (bmi) {
+    if (bmi < 18.5) {
+      bmiCategory = 'Low';
+    } else if (bmi >= 18.5 && bmi < 25) {
+      bmiCategory = 'In Range';
+    } else if (bmi >= 25 && bmi < 30) {
+      bmiCategory = 'Elevated';
+    } else {
+      bmiCategory = 'High';
+    }
+  }
+  
   const goals = profile?.health_goals || [];
   const primaryConcern = profile?.primary_health_concern || '';
 
@@ -242,7 +286,7 @@ async function generateAIHealthDomainsAnalysis(userData: any) {
   healthContext += `• Name: ${firstName}\n`;
   healthContext += `• Age: ${age} years old\n`;
   healthContext += `• Gender: ${gender}\n`;
-  healthContext += `• BMI: ${bmi || 'Not available'}\n`;
+  healthContext += `• BMI Category: ${bmiCategory}\n`;
   healthContext += `• Primary Health Concern: "${primaryConcern}"\n`;
   healthContext += `• Health Goals: ${goals.join(', ') || 'General wellness'}\n\n`;
 
@@ -354,15 +398,27 @@ async function generateAIHealthDomainsAnalysis(userData: any) {
 
   const prompt = `${healthContext}
 
+🎯 CRITICAL PERSONALIZATION REQUIREMENTS:
+- Use their EXACT age: ${age} years old (not generic age ranges)
+- Use their EXACT gender: ${gender} (gender-specific insights)
+- Use their BMI category: ${bmiCategory} (for metabolic context, don't mention specific numbers)
+- Use their PRIMARY CONCERN: "${primaryConcern}" (use their exact words)
+- Use their symptom count: ${positiveResponses.length}/16 total issues reported
+- Reference their EXACT supplement protocol (what they're taking RIGHT NOW)
+- Connect their symptoms to their current supplements
+- Explain WHY they experience each specific symptom
+- Make every insight impossible to replicate without their exact data
+- **CRITICAL**: Use "${firstName}" SPARINGLY - only 3-5 times total. Primarily use "you/your" to sound conversational, not robotic
+
 🎯 ULTRA-HYPER-PERSONALIZED ANALYSIS FOR ${firstName.toUpperCase()}**:
 
 🔥 **IMPOSSIBLE-TO-REPLICATE ANALYSIS MISSION:**
-You are creating analysis so SPECIFIC and PERSONALIZED that it's impossible for generic ChatGPT to replicate. You have access to ${firstName}'s EXACT onboarding data, supplement plan, biomarkers, and genetics - use EVERY piece of data to create mind-blowing insights.
+You are creating analysis so SPECIFIC and PERSONALIZED that it's impossible for generic ChatGPT to replicate. You have access to their EXACT onboarding data, supplement plan, biomarkers, and genetics - use EVERY piece of data to create mind-blowing insights.
 
 **🎯 EXACT DATA INTEGRATION** - Use these precise details:
 - Age: ${age} years old (not generic age ranges)
 - Gender: ${gender} (gender-specific insights)
-- BMI: ${bmi || 'not available'} (exact body composition context)
+- BMI: ${bmiCategory} (qualitative body composition context)
 - Primary concern: "${primaryConcern}" (use their exact words)
 - Symptom count: ${positiveResponses.length}/16 total issues reported
 - Current supplement protocol: ${supplementPlan && supplementPlan.recommendations ? supplementPlan.recommendations.map((supp: any) => `${supp.name} at ${supp.dosage} ${supp.timing}`).join(', ') : 'None specified'}
@@ -396,12 +452,12 @@ ${biomarkers.length > 0 ? 'Reference their exact biomarker values and ranges' : 
 - ALL recommendations must be safe for their conditions
 - Check for drug-nutrient interactions
 
-**🎯 NATURAL NAME USAGE**:
-- Use "${firstName}" naturally in conversation, not repetitively
-- Vary with "you" and "your" most of the time
-- Only use the name when it adds personalization value
-- Avoid starting every sentence with their name
-- Make it sound like talking to a friend, not a medical chart
+**🎯 NATURAL CONVERSATIONAL TONE**:
+- Use "${firstName}" sparingly and naturally - only when it adds genuine personalization
+- Primarily use "you" and "your" in conversation
+- Vary language naturally - don't repeat phrases
+- Make it sound like talking to a friend who knows them well
+- Avoid clinical, robotic language
 
 **🎯 GOALS INTEGRATION**:
 Primary goals: ${goals.join(', ') || 'general wellness optimization'}
@@ -409,30 +465,30 @@ Primary goals: ${goals.join(', ') || 'general wellness optimization'}
 - Show how recommendations support their objectives
 - Make it clear this is designed for THEIR success
 
-ANALYSIS DOMAINS - ULTRA-PERSONALIZED FOR ${firstName}:
+ANALYSIS DOMAINS - PERSONALIZED HEALTH BLUEPRINT:
 
-1. ${firstName}'S METABOLOMIC BLUEPRINT (Energy Production & Glucose Metabolism)
-2. ${firstName}'S LIPIDOMIC SIGNATURE (Cell Membrane Health & Essential Fatty Acids) 
-3. ${firstName}'S INFLAMMATION PROFILE (Inflammatory Pathways & Immune Response)
-4. ${firstName}'S COGNITIVE ARCHITECTURE (Brain Function & Neurotransmitter Balance)
-5. ${firstName}'S GUT ECOSYSTEM (Digestive Health & Microbiome Balance)
+1. ENERGY BLUEPRINT (Metabolic Function & Glucose Regulation)
+2. BRAIN CHEMISTRY PROFILE (Cognitive Function & Neurotransmitter Balance) 
+3. INFLAMMATORY SIGNATURE (Immune Response & Inflammatory Pathways)
+4. DIGESTIVE ECOSYSTEM (Gut Health & Microbiome Balance)
+5. HORMONE PROFILE (Endocrine Function & Hormonal Balance)
 
 For EACH domain, provide ULTRA-SPECIFIC analysis:
-- WHY THIS MATTERS TO ${firstName}: Explain the science for ${firstName}'s exact situation
-- ${firstName}'S PERSONALIZED INSIGHTS: Use ${firstName}'s specific data and symptoms
-- SPECIFIC FINDINGS ABOUT ${firstName}: Reference ${firstName}'s exact biomarkers, symptoms, genetics
-- TARGETED PROTOCOLS FOR ${firstName}: 3-4 specific, actionable protocols designed for ${firstName}
-- DAILY TIPS ${firstName} CAN START TODAY: Practical actions ${firstName} can implement immediately
-- SAFETY FOR ${firstName}: Precautions specific to ${firstName}'s allergies/conditions/medications
-- HOW THIS SUPPORTS ${firstName}'S GOALS: Direct connection to ${firstName}'s exact goals
+- WHY THIS MATTERS: Explain the science for their exact situation
+- PERSONALIZED INSIGHTS: Use their specific data and symptoms
+- SPECIFIC FINDINGS: Reference their exact biomarkers, symptoms, genetics
+- TARGETED PROTOCOLS: 3-4 specific, actionable protocols designed for them
+- DAILY TIPS: Practical actions they can implement immediately
+- SAFETY CONSIDERATIONS: Precautions specific to their allergies/conditions/medications
+- GOAL CONNECTION: Direct connection to their exact goals
 
-ADDITIONAL ULTRA-PERSONALIZED SECTIONS:
-- ${firstName}'S CROSS-DOMAIN CONNECTIONS: How ${firstName}'s specific issues connect
-- ${firstName}'S PRIORITY PROTOCOLS: Top 3 most important interventions for ${firstName}
-- ${firstName}'S DAILY ACTION PLAN: Morning/afternoon/evening actions for ${firstName}
-- SAFETY WARNINGS FOR ${firstName}: Critical interactions ${firstName} must avoid
+ADDITIONAL PERSONALIZED SECTIONS:
+- CROSS-DOMAIN CONNECTIONS: How their specific issues connect
+- PRIORITY PROTOCOLS: Top 3 most important interventions
+- DAILY ACTION PLAN: Morning/afternoon/evening actions
+- SAFETY WARNINGS: Critical interactions to avoid
 
-TONE: Like a world-class functional medicine doctor who has studied ${firstName} for months and knows ${firstName}'s body intimately. Every sentence should make ${firstName} think "How does this AI know me so well?"
+TONE: Like a world-class functional medicine doctor who has studied them for months and knows their body intimately. Every sentence should make them think "How does this AI know me so well?"
 
 OUTPUT FORMAT: Return a valid JSON object with this exact structure:
 
@@ -442,31 +498,36 @@ OUTPUT FORMAT: Return a valid JSON object with this exact structure:
     "title": "Your Energy Blueprint",
     "insights": "Explain their energy patterns using their exact symptoms and data. Use natural conversation - 'you' and 'your' primarily, with their name only when it adds personal touch. Focus on WHY they experience their specific energy issues.",
     "actionableTips": "Daily energy optimization strategies tailored to their exact profile",
-    "safetyConsiderations": "Any precautions specific to their allergies/conditions/medications"
+    "safetyConsiderations": "Any precautions specific to their allergies/conditions/medications",
+    "unlockDeeperInsights": ${biomarkers.length === 0 || snps.length === 0 ? `"🔍 **Want Even Deeper Energy Insights?** Based on your specific fatigue and energy symptoms, these exact tests transform your energy: • Vitamin B12 (serum + methylmalonic acid) - gives you steady energy all day • 25-hydroxyvitamin D - boosts your mood and motivation • TSH, Free T3, Free T4, Reverse T3 - unlocks natural energy • MTHFR C677T/A1298C genetics - fixes energy at the cellular level. Getting these tested lets me create hyper-targeted energy protocols instead of general recommendations."` : `null`}
   },
   "brainChemistryProfile": {
     "title": "Your Brain Chemistry Profile", 
     "insights": "Analyze their cognitive/mood symptoms using their exact data. Be conversational and natural - avoid repetitive name usage. Explain the underlying mechanisms in relatable terms.",
     "actionableTips": "Brain optimization strategies for their specific symptoms",
-    "safetyConsiderations": "Safety notes for their profile"
+    "safetyConsiderations": "Safety notes for their profile",
+    "unlockDeeperInsights": ${biomarkers.length === 0 || snps.length === 0 ? `"🧠 **Unlock Your Brain's Blueprint?** Your cognitive symptoms suggest specific neurotransmitter imbalances. These exact tests show what's happening: • Homocysteine - restores your sharp thinking • COMT Val158Met genetics - explains focus issues and guides perfect supplement timing • Neurotransmitter panel (serotonin, dopamine, GABA) - targets your specific mood/focus issues • B-vitamin panel (B1, B6, B12, folate) - eliminates brain fog completely. This transforms generic brain support into precision neurotransmitter optimization."` : `null`}
   },
   "inflammatorySignature": {
     "title": "Your Inflammatory Signature",
     "insights": "Connect their inflammation-related symptoms to their profile. Use natural language - mostly 'you/your' with occasional name use for personalization.",
     "actionableTips": "Anti-inflammatory strategies for their specific pattern",
-    "safetyConsiderations": "Safety considerations for their conditions"
+    "safetyConsiderations": "Safety considerations for their conditions",
+    "unlockDeeperInsights": ${biomarkers.length === 0 || snps.length === 0 ? `"🔥 **Discover Your Inflammation Triggers?** Based on your pain and inflammatory symptoms, these markers reveal your exact pathways: • High-sensitivity CRP - eliminates your pain • ESR (erythrocyte sedimentation rate) - restores joint comfort • IL-6, TNF-alpha - targets your specific inflammation triggers • Omega-3 index - naturally reduces pain. You get targeted anti-inflammatory protocols instead of general approaches."` : `null`}
   },
   "digestiveEcosystem": {
     "title": "Your Digestive Ecosystem",
     "insights": "Analyze their digestive symptoms and connections. Keep it conversational and natural - avoid overusing their name.",
     "actionableTips": "Gut health optimization for their specific issues",
-    "safetyConsiderations": "Digestive safety notes"
+    "safetyConsiderations": "Digestive safety notes",
+    "unlockDeeperInsights": ${biomarkers.length === 0 || snps.length === 0 ? `"🦠 **Map Your Gut Ecosystem?** Your digestive symptoms point to specific imbalances. These exact tests show what's happening: • Comprehensive stool analysis - eliminates bloating and improves digestion • SIBO breath test (lactulose) - stops gas and bloating • Food sensitivity panel (IgG) - heals your gut • Zonulin (leaky gut marker) - improves nutrient absorption. This creates a precision gut healing protocol tailored to your microbiome."` : `null`}
   },
   "hormoneProfile": {
     "title": "Your Hormone Profile",
     "insights": "Age/gender-specific hormone analysis based on their symptoms. Use natural conversation style.",
     "actionableTips": "Hormone balance strategies for their profile",
-    "safetyConsiderations": "Hormone-related safety considerations"
+    "safetyConsiderations": "Hormone-related safety considerations",
+    "unlockDeeperInsights": ${biomarkers.length === 0 || snps.length === 0 ? `"⚡ **Decode Your Hormone Blueprint?** At ${age} years old with your symptoms, these hormone tests reveal exactly what's out of balance: • 4-point cortisol rhythm - improves sleep and energy • Complete hormone panel (testosterone, estrogen, progesterone) - balances your mood • DHEA-S - restores vitality • Insulin + glucose - helps with weight and energy. You get precision hormone optimization instead of guessing."` : `null`}
   },
   "dailyActionPlan": {
     "morning": "Personalized morning routine based on their goals and symptoms",
@@ -482,14 +543,68 @@ OUTPUT FORMAT: Return a valid JSON object with this exact structure:
 }
 
 🔥 CRITICAL SUCCESS FACTORS:
-- Use ${firstName}'s name minimum 20 times throughout the analysis
-- Reference ${firstName}'s exact symptoms, not generic ones
-- Explain WHY ${firstName} experiences each specific symptom
-- Connect ${firstName}'s current supplements to their symptoms
-- Make every insight impossible to replicate without ${firstName}'s exact data
+- Use their name naturally and sparingly - only when it adds genuine personalization value
+- Reference their exact symptoms, not generic ones
+- Explain WHY they experience each specific symptom
+- Connect their current supplements to their symptoms
+- Make every insight impossible to replicate without their exact data
 - Create "Holy sh*t, this knows me better than I know myself" moments
 
-🎯 SAFETY REMINDER: Every recommendation must be safe for ${firstName}'s allergies (${allergies.map((a: any) => a.ingredient_name).join(', ') || 'none'}), conditions (${conditions.map((c: any) => c.condition_name).join(', ') || 'none'}), and medications (${medications.map((m: any) => m.medication_name).join(', ') || 'none'}).
+🎯 SAFETY REMINDER: Every recommendation must be safe for their allergies (${allergies.map((a: any) => a.ingredient_name).join(', ') || 'none'}), conditions (${conditions.map((c: any) => c.condition_name).join(', ') || 'none'}), and medications (${medications.map((m: any) => m.medication_name).join(', ') || 'none'}).
+
+**🔍 UNLOCK DEEPER INSIGHTS FEATURE** (ONLY if they're missing biomarkers OR genetics):
+${biomarkers.length === 0 || snps.length === 0 ? `
+For EACH domain, include "unlockDeeperInsights" section that:
+- Analyzes their SPECIFIC symptoms to recommend EXACT tests
+- Lists 3-4 PRECISE biomarkers/genetic tests with EXACT names
+- Explains EXACTLY how each test would improve their life
+- Shows the SPECIFIC optimization each test would unlock
+- Connects to their exact symptoms and goals
+
+ULTRA-SPECIFIC symptom-to-test mapping with life improvements:
+
+ENERGY SYMPTOMS (fatigue, low energy, afternoon crashes):
+- Vitamin B12 (serum + methylmalonic acid): "Would reveal if your fatigue is from B12 deficiency - fixing this gives you steady energy all day"
+- Folate (serum + RBC folate): "Shows if poor folate is causing your brain fog - optimizing this sharpens your mental clarity"
+- 25-hydroxyvitamin D: "Low D explains mood dips and energy crashes - getting this right boosts your mood and motivation"
+- TSH, Free T3, Free T4, Reverse T3: "Complete thyroid panel reveals if slow metabolism is causing your fatigue - unlocks natural energy"
+- MTHFR C677T/A1298C genetics: "Shows if you need methylated vitamins instead of regular ones - fixes energy at the cellular level"
+
+BRAIN/COGNITIVE SYMPTOMS (brain fog, focus issues, memory problems):
+- Homocysteine: "High levels damage brain cells - lowering this restores your sharp thinking"
+- B-vitamin panel (B1, B6, B12, folate): "Reveals which B-vitamins your brain is missing - eliminates brain fog completely"
+- COMT Val158Met genetics: "Shows how fast you clear dopamine - explains focus issues and guides perfect supplement timing"
+- Neurotransmitter panel (serotonin, dopamine, GABA): "Reveals exact brain chemical imbalances - targets your specific mood/focus issues"
+- Inflammatory markers (CRP, IL-6): "Brain inflammation causes fog - reducing this restores mental clarity"
+
+INFLAMMATION SYMPTOMS (joint pain, stiffness, muscle aches):
+- High-sensitivity CRP: "Shows systemic inflammation level - lowering this eliminates your pain"
+- ESR (erythrocyte sedimentation rate): "Reveals active inflammation - targeting this restores joint comfort"
+- Rheumatoid factor + Anti-CCP: "Rules out autoimmune causes - prevents future joint damage"
+- IL-6, TNF-alpha: "Shows exact inflammatory pathways - targets your specific inflammation triggers"
+- Omega-3 index: "Low levels fuel inflammation - optimizing this naturally reduces pain"
+
+DIGESTIVE SYMPTOMS (bloating, gas, irregular bowel movements):
+- Comprehensive stool analysis: "Reveals exact gut bacteria imbalances - eliminates bloating and improves digestion"
+- SIBO breath test (lactulose): "Detects small intestine bacterial overgrowth - treating this stops gas and bloating"
+- Food sensitivity panel (IgG): "Shows which foods trigger your symptoms - avoiding these heals your gut"
+- Zonulin (leaky gut marker): "Reveals intestinal permeability - healing this improves nutrient absorption"
+- H. pylori testing: "Hidden infection causes digestive issues - treating this restores gut health"
+
+HORMONE SYMPTOMS (mood swings, sleep issues, weight gain):
+- Complete hormone panel (testosterone, estrogen, progesterone, cortisol): "Shows exact imbalances causing your symptoms"
+- 4-point cortisol rhythm: "Reveals stress hormone patterns - fixing this improves sleep and energy"
+- DHEA-S: "Low levels cause fatigue and mood issues - optimizing this restores vitality"
+- Insulin + glucose: "Shows metabolic dysfunction - fixing this helps with weight and energy"
+- Thyroid antibodies (TPO, thyroglobulin): "Detects autoimmune thyroid issues - prevents future problems"
+
+SLEEP SYMPTOMS (insomnia, restless sleep, not feeling rested):
+- Melatonin levels (saliva): "Low production explains sleep issues - guides perfect sleep optimization"
+- Magnesium RBC: "Deficiency causes restless sleep - fixing this gives you deep, restorative sleep"
+- Cortisol rhythm: "High nighttime cortisol keeps you wired - balancing this helps you fall asleep easily"
+- Sleep genetics (PER2, CLOCK genes): "Shows your natural sleep chronotype - optimizes your perfect sleep schedule"
+
+Make each recommendation ULTRA-SPECIFIC to their reported symptoms with exact test names and life improvements.` : 'Skip unlockDeeperInsights sections since they have biomarker/genetic data'}
 
 BEGIN ULTRA-PERSONALIZED ANALYSIS FOR ${firstName}:`;
 
