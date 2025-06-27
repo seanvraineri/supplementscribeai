@@ -710,7 +710,10 @@ export default function HomePage() {
                       <p className="text-xs font-medium text-dark-primary">Add Monthly Supplements</p>
                       <p className="text-xs text-dark-secondary">Upgrade anytime</p>
                     </div>
-                    <p className="text-xs font-bold text-dark-accent">+$75/month</p>
+                    <div className="text-right">
+                      <p className="text-xs font-bold text-dark-accent">$75/month total</p>
+                      <p className="text-xs text-dark-secondary">($55.01 more)</p>
+                    </div>
                   </div>
                 </div>
                 <Link href="/auth/signup">

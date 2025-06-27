@@ -157,9 +157,25 @@ export function SubscriptionTierStep({ onNext }: SubscriptionTierStepProps) {
                       <div key={idx} className="flex items-center gap-2">
                         <CheckCircle className={`w-4 h-4 flex-shrink-0 ${isSelected ? 'text-dark-accent' : 'text-dark-secondary'}`} />
                         <span className="text-sm text-dark-primary">{feature}</span>
-                      </div>
-                    ))}
+                                      </div>
+              ))}
+            </div>
+
+            {/* Upgrade Option for Software Only - Outside cards to prevent cutoff */}
+            {selectedTier === 'software_only' && (
+              <div className="mt-6 p-4 bg-dark-accent/10 border border-dark-accent/20 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-dark-primary">Add Monthly Supplements</p>
+                    <p className="text-xs text-dark-secondary">Upgrade anytime from your dashboard</p>
                   </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold text-dark-accent">$75/month total</p>
+                    <p className="text-xs text-dark-secondary">($55.01 more)</p>
+                  </div>
+                </div>
+              </div>
+            )}
                   
                   {/* Additional Info for Software Only */}
                   {tier.value === 'software_only' && (
@@ -168,17 +184,6 @@ export function SubscriptionTierStep({ onNext }: SubscriptionTierStepProps) {
                         <p className="text-xs text-dark-secondary">
                           💡 You'll get the same personalized recommendations - just source your own supplements
                         </p>
-                      </div>
-                      <div className="p-3 bg-dark-accent/10 border border-dark-accent/20 rounded-lg">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium text-dark-primary">Add Monthly Supplements</p>
-                            <p className="text-xs text-dark-secondary">Upgrade anytime from your dashboard</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-sm font-bold text-dark-accent">+$75/month</p>
-                          </div>
-                        </div>
                       </div>
                     </div>
                   )}
