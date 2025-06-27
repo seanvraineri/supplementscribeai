@@ -14,12 +14,10 @@ export function PersonalDetailsStep() {
   // Pre-fill shipping name with full name when it changes
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const name = e.target.value;
-    if (subscriptionTier === 'full') {
-      setValue('shipping_name', name, { shouldValidate: true });
-    }
+    setValue('shipping_name', name, { shouldValidate: true });
   };
   
-  const needsShipping = subscriptionTier === 'full';
+  const needsShipping = true; // Collect address for ALL users to enable upselling
   
   return (
     <div className="space-y-6 w-full max-w-lg mx-auto text-left">
@@ -127,7 +125,7 @@ export function PersonalDetailsStep() {
         </div>
       </div>
 
-      {/* Shipping Address (only for complete package) */}
+      {/* Shipping Address - Collected for all users to enable seamless upgrades */}
       {needsShipping && (
         <motion.div
           initial={{ opacity: 0, height: 0 }}
@@ -140,7 +138,10 @@ export function PersonalDetailsStep() {
             <h3 className="text-lg font-semibold text-dark-primary">Shipping Address</h3>
           </div>
           <p className="text-sm text-dark-secondary">
-            📦 Your supplements will be delivered to this address monthly
+            {subscriptionTier === 'full' 
+              ? "📦 Your supplements will be delivered to this address monthly"
+              : "📍 We'll save this for future supplement delivery if you upgrade"
+            }
           </p>
           
           <div className="space-y-4">
@@ -159,19 +160,19 @@ export function PersonalDetailsStep() {
             <div className="space-y-1">
               <label className="text-sm font-medium text-dark-secondary">Street Address</label>
               <input 
-                {...register('shipping_address1')}
+                {...register('shipping_address_line1')}
                 placeholder="123 Main Street"
                 className="w-full px-4 py-2.5 bg-dark-panel border-2 border-dark-border rounded-lg placeholder:text-dark-secondary/60 focus:border-dark-accent focus:ring-2 focus:ring-dark-accent/30 transition-all"
               />
-              {errors.shipping_address1 && (
-                <p className="text-red-400 text-xs">{errors.shipping_address1.message}</p>
+              {errors.shipping_address_line1 && (
+                <p className="text-red-400 text-xs">{errors.shipping_address_line1.message}</p>
               )}
             </div>
             
             <div className="space-y-1">
               <label className="text-sm font-medium text-dark-secondary">Apartment, Suite, etc. (Optional)</label>
               <input 
-                {...register('shipping_address2')}
+                {...register('shipping_address_line2')}
                 placeholder="Apt 4B"
                 className="w-full px-4 py-2.5 bg-dark-panel border-2 border-dark-border rounded-lg placeholder:text-dark-secondary/60 focus:border-dark-accent focus:ring-2 focus:ring-dark-accent/30 transition-all"
               />

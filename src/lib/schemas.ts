@@ -16,14 +16,14 @@ export const onboardingSchema = z.object({
   // Step 2: Subscription Tier
   subscription_tier: z.string({ required_error: "Please select a subscription plan." }),
   
-  // Shipping Address (only required for complete package)
-  shipping_name: z.string().optional(),
-  shipping_address1: z.string().optional(),
-  shipping_address2: z.string().optional(),
-  shipping_city: z.string().optional(),
-  shipping_state: z.string().optional(),
-  shipping_postal_code: z.string().optional(),
-  shipping_country: z.string().optional(),
+  // Shipping Address - REQUIRED FOR ALL USERS to enable upselling
+  shipping_name: z.string().min(2, { message: "Full name is required." }),
+  shipping_address_line1: z.string().min(5, { message: "Street address is required." }),
+  shipping_address_line2: z.string().optional(),
+  shipping_city: z.string().min(2, { message: "City is required." }),
+  shipping_state: z.string().min(2, { message: "State is required." }),
+  shipping_postal_code: z.string().min(5, { message: "ZIP code is required." }),
+  shipping_country: z.string().min(2, { message: "Country is required." }),
   shipping_phone: z.string().optional(),
   
   // Step 2: Lifestyle Assessment (16 Yes/No Questions)
@@ -86,52 +86,6 @@ export const onboardingSchema = z.object({
       message: "Please enter your custom goal (minimum 3 characters).",
       path: ["customHealthGoal"],
     });
-  }
-  
-  // Validate shipping address for complete package
-  if (data.subscription_tier === 'full') {
-    if (!data.shipping_name || data.shipping_name.trim().length < 2) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Full name is required for supplement delivery.",
-        path: ["shipping_name"],
-      });
-    }
-    if (!data.shipping_address1 || data.shipping_address1.trim().length < 5) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Street address is required for supplement delivery.",
-        path: ["shipping_address1"],
-      });
-    }
-    if (!data.shipping_city || data.shipping_city.trim().length < 2) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "City is required for supplement delivery.",
-        path: ["shipping_city"],
-      });
-    }
-    if (!data.shipping_state || data.shipping_state.trim().length < 2) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "State is required for supplement delivery.",
-        path: ["shipping_state"],
-      });
-    }
-    if (!data.shipping_postal_code || data.shipping_postal_code.trim().length < 5) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "ZIP code is required for supplement delivery.",
-        path: ["shipping_postal_code"],
-      });
-    }
-    if (!data.shipping_country || data.shipping_country.trim().length < 2) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Country is required for supplement delivery.",
-        path: ["shipping_country"],
-      });
-    }
   }
 });
 
