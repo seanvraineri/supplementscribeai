@@ -366,10 +366,10 @@ export default function HomePage() {
           <div className="container mx-auto px-4 md:px-6 max-w-6xl">
             <div className="text-center mb-8 md:mb-12">
               <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-4 md:mb-6 px-2">
-                What Usually Costs $50,000+ in Lab Tests
+                What Usually Costs $15,000+ in Lab Tests*
               </h2>
               <p className="text-base md:text-lg text-gray-400 max-w-3xl mx-auto px-2">
-                We've cracked the code on expensive functional medicine testing. Get the same insights for 99% less.
+                We've developed an accessible approach to personalized health insights. Get comprehensive analysis for significantly less.
               </p>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
@@ -384,7 +384,7 @@ export default function HomePage() {
                   <p>• Custom Supplement Formulation: $500/month</p>
                 </div>
                 <div className="mt-4 pt-4 border-t border-dark-border">
-                  <p className="text-red-400 font-bold text-base md:text-lg">Total: $50,000+/year</p>
+                  <p className="text-red-400 font-bold text-base md:text-lg">Total: $15,000+/year</p>
                 </div>
               </div>
               <div className="bg-dark-panel p-4 md:p-6 rounded-2xl border border-dark-accent relative">
@@ -401,13 +401,13 @@ export default function HomePage() {
                   <p>• Monthly Optimization: ✓</p>
                 </div>
                 <div className="mt-4 pt-4 border-t border-dark-border">
-                  <p className="text-green-400 font-bold text-base md:text-lg">Total: $89/month</p>
+                  <p className="text-green-400 font-bold text-base md:text-lg">Starting at $19.99/month</p>
                 </div>
               </div>
               <div className="bg-dark-panel p-4 md:p-6 rounded-2xl border border-dark-border">
                 <h3 className="text-lg md:text-xl font-bold text-blue-400 mb-3">The Difference</h3>
                 <div className="space-y-3 text-gray-300">
-                  <p className="text-xl md:text-2xl font-bold text-white">99.8% Savings</p>
+                  <p className="text-xl md:text-2xl font-bold text-white">Significant Savings</p>
                   <div className="space-y-2 text-sm md:text-base">
                     <p>• No waiting for lab results</p>
                     <p>• No expensive doctor visits</p>
@@ -420,6 +420,11 @@ export default function HomePage() {
                   <p className="text-blue-400 font-bold text-sm md:text-base">Same Results, Fraction of Cost</p>
                 </div>
               </div>
+            </div>
+            <div className="text-center mt-8">
+              <p className="text-xs text-gray-500 max-w-4xl mx-auto">
+                *Cost estimates based on typical functional medicine practice pricing for comprehensive testing and consultations. Individual costs may vary. SupplementScribe provides health analysis and recommendations but is not a substitute for professional medical advice, diagnosis, or treatment. Always consult with a healthcare provider before making health decisions.
+              </p>
             </div>
           </div>
         </section>
