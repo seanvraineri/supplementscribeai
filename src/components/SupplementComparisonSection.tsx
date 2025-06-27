@@ -615,6 +615,21 @@ export default function SupplementComparisonSection() {
             </span>
           </div>
         </motion.div>
+
+        {/* Legal Disclaimers */}
+        <motion.div 
+          className="mt-16 text-center"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          viewport={{ once: true }}
+        >
+          <div className="bg-dark-panel/30 border border-dark-border/50 rounded-lg p-6">
+            <p className="text-xs text-gray-500 max-w-5xl mx-auto leading-relaxed">
+              *Cost estimates based on typical health consultant and supplement pricing. Individual costs may vary. SupplementScribe provides personalized health analysis and supplement recommendations but is not a substitute for professional medical advice, diagnosis, or treatment. Our recommendations are based on lifestyle and symptom analysis, not medical diagnosis. Always consult with a qualified healthcare provider before starting any new supplement regimen, especially if you have existing health conditions or take medications. Results may vary based on individual factors including genetics, lifestyle, and adherence to recommendations.
+            </p>
+          </div>
+        </motion.div>
       </div>
     </section>
   );
