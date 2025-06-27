@@ -91,7 +91,7 @@ export function SubscriptionTierStep({ onNext }: SubscriptionTierStepProps) {
                 onClick={() => handleSelect(tier.value)}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className={`w-full p-6 rounded-2xl border-2 text-left transition-all duration-300 relative overflow-hidden
+                className={`w-full p-8 rounded-2xl border-2 text-left transition-all duration-300 relative overflow-hidden
                   ${isSelected
                     ? 'bg-dark-panel border-dark-accent shadow-lg shadow-dark-accent/20'
                     : 'bg-dark-panel border-dark-border hover:border-dark-border/70 hover:shadow-lg'
@@ -134,21 +134,21 @@ export function SubscriptionTierStep({ onNext }: SubscriptionTierStepProps) {
                   {/* Price */}
                   <div className="mb-4">
                     {tier.hasIntroPrice ? (
-                      <>
-                        <div className="flex items-center gap-2 mb-1">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
                           <span className="text-lg text-dark-secondary line-through">{tier.originalPrice}</span>
                           <span className="text-3xl font-bold text-green-400">{tier.price}</span>
-                          <span className="text-sm text-dark-secondary">{tier.period}</span>
                         </div>
-                        <div className="text-sm text-dark-primary mb-1">{tier.regularPeriod}</div>
-                      </>
+                        <div className="text-sm text-dark-primary">{tier.period}</div>
+                        <div className="text-sm text-dark-secondary">{tier.regularPeriod}</div>
+                      </div>
                     ) : (
                       <div className="flex items-baseline gap-1">
                         <span className="text-3xl font-bold text-dark-primary">{tier.price}</span>
                         <span className="text-dark-secondary">{tier.period}</span>
                       </div>
                     )}
-                    <p className="text-sm text-dark-secondary mt-1">{tier.description}</p>
+                    <p className="text-sm text-dark-secondary mt-2">{tier.description}</p>
                   </div>
                   
                   {/* Features */}
