@@ -241,15 +241,18 @@ export function PersonalDetailsStep() {
             </div>
             
             <div className="space-y-1">
-              <label className="text-sm font-medium text-dark-secondary">Phone Number (Optional)</label>
+              <label className="text-sm font-medium text-dark-secondary">Phone Number *</label>
               <input 
                 {...register('shipping_phone')}
                 type="tel"
                 placeholder="(555) 123-4567"
                 className="w-full px-4 py-2.5 bg-dark-panel border-2 border-dark-border rounded-lg placeholder:text-dark-secondary/60 focus:border-dark-accent focus:ring-2 focus:ring-dark-accent/30 transition-all"
               />
+              {errors.shipping_phone && (
+                <p className="text-red-400 text-xs">{errors.shipping_phone.message}</p>
+              )}
               <p className="text-xs text-dark-secondary">
-                For delivery notifications and updates
+                Required for delivery notifications and updates
               </p>
             </div>
           </div>

@@ -24,7 +24,7 @@ export const onboardingSchema = z.object({
   shipping_state: z.string().min(2, { message: "State is required." }),
   shipping_postal_code: z.string().min(5, { message: "ZIP code is required." }),
   shipping_country: z.string().min(2, { message: "Country is required." }),
-  shipping_phone: z.string().optional(),
+  shipping_phone: z.string().min(10, { message: "Phone number is required for delivery notifications." }),
   
   // Step 2: Lifestyle Assessment (16 Yes/No Questions)
   energy_levels: z.string().optional(),
