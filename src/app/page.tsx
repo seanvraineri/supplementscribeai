@@ -116,7 +116,7 @@ const ShipIcon = (props: SVGProps<SVGSVGElement>) => (
 
 const headlines = [
   { text: 'Stop Wasting $2,000+ on Supplements That Don\'t Work', color: '#f87171' }, // red-400
-  { text: 'Get What $15,000+ Lab Tests Would Tell You', color: '#4ade80' }, // green-400
+  { text: 'Get What $15,000+ Lab Tests Would Tell You for $9.99', color: '#4ade80' }, // green-400
   { text: 'Finally Know Your Body\'s Secret Blueprint', color: '#60a5fa' }, // blue-400
 ];
 
@@ -341,8 +341,8 @@ export default function HomePage() {
                 className="w-full sm:w-auto bg-dark-accent hover:bg-dark-accent/90 text-dark-background font-bold px-8 py-4 text-lg whitespace-nowrap"
                 size="lg"
               >
-                <span className="hidden sm:inline">Unlock My Body's Blueprint</span>
-                <span className="sm:hidden">Get My Blueprint</span>{' '}
+                <span className="hidden sm:inline">Start for $9.99 First Month</span>
+                <span className="sm:hidden">Start $9.99</span>{' '}
                 <ChevronsRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
@@ -401,7 +401,7 @@ export default function HomePage() {
                   <p>• Monthly Optimization: ✓</p>
                 </div>
                 <div className="mt-4 pt-4 border-t border-dark-border">
-                  <p className="text-green-400 font-bold text-base md:text-lg">Starting at $19.99/month</p>
+                  <p className="text-green-400 font-bold text-base md:text-lg">$9.99 first month, then $19.99/month</p>
                 </div>
               </div>
               <div className="bg-dark-panel p-4 md:p-6 rounded-2xl border border-dark-border">
@@ -675,15 +675,25 @@ export default function HomePage() {
             >
               {/* Software-Only Plan */}
               <div className="bg-dark-panel border border-dark-border rounded-3xl p-6 shadow-xl shadow-black/20 relative">
-                <div className="text-center mb-6">
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                  <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+                    50% OFF FIRST MONTH
+                  </span>
+                </div>
+                <div className="text-center mb-6 mt-2">
                   <h3 className="text-xl font-bold text-dark-primary mb-2">Software-Only</h3>
                   <p className="text-sm text-dark-secondary mb-4">AI analysis & recommendations</p>
                   <div className="mb-4">
-                    <div className="text-3xl font-bold text-dark-primary">
-                      $19.99<span className="text-sm text-dark-secondary">/month</span>
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <span className="text-lg text-dark-secondary line-through">$19.99</span>
+                      <span className="text-3xl font-bold text-green-400">$9.99</span>
+                      <span className="text-sm text-dark-secondary">first month</span>
                     </div>
-                    <div className="text-sm text-dark-accent mt-1">
-                      $14.99/month yearly
+                    <div className="text-sm text-dark-primary">
+                      Then $19.99/month
+                    </div>
+                    <div className="text-xs text-dark-secondary mt-1">
+                      Cancel anytime • No commitment
                     </div>
                   </div>
                 </div>

@@ -33,8 +33,10 @@ const SUBSCRIPTION_TIERS = [
     value: 'software_only',
     title: 'Software Only',
     subtitle: 'Just the Intelligence',
-    price: '$19.99',
-    period: '/month',
+    price: '$9.99',
+    originalPrice: '$19.99',
+    period: 'first month',
+    regularPeriod: 'then $19.99/month',
     icon: Brain,
     features: [
       'Personalized supplement recommendations',
@@ -43,9 +45,10 @@ const SUBSCRIPTION_TIERS = [
       'Health insights',
       'Standard support'
     ],
-    description: 'Get the recommendations, source your own supplements',
+    description: '50% off first month • Cancel anytime',
     gradient: 'from-gray-500/20 to-slate-500/20',
-    recommended: false
+    recommended: false,
+    hasIntroPrice: true
   }
 ];
 
@@ -130,10 +133,21 @@ export function SubscriptionTierStep({ onNext }: SubscriptionTierStepProps) {
                   
                   {/* Price */}
                   <div className="mb-4">
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-bold text-dark-primary">{tier.price}</span>
-                      <span className="text-dark-secondary">{tier.period}</span>
-                    </div>
+                    {tier.hasIntroPrice ? (
+                      <>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-lg text-dark-secondary line-through">{tier.originalPrice}</span>
+                          <span className="text-3xl font-bold text-green-400">{tier.price}</span>
+                          <span className="text-sm text-dark-secondary">{tier.period}</span>
+                        </div>
+                        <div className="text-sm text-dark-primary mb-1">{tier.regularPeriod}</div>
+                      </>
+                    ) : (
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-3xl font-bold text-dark-primary">{tier.price}</span>
+                        <span className="text-dark-secondary">{tier.period}</span>
+                      </div>
+                    )}
                     <p className="text-sm text-dark-secondary mt-1">{tier.description}</p>
                   </div>
                   
