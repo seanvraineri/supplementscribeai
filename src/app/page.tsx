@@ -697,13 +697,22 @@ export default function HomePage() {
                     </div>
                   </div>
                 </div>
-                <ul className="space-y-3 mb-6 text-dark-primary text-sm">
+                <ul className="space-y-3 mb-4 text-dark-primary text-sm">
                   <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Deep Health Analysis</li>
                   <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Personalized Core 6 Formula Plan</li>
                   <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Custom Diet Plan</li>
                   <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Progress Tracking</li>
                   <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Health Score Monitoring</li>
                 </ul>
+                <div className="mb-6 p-3 bg-dark-background/50 rounded-lg border border-dark-border">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-medium text-dark-primary">Add Monthly Supplements</p>
+                      <p className="text-xs text-dark-secondary">Upgrade anytime</p>
+                    </div>
+                    <p className="text-xs font-bold text-dark-accent">+$75/month</p>
+                  </div>
+                </div>
                 <Link href="/auth/signup">
                   <button className="w-full px-4 py-2 text-sm font-bold text-dark-primary bg-dark-background border border-dark-border rounded-full hover:bg-dark-border transition-all duration-200">
                     Get Started

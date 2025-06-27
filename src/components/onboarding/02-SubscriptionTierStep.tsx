@@ -163,10 +163,23 @@ export function SubscriptionTierStep({ onNext }: SubscriptionTierStepProps) {
                   
                   {/* Additional Info for Software Only */}
                   {tier.value === 'software_only' && (
-                    <div className="mt-4 p-3 bg-dark-background/50 rounded-lg">
-                      <p className="text-xs text-dark-secondary">
-                        💡 You'll get the same personalized recommendations - just source your own supplements
-                      </p>
+                    <div className="mt-4 space-y-3">
+                      <div className="p-3 bg-dark-background/50 rounded-lg">
+                        <p className="text-xs text-dark-secondary">
+                          💡 You'll get the same personalized recommendations - just source your own supplements
+                        </p>
+                      </div>
+                      <div className="p-3 bg-dark-accent/10 border border-dark-accent/20 rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-dark-primary">Add Monthly Supplements</p>
+                            <p className="text-xs text-dark-secondary">Upgrade anytime from your dashboard</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-bold text-dark-accent">+$75/month</p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
