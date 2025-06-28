@@ -154,6 +154,137 @@
       background-position: -200% 0;
     }
   }
+
+  /* Dashboard grid responsive styles */
+  .dashboard-grid {
+    @apply grid grid-cols-1 gap-4 sm:gap-6 lg:gap-8;
+  }
+  
+  @media (min-width: 640px) {
+    .dashboard-grid {
+      @apply grid-cols-2;
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .dashboard-grid {
+      @apply grid-cols-3;
+    }
+  }
+  
+  /* Card responsive styles */
+  .dashboard-card {
+    @apply p-4 sm:p-6 rounded-xl sm:rounded-2xl;
+  }
+  
+  /* Mobile touch target sizes */
+  .touch-target {
+    @apply min-h-[44px];
+  }
+  
+  /* Responsive text utilities */
+  .text-responsive-4xl {
+    @apply text-2xl sm:text-3xl lg:text-4xl;
+  }
+  
+  .text-responsive-3xl {
+    @apply text-xl sm:text-2xl lg:text-3xl;
+  }
+  
+  .text-responsive-2xl {
+    @apply text-lg sm:text-xl lg:text-2xl;
+  }
+  
+  .text-responsive-xl {
+    @apply text-base sm:text-lg lg:text-xl;
+  }
+  
+  /* Responsive spacing utilities */
+  .space-responsive-y-6 {
+    @apply space-y-4 sm:space-y-6;
+  }
+  
+  .space-responsive-y-8 {
+    @apply space-y-4 sm:space-y-6 lg:space-y-8;
+  }
+  
+  /* Mobile-first button styles */
+  .btn-mobile-full {
+    @apply w-full sm:w-auto;
+  }
+  
+  /* Responsive padding utilities */
+  .p-responsive-8 {
+    @apply p-4 sm:p-6 lg:p-8;
+  }
+  
+  .px-responsive-6 {
+    @apply px-4 sm:px-6;
+  }
+  
+  .py-responsive-6 {
+    @apply py-4 sm:py-6;
+  }
+  
+  /* Mobile sidebar styles */
+  .sidebar-mobile {
+    @apply fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ease-in-out lg:static lg:transform-none;
+  }
+  
+  .sidebar-mobile-closed {
+    @apply -translate-x-full lg:translate-x-0;
+  }
+  
+  /* Mobile menu overlay */
+  .mobile-menu-overlay {
+    @apply fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden;
+  }
+  
+  /* Stack on mobile patterns */
+  .stack-on-mobile {
+    @apply flex flex-col sm:flex-row;
+  }
+  
+  .grid-stack-mobile {
+    @apply grid grid-cols-1 sm:grid-cols-2;
+  }
+  
+  /* Mobile-first form styles */
+  .form-input-mobile {
+    @apply w-full p-3 text-base;
+  }
+  
+  /* Responsive chart container */
+  .chart-container-mobile {
+    @apply h-48 sm:h-64 lg:h-80;
+  }
+  
+  /* Mobile table wrapper */
+  .table-mobile-wrapper {
+    @apply overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0;
+  }
+  
+  /* Hide scrollbar on mobile for better UX */
+  @media (max-width: 639px) {
+    .hide-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    
+    .hide-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  }
+  
+  /* Mobile card layouts */
+  .card-mobile-horizontal {
+    @apply flex flex-row items-center gap-3 sm:flex-col sm:items-start;
+  }
+  
+  /* Responsive modal styles */
+  .modal-mobile-full {
+    @apply fixed inset-0 sm:inset-auto sm:max-w-lg sm:mx-auto sm:my-8;
+  }
 }
 
 @keyframes fadeInUp {

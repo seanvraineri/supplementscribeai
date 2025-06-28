@@ -966,35 +966,35 @@ export default function DashboardPage() {
   };
 
   const renderDashboardContent = () => (
-    <div className="h-full flex flex-col space-y-6">
+    <div className="h-full flex flex-col space-y-4 sm:space-y-6">
       {/* Compact Welcome Header */}
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-dark-primary tracking-tight">Dashboard</h1>
-        <p className="text-dark-secondary mt-1">Your personalized health insights and recommendations.</p>
+      <div className="text-center px-4 sm:px-0">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-dark-primary tracking-tight">Dashboard</h1>
+        <p className="text-dark-secondary mt-1 text-sm sm:text-base">Your personalized health insights and recommendations.</p>
       </div>
 
       {/* Onboarding Banner - Show if profile is incomplete */}
       {!profile && (
         <motion.div 
-          className="bg-gradient-to-r from-dark-accent/20 to-blue-900/20 border border-dark-accent/50 rounded-xl p-4"
+          className="bg-gradient-to-r from-dark-accent/20 to-blue-900/20 border border-dark-accent/50 rounded-lg sm:rounded-xl p-3 sm:p-4 mx-4 sm:mx-0"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <div className="flex items-center gap-4">
-            <div className="p-2 bg-dark-accent/20 rounded-lg">
-              <AlertCircle className="h-5 w-5 text-dark-accent" />
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+            <div className="p-1.5 sm:p-2 bg-dark-accent/20 rounded-lg">
+              <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-dark-accent" />
             </div>
             <div className="flex-1">
-              <h3 className="text-base font-semibold text-dark-primary mb-1">
+              <h3 className="text-sm sm:text-base font-semibold text-dark-primary mb-1">
                 Complete Your Health Profile
               </h3>
-              <p className="text-dark-secondary text-sm">
+              <p className="text-dark-secondary text-xs sm:text-sm">
                 Unlock personalized AI recommendations by completing your health onboarding.
               </p>
             </div>
             <Button 
               onClick={() => router.push('/onboarding')}
-              className="bg-dark-accent text-white hover:bg-dark-accent/80 transition-all duration-300 px-4"
+              className="bg-dark-accent text-white hover:bg-dark-accent/80 transition-all duration-300 w-full sm:w-auto text-sm px-3 sm:px-4 touch-target"
               size="sm"
             >
               Complete Setup
@@ -1004,7 +1004,7 @@ export default function DashboardPage() {
       )}
 
       {/* Main Content - Single Row Layout */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-5 gap-6">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-6 px-4 sm:px-0">
         {/* Health Score - Takes up 3/5 of the space and is static */}
         <div className="lg:col-span-3">
           <div className="h-full">
@@ -1013,149 +1013,152 @@ export default function DashboardPage() {
         </div>
 
         {/* Right Sidebar - Takes up 2/5 of the space */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="lg:col-span-2 space-y-3 sm:space-y-4">
           {/* Quick Supplements Count */}
-          <div className="bg-dark-panel border border-dark-border rounded-xl p-3">
+          <div className="bg-dark-panel border border-dark-border rounded-lg sm:rounded-xl p-3">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-dark-border rounded-lg">
+              <div className="p-1.5 sm:p-2 bg-dark-border rounded-lg">
                 <Pill className="h-4 w-4 text-dark-accent" />
               </div>
               <div>
-                <p className="text-dark-secondary text-sm">Active Supplements</p>
-                <p className="text-xl font-bold text-dark-primary">{plan?.recommendations?.length || 0}</p>
+                <p className="text-dark-secondary text-xs sm:text-sm">Active Supplements</p>
+                <p className="text-lg sm:text-xl font-bold text-dark-primary">{plan?.recommendations?.length || 0}</p>
               </div>
             </div>
           </div>
 
-          {/* Supplement Plan Panel - Compact */}
-          <div className="bg-dark-panel rounded-xl p-3 border border-dark-border">
-            <div className="flex items-center gap-2 mb-2">
-              <Sparkles className="h-4 w-4 text-dark-secondary" />
-              <h3 className="text-sm font-semibold text-dark-primary">AI-Powered Plan</h3>
-            </div>
-            <div className="py-1">
-              {plan ? (
-                <div className="space-y-2 text-center">
-                  <div className="w-8 h-8 bg-green-900/50 rounded-full mx-auto flex items-center justify-center">
-                    <CheckCircle className="h-4 w-4 text-green-400" />
+          {/* Mobile horizontal layout for plan panels */}
+          <div className="grid grid-cols-2 lg:grid-cols-1 gap-3 sm:gap-4">
+            {/* Supplement Plan Panel - Compact */}
+            <div className="bg-dark-panel rounded-lg sm:rounded-xl p-3 border border-dark-border">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 text-dark-secondary" />
+                <h3 className="text-xs sm:text-sm font-semibold text-dark-primary">AI-Powered Plan</h3>
+              </div>
+              <div className="py-1">
+                {plan ? (
+                  <div className="space-y-2 text-center">
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-green-900/50 rounded-full mx-auto flex items-center justify-center">
+                      <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-400" />
+                    </div>
+                    <p className="text-dark-secondary text-[10px] sm:text-xs">Plan ready</p>
+                    <Button 
+                      onClick={() => setActiveTab('supplement-plan')}
+                      size="sm"
+                      className="w-full bg-dark-accent text-white hover:bg-dark-accent/80 rounded-lg text-[11px] sm:text-xs py-1 touch-target min-h-[36px] sm:min-h-[32px]"
+                    >
+                      View Plan
+                    </Button>
                   </div>
-                  <p className="text-dark-secondary text-xs">Plan ready</p>
-                  <Button 
-                    onClick={() => setActiveTab('supplement-plan')}
-                    size="sm"
-                    className="w-full bg-dark-accent text-white hover:bg-dark-accent/80 rounded-lg text-xs py-1"
-                  >
-                    View Plan
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-2 text-center">
-                  <div className="w-8 h-8 bg-dark-border rounded-full mx-auto flex items-center justify-center">
-                    <Sparkles className="h-4 w-4 text-dark-accent" />
+                ) : (
+                  <div className="space-y-2 text-center">
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-dark-border rounded-full mx-auto flex items-center justify-center">
+                      <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 text-dark-accent" />
+                    </div>
+                    <p className="text-dark-secondary text-[10px] sm:text-xs">No plan yet</p>
+                    <Button 
+                      onClick={generatePlan} 
+                      disabled={isGenerating}
+                      size="sm"
+                      className="w-full text-[11px] sm:text-xs py-1 touch-target min-h-[36px] sm:min-h-[32px]"
+                    >
+                      {isGenerating ? 'Generating...' : 'Generate'}
+                    </Button>
                   </div>
-                  <p className="text-dark-secondary text-xs">No plan yet</p>
-                  <Button 
-                    onClick={generatePlan} 
-                    disabled={isGenerating}
-                    size="sm"
-                    className="w-full text-xs py-1"
-                  >
-                    {isGenerating ? 'Generating...' : 'Generate'}
-                  </Button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
-          </div>
 
-          {/* Diet Plan Panel - Compact */}
-          <div className="bg-dark-panel rounded-xl p-3 border border-dark-border">
-            <div className="flex items-center gap-2 mb-2">
-              <Apple className="h-4 w-4 text-dark-secondary" />
-              <h3 className="text-sm font-semibold text-dark-primary">Whole Food Diet Plan</h3>
-            </div>
-            <div className="py-1">
-              {dietPlan ? (
-                <div className="space-y-2 text-center">
-                  <div className="w-8 h-8 bg-green-900/50 rounded-full mx-auto flex items-center justify-center">
-                    <CheckCircle className="h-4 w-4 text-green-400" />
+            {/* Diet Plan Panel - Compact */}
+            <div className="bg-dark-panel rounded-lg sm:rounded-xl p-3 border border-dark-border">
+              <div className="flex items-center gap-2 mb-2">
+                <Apple className="h-3 w-3 sm:h-4 sm:w-4 text-dark-secondary" />
+                <h3 className="text-xs sm:text-sm font-semibold text-dark-primary">Whole Food Diet</h3>
+              </div>
+              <div className="py-1">
+                {dietPlan ? (
+                  <div className="space-y-2 text-center">
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-green-900/50 rounded-full mx-auto flex items-center justify-center">
+                      <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-400" />
+                    </div>
+                    <p className="text-dark-secondary text-[10px] sm:text-xs">Diet ready</p>
+                    <Button 
+                      onClick={() => setActiveTab('diet-groceries')}
+                      size="sm"
+                      className="w-full bg-dark-accent text-white hover:bg-dark-accent/80 rounded-lg text-[11px] sm:text-xs py-1 touch-target min-h-[36px] sm:min-h-[32px]"
+                    >
+                      View Diet
+                    </Button>
                   </div>
-                  <p className="text-dark-secondary text-xs">Diet ready</p>
-                  <Button 
-                    onClick={() => setActiveTab('diet-groceries')}
-                    size="sm"
-                    className="w-full bg-dark-accent text-white hover:bg-dark-accent/80 rounded-lg text-xs py-1"
-                  >
-                    View Diet
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-2 text-center">
-                  <div className="w-8 h-8 bg-dark-border rounded-full mx-auto flex items-center justify-center">
-                    <Apple className="h-4 w-4 text-dark-accent" />
+                ) : (
+                  <div className="space-y-2 text-center">
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-dark-border rounded-full mx-auto flex items-center justify-center">
+                      <Apple className="h-3 w-3 sm:h-4 sm:w-4 text-dark-accent" />
+                    </div>
+                    <p className="text-dark-secondary text-[10px] sm:text-xs">No diet yet</p>
+                    <Button 
+                      onClick={generateDietPlan} 
+                      disabled={isGeneratingDiet}
+                      size="sm"
+                      className="w-full text-[11px] sm:text-xs py-1 touch-target min-h-[36px] sm:min-h-[32px]"
+                    >
+                      {isGeneratingDiet ? 'Generating...' : 'Generate'}
+                    </Button>
                   </div>
-                  <p className="text-dark-secondary text-xs">No diet yet</p>
-                  <Button 
-                    onClick={generateDietPlan} 
-                    disabled={isGeneratingDiet}
-                    size="sm"
-                    className="w-full text-xs py-1"
-                  >
-                    {isGeneratingDiet ? 'Generating...' : 'Generate'}
-                  </Button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
 
           {/* Quick Actions - Vertical Stack */}
           <div className="space-y-2">
             <motion.div 
-              className="bg-dark-panel border border-dark-border rounded-lg p-3 hover:border-dark-accent/50 transition-all cursor-pointer"
+              className="bg-dark-panel border border-dark-border rounded-lg p-3 hover:border-dark-accent/50 transition-all cursor-pointer mobile-tap"
               onClick={() => setActiveTab('analysis')}
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
             >
               <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-blue-500/10 rounded-lg">
-                  <BarChart3 className="h-4 w-4 text-blue-400" />
+                <div className="p-1 sm:p-1.5 bg-blue-500/10 rounded-lg">
+                  <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4 text-blue-400" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-dark-primary">Analysis</h3>
-                  <p className="text-dark-secondary text-xs">Health domains</p>
+                  <h3 className="text-xs sm:text-sm font-semibold text-dark-primary">Analysis</h3>
+                  <p className="text-dark-secondary text-[10px] sm:text-xs">Health domains</p>
                 </div>
               </div>
             </motion.div>
 
             <motion.div 
-              className="bg-dark-panel border border-dark-border rounded-lg p-3 hover:border-dark-accent/50 transition-all cursor-pointer"
+              className="bg-dark-panel border border-dark-border rounded-lg p-3 hover:border-dark-accent/50 transition-all cursor-pointer mobile-tap"
               onClick={() => setActiveTab('tracking')}
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
             >
               <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-green-500/10 rounded-lg">
-                  <Activity className="h-4 w-4 text-green-400" />
+                <div className="p-1 sm:p-1.5 bg-green-500/10 rounded-lg">
+                  <Activity className="h-3 w-3 sm:h-4 sm:w-4 text-green-400" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-dark-primary">Tracking</h3>
-                  <p className="text-dark-secondary text-xs">Log progress</p>
+                  <h3 className="text-xs sm:text-sm font-semibold text-dark-primary">Tracking</h3>
+                  <p className="text-dark-secondary text-[10px] sm:text-xs">Log progress</p>
                 </div>
               </div>
             </motion.div>
 
             <motion.div 
-              className="bg-dark-panel border border-dark-border rounded-lg p-3 hover:border-dark-accent/50 transition-all cursor-pointer"
+              className="bg-dark-panel border border-dark-border rounded-lg p-3 hover:border-dark-accent/50 transition-all cursor-pointer mobile-tap"
               onClick={() => setActiveTab('ai-chat')}
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
             >
               <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-purple-500/10 rounded-lg">
-                  <MessageSquare className="h-4 w-4 text-purple-400" />
+                <div className="p-1 sm:p-1.5 bg-purple-500/10 rounded-lg">
+                  <MessageSquare className="h-3 w-3 sm:h-4 sm:w-4 text-purple-400" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-dark-primary">AI Chat</h3>
-                  <p className="text-dark-secondary text-xs">Get advice</p>
+                  <h3 className="text-xs sm:text-sm font-semibold text-dark-primary">AI Chat</h3>
+                  <p className="text-dark-secondary text-[10px] sm:text-xs">Get advice</p>
                 </div>
               </div>
             </motion.div>
@@ -1166,19 +1169,19 @@ export default function DashboardPage() {
   );
 
   const renderSupplementPlan = () => (
-    <div className="space-y-8">
+    <div className="space-y-4 sm:space-y-6 lg:space-y-8">
       {/* Hero Header */}
-      <div className="relative bg-dark-panel border border-dark-border rounded-xl p-8">
-        <div className="flex items-center justify-between">
+      <div className="relative bg-dark-panel border border-dark-border rounded-lg sm:rounded-xl p-4 sm:p-6 lg:p-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-bold text-dark-primary mb-2">
+            <h1 className="text-xl sm:text-2xl lg:text-4xl font-bold text-dark-primary mb-1 sm:mb-2">
               Your Personalized Supplement Plan
             </h1>
-            <p className="text-lg text-dark-secondary">
+            <p className="text-sm sm:text-base lg:text-lg text-dark-secondary">
               AI-powered recommendations based on your unique health data
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
             {plan && (
               <Button 
                 onClick={() => {
@@ -1189,25 +1192,25 @@ export default function DashboardPage() {
                   }
                 }}
                 size="lg"
-                className="bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-semibold px-6 py-3"
+                className="bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-semibold px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base touch-target"
               >
-                <ExternalLink className="h-5 w-5 mr-2" />
+                <ExternalLink className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                 🔥 Share Your Stack
               </Button>
             )}
             <Button 
               onClick={generatePlan} 
               disabled={isGenerating}
-              className="bg-dark-accent text-white hover:bg-dark-accent/80 transition-all duration-300"
+              className="bg-dark-accent text-white hover:bg-dark-accent/80 transition-all duration-300 w-full sm:w-auto text-sm sm:text-base touch-target"
             >
               {isGenerating ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                   Regenerating...
                 </div>
               ) : (
-                <div className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4" />
+                <div className="flex items-center justify-center gap-2">
+                  <Sparkles className="h-3 w-3 sm:h-4 sm:w-4" />
                   Regenerate Plan
                 </div>
               )}
@@ -1217,15 +1220,15 @@ export default function DashboardPage() {
       </div>
 
       {plan ? (
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {/* General Notes Section */}
           {plan.general_notes && (
-            <div className="bg-dark-panel rounded-xl p-6 border border-dark-border">
-              <h3 className="text-lg font-semibold text-dark-accent mb-3 flex items-center gap-2">
-                <Heart className="h-5 w-5" />
+            <div className="bg-dark-panel rounded-lg sm:rounded-xl p-4 sm:p-6 border border-dark-border">
+              <h3 className="text-base sm:text-lg font-semibold text-dark-accent mb-2 sm:mb-3 flex items-center gap-2">
+                <Heart className="h-4 w-4 sm:h-5 sm:w-5" />
                 Your Personalized Health Journey
               </h3>
-              <p className="text-dark-primary leading-relaxed">{plan.general_notes}</p>
+              <p className="text-dark-primary leading-relaxed text-sm sm:text-base">{plan.general_notes}</p>
             </div>
           )}
           
@@ -1237,25 +1240,25 @@ export default function DashboardPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
             >
-              <div className="p-6">
-                <div className="flex items-start justify-between">
+              <div className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
                   <div className="flex-1">
-                    <h3 className="text-2xl font-bold text-dark-primary">{rec.supplement}</h3>
-                    <p className="text-dark-secondary font-mono">{cleanProductName(rec.product?.product_name)}</p>
+                    <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-dark-primary">{rec.supplement}</h3>
+                    <p className="text-dark-secondary font-mono text-xs sm:text-sm truncate">{cleanProductName(rec.product?.product_name)}</p>
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold text-dark-primary text-lg">{rec.dosage}</p>
-                    {rec.timing && <p className="text-dark-secondary text-sm">{rec.timing}</p>}
+                  <div className="sm:text-right">
+                    <p className="font-bold text-dark-primary text-base sm:text-lg">{rec.dosage}</p>
+                    {rec.timing && <p className="text-dark-secondary text-xs sm:text-sm">{rec.timing}</p>}
                   </div>
                 </div>
-                <div className="mt-4 pt-4 border-t border-dark-border space-y-2">
-                  <h4 className="font-semibold text-dark-accent">Why This Is Perfect For You</h4>
-                  <div className="bg-dark-background/50 rounded-lg p-4 border-l-4 border-dark-accent">
-                    <p className="text-dark-primary leading-relaxed">{rec.reason}</p>
+                <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-dark-border space-y-2">
+                  <h4 className="font-semibold text-dark-accent text-sm sm:text-base">Why This Is Perfect For You</h4>
+                  <div className="bg-dark-background/50 rounded-lg p-3 sm:p-4 border-l-4 border-dark-accent">
+                    <p className="text-dark-primary leading-relaxed text-sm sm:text-base">{rec.reason}</p>
                   </div>
                   {rec.notes && (
-                    <div className="mt-3 p-3 bg-dark-border rounded-lg">
-                      <p className="text-dark-secondary text-sm leading-relaxed">{rec.notes}</p>
+                    <div className="mt-2 sm:mt-3 p-2.5 sm:p-3 bg-dark-border rounded-lg">
+                      <p className="text-dark-secondary text-xs sm:text-sm leading-relaxed">{rec.notes}</p>
                     </div>
                   )}
                 </div>
@@ -1265,13 +1268,13 @@ export default function DashboardPage() {
           ))}
         </div>
       ) : (
-        <div className="text-center py-20 bg-dark-panel border border-dark-border rounded-lg">
-          <Pill className="h-12 w-12 text-dark-secondary mx-auto mb-4" />
-          <h3 className="text-xl font-medium text-dark-primary mb-2">No Supplement Plan Generated</h3>
-          <p className="text-dark-secondary mb-4">
+        <div className="text-center py-12 sm:py-16 lg:py-20 bg-dark-panel border border-dark-border rounded-lg mx-4 sm:mx-0">
+          <Pill className="h-10 w-10 sm:h-12 sm:w-12 text-dark-secondary mx-auto mb-3 sm:mb-4" />
+          <h3 className="text-base sm:text-lg lg:text-xl font-medium text-dark-primary mb-2">No Supplement Plan Generated</h3>
+          <p className="text-dark-secondary mb-3 sm:mb-4 text-sm sm:text-base px-4 sm:px-0">
             Generate your AI-powered plan to get started.
           </p>
-          <Button onClick={generatePlan} disabled={isGenerating} className="bg-dark-accent text-white hover:bg-dark-accent/80">
+          <Button onClick={generatePlan} disabled={isGenerating} className="bg-dark-accent text-white hover:bg-dark-accent/80 text-sm sm:text-base touch-target">
             {isGenerating ? 'Generating...' : 'Generate AI Plan'}
           </Button>
         </div>
@@ -1280,32 +1283,32 @@ export default function DashboardPage() {
   );
 
   const renderDietGroceries = () => (
-    <div className="space-y-8">
+    <div className="space-y-4 sm:space-y-6 lg:space-y-8">
       {/* Hero Header */}
-      <div className="relative bg-dark-panel border border-dark-border rounded-xl p-8">
-        <div className="flex items-center justify-between">
+      <div className="relative bg-dark-panel border border-dark-border rounded-lg sm:rounded-xl p-4 sm:p-6 lg:p-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-bold text-dark-primary mb-2">
+            <h1 className="text-xl sm:text-2xl lg:text-4xl font-bold text-dark-primary mb-1 sm:mb-2">
               Your Personalized Whole Food Diet Plan
             </h1>
-            <p className="text-lg text-dark-secondary">
+            <p className="text-sm sm:text-base lg:text-lg text-dark-secondary">
               Traditional nutrition principles with grocery list & meal suggestions
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
             <Button 
               onClick={generateDietPlan} 
               disabled={isGeneratingDiet}
-              className="bg-dark-accent text-white hover:bg-dark-accent/80 transition-all duration-300"
+              className="bg-dark-accent text-white hover:bg-dark-accent/80 transition-all duration-300 w-full sm:w-auto text-sm sm:text-base touch-target"
             >
               {isGeneratingDiet ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                   Regenerating...
                 </div>
               ) : (
-                <div className="flex items-center gap-2">
-                  <Apple className="h-4 w-4" />
+                <div className="flex items-center justify-center gap-2">
+                  <Apple className="h-3 w-3 sm:h-4 sm:w-4" />
                   Regenerate Diet Plan
                 </div>
               )}
@@ -1315,29 +1318,29 @@ export default function DashboardPage() {
       </div>
 
       {dietPlan ? (
-        <div className="space-y-8">
+        <div className="space-y-4 sm:space-y-6 lg:space-y-8">
           {/* Dietary Restrictions Display */}
           {(profile?.dietary_preference || (userAllergies && userAllergies.length > 0)) && (
-            <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-4">
-              <h3 className="text-lg font-semibold text-red-400 mb-3 flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5" />
+            <div className="bg-red-500/5 border border-red-500/20 rounded-lg sm:rounded-xl p-3 sm:p-4">
+              <h3 className="text-base sm:text-lg font-semibold text-red-400 mb-2 sm:mb-3 flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5" />
                 Your Dietary Requirements (Strictly Followed)
               </h3>
               <div className="space-y-2">
                 {profile?.dietary_preference && (
                   <div className="flex items-center gap-2">
-                    <Leaf className="h-4 w-4 text-dark-accent" />
-                    <span className="text-dark-primary font-medium">
+                    <Leaf className="h-3 w-3 sm:h-4 sm:w-4 text-dark-accent" />
+                    <span className="text-dark-primary font-medium text-sm sm:text-base">
                       Diet Type: <span className="text-dark-accent">{profile.dietary_preference.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}</span>
                     </span>
                   </div>
                 )}
                 {userAllergies && userAllergies.length > 0 && (
                   <div>
-                    <p className="text-dark-primary font-medium mb-1">⚠️ Allergies Avoided:</p>
-                    <div className="flex flex-wrap gap-2">
+                    <p className="text-dark-primary font-medium mb-1 text-sm sm:text-base">⚠️ Allergies Avoided:</p>
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2">
                       {userAllergies.map((allergy: any, index: number) => (
-                        <span key={index} className="bg-red-500/10 text-red-400 px-3 py-1 rounded-full text-sm font-medium">
+                        <span key={index} className="bg-red-500/10 text-red-400 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-medium">
                           {allergy.ingredient_name}
                         </span>
                       ))}
@@ -1350,39 +1353,39 @@ export default function DashboardPage() {
 
           {/* General Notes Section */}
           {dietPlan.general_notes && (
-            <div className="bg-dark-panel rounded-xl p-6 border border-dark-border">
-              <h3 className="text-lg font-semibold text-dark-accent mb-3 flex items-center gap-2">
-                <Heart className="h-5 w-5" />
+            <div className="bg-dark-panel rounded-lg sm:rounded-xl p-4 sm:p-6 border border-dark-border">
+              <h3 className="text-base sm:text-lg font-semibold text-dark-accent mb-2 sm:mb-3 flex items-center gap-2">
+                <Heart className="h-4 w-4 sm:h-5 sm:w-5" />
                 Your Personalized Nutrition Journey
               </h3>
-              <p className="text-dark-primary leading-relaxed">{dietPlan.general_notes}</p>
+              <p className="text-dark-primary leading-relaxed text-sm sm:text-base">{dietPlan.general_notes}</p>
             </div>
           )}
 
           {/* Grocery List Section */}
-          <div className="bg-dark-panel rounded-xl p-6 border border-dark-border">
-            <h2 className="text-2xl font-bold text-dark-primary mb-6 flex items-center gap-2">
-              <Apple className="h-6 w-6 text-dark-accent" />
+          <div className="bg-dark-panel rounded-lg sm:rounded-xl p-4 sm:p-6 border border-dark-border">
+            <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-dark-primary mb-4 sm:mb-6 flex items-center gap-2">
+              <Apple className="h-5 w-5 sm:h-6 sm:w-6 text-dark-accent" />
               Your Personalized Grocery List
             </h2>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
               {dietPlan.grocery_list && Object.entries(dietPlan.grocery_list).map(([category, items]: [string, any]) => (
                 <motion.div 
                   key={category}
-                  className="bg-dark-background/50 rounded-lg p-4 border border-dark-border"
+                  className="bg-dark-background/50 rounded-lg p-3 sm:p-4 border border-dark-border"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 }}
                 >
-                  <h3 className="text-lg font-semibold text-dark-accent mb-3 capitalize">
+                  <h3 className="text-base sm:text-lg font-semibold text-dark-accent mb-2 sm:mb-3 capitalize">
                     {category.replace('_', ' ')}
                   </h3>
-                  <div className="space-y-3">
+                  <div className="space-y-2 sm:space-y-3">
                     {Array.isArray(items) && items.map((item: any, index: number) => (
-                      <div key={index} className="bg-dark-panel rounded-lg p-3 border border-dark-border">
-                        <h4 className="font-semibold text-dark-primary text-sm mb-1">{item.item}</h4>
-                        <p className="text-dark-secondary text-xs leading-relaxed">{item.reason}</p>
+                      <div key={index} className="bg-dark-panel rounded-lg p-2.5 sm:p-3 border border-dark-border">
+                        <h4 className="font-semibold text-dark-primary text-xs sm:text-sm mb-0.5 sm:mb-1">{item.item}</h4>
+                        <p className="text-dark-secondary text-[11px] sm:text-xs leading-relaxed">{item.reason}</p>
                       </div>
                     ))}
                   </div>
@@ -1392,68 +1395,68 @@ export default function DashboardPage() {
           </div>
 
           {/* Meal Suggestions Section */}
-          <div className="bg-dark-panel rounded-xl p-6 border border-dark-border">
-            <h2 className="text-2xl font-bold text-dark-primary mb-6 flex items-center gap-2">
-              <Leaf className="h-6 w-6 text-dark-accent" />
+          <div className="bg-dark-panel rounded-lg sm:rounded-xl p-4 sm:p-6 border border-dark-border">
+            <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-dark-primary mb-4 sm:mb-6 flex items-center gap-2">
+              <Leaf className="h-5 w-5 sm:h-6 sm:w-6 text-dark-accent" />
               Your 20 Personalized Meal Suggestions
             </h2>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               {dietPlan.meal_suggestions && Object.entries(dietPlan.meal_suggestions).map(([mealType, meals]: [string, any]) => (
                 <motion.div 
                   key={mealType}
-                  className="bg-dark-background/50 rounded-lg p-4 border border-dark-border"
+                  className="bg-dark-background/50 rounded-lg p-3 sm:p-4 border border-dark-border"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
                 >
-                  <h3 className="text-xl font-semibold text-dark-accent mb-4 capitalize flex items-center gap-2">
-                    {mealType === 'breakfast' && <Star className="h-5 w-5" />}
-                    {mealType === 'lunch' && <Target className="h-5 w-5" />}
-                    {mealType === 'dinner' && <Heart className="h-5 w-5" />}
-                    {mealType === 'snacks' && <Zap className="h-5 w-5" />}
+                  <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-dark-accent mb-3 sm:mb-4 capitalize flex items-center gap-2">
+                    {mealType === 'breakfast' && <Star className="h-4 w-4 sm:h-5 sm:w-5" />}
+                    {mealType === 'lunch' && <Target className="h-4 w-4 sm:h-5 sm:w-5" />}
+                    {mealType === 'dinner' && <Heart className="h-4 w-4 sm:h-5 sm:w-5" />}
+                    {mealType === 'snacks' && <Zap className="h-4 w-4 sm:h-5 sm:w-5" />}
                     {mealType} ({Array.isArray(meals) ? meals.length : 0})
                   </h3>
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4">
                     {Array.isArray(meals) && meals.map((meal: any, index: number) => (
                       <motion.div 
                         key={index} 
-                        className="bg-dark-panel rounded-lg p-4 border border-dark-border"
+                        className="bg-dark-panel rounded-lg p-3 sm:p-4 border border-dark-border"
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.3 + index * 0.05 }}
                       >
-                        <h4 className="font-bold text-dark-primary mb-2">{meal.name}</h4>
+                        <h4 className="font-bold text-dark-primary mb-2 text-sm sm:text-base">{meal.name}</h4>
                         
                         {/* Cooking Info */}
                         {(meal.prep_time || meal.cook_time || meal.servings) && (
-                          <div className="flex flex-wrap gap-4 mb-3 text-xs text-dark-secondary">
+                          <div className="flex flex-wrap gap-2 sm:gap-4 mb-2 sm:mb-3 text-[11px] sm:text-xs text-dark-secondary">
                             {meal.prep_time && (
                               <div className="flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
+                                <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                                 <span>Prep: {meal.prep_time}</span>
                               </div>
                             )}
                             {meal.cook_time && (
                               <div className="flex items-center gap-1">
-                                <ChefHat className="h-3 w-3" />
+                                <ChefHat className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                                 <span>Cook: {meal.cook_time}</span>
                               </div>
                             )}
                             {meal.servings && (
                               <div className="flex items-center gap-1">
-                                <Users className="h-3 w-3" />
+                                <Users className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                                 <span>Serves: {meal.servings}</span>
                               </div>
                             )}
                           </div>
                         )}
 
-                        <div className="mb-3">
-                          <p className="text-dark-secondary text-sm mb-1">Ingredients:</p>
+                        <div className="mb-2 sm:mb-3">
+                          <p className="text-dark-secondary text-xs sm:text-sm mb-1">Ingredients:</p>
                           <div className="flex flex-wrap gap-1">
                             {Array.isArray(meal.ingredients) && meal.ingredients.map((ingredient: string, i: number) => (
-                              <span key={i} className="bg-dark-accent/20 text-dark-accent px-2 py-1 rounded text-xs">
+                              <span key={i} className="bg-dark-accent/20 text-dark-accent px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-[10px] sm:text-xs">
                                 {ingredient}
                               </span>
                             ))}
@@ -1462,15 +1465,15 @@ export default function DashboardPage() {
 
                         {/* Cooking Instructions */}
                         {meal.instructions && Array.isArray(meal.instructions) && meal.instructions.length > 0 && (
-                          <div className="mb-3">
-                            <p className="text-dark-secondary text-sm mb-2 font-semibold">5-Step Instructions:</p>
+                          <div className="mb-2 sm:mb-3">
+                            <p className="text-dark-secondary text-xs sm:text-sm mb-1.5 sm:mb-2 font-semibold">5-Step Instructions:</p>
                             <div className="space-y-1">
                               {meal.instructions.map((step: string, stepIndex: number) => (
-                                <div key={stepIndex} className="flex items-start gap-2">
-                                  <span className="bg-dark-accent text-white text-xs rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <div key={stepIndex} className="flex items-start gap-1.5 sm:gap-2">
+                                  <span className="bg-dark-accent text-white text-[10px] sm:text-xs rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center flex-shrink-0 mt-0.5">
                                     {stepIndex + 1}
                                   </span>
-                                  <p className="text-dark-secondary text-xs leading-relaxed">{step}</p>
+                                  <p className="text-dark-secondary text-[11px] sm:text-xs leading-relaxed">{step}</p>
                                 </div>
                               ))}
                             </div>
@@ -1479,25 +1482,25 @@ export default function DashboardPage() {
 
                         {/* Micronutrient Information */}
                         {meal.micronutrients && (
-                          <div className="mb-3">
-                            <p className="text-dark-secondary text-sm mb-2 font-semibold flex items-center gap-1">
-                              <Dna className="h-3 w-3" />
+                          <div className="mb-2 sm:mb-3">
+                            <p className="text-dark-secondary text-xs sm:text-sm mb-1.5 sm:mb-2 font-semibold flex items-center gap-1">
+                              <Dna className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                               Personalized Nutrition Analysis:
                             </p>
-                            <div className="bg-dark-background/30 rounded-lg p-3 space-y-2">
+                            <div className="bg-dark-background/30 rounded-lg p-2 sm:p-3 space-y-1.5 sm:space-y-2">
                               {meal.micronutrients.nutrient_density_score && (
-                                <div className="flex items-center gap-2">
-                                  <Star className="h-3 w-3 text-yellow-400" />
-                                  <span className="text-xs text-dark-accent font-medium">{meal.micronutrients.nutrient_density_score}</span>
+                                <div className="flex items-center gap-1.5 sm:gap-2">
+                                  <Star className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-yellow-400" />
+                                  <span className="text-[10px] sm:text-xs text-dark-accent font-medium">{meal.micronutrients.nutrient_density_score}</span>
                                 </div>
                               )}
                               
                               {meal.micronutrients.primary_nutrients && meal.micronutrients.primary_nutrients.length > 0 && (
                                 <div>
-                                  <p className="text-xs text-dark-secondary font-medium mb-1">Key Nutrients:</p>
-                                  <div className="flex flex-wrap gap-1">
+                                  <p className="text-[10px] sm:text-xs text-dark-secondary font-medium mb-1">Key Nutrients:</p>
+                                  <div className="flex flex-wrap gap-0.5 sm:gap-1">
                                     {meal.micronutrients.primary_nutrients.map((nutrient: string, i: number) => (
-                                      <span key={i} className="bg-blue-500/20 text-blue-400 px-2 py-1 rounded text-xs">
+                                      <span key={i} className="bg-blue-500/20 text-blue-400 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-[9px] sm:text-xs">
                                         {nutrient}
                                       </span>
                                     ))}
@@ -1506,8 +1509,8 @@ export default function DashboardPage() {
                               )}
 
                               {meal.micronutrients.synergistic_effects && (
-                                <div className="bg-dark-panel rounded p-2 border-l-2 border-dark-accent">
-                                  <p className="text-xs text-dark-secondary">
+                                <div className="bg-dark-panel rounded p-1.5 sm:p-2 border-l-2 border-dark-accent">
+                                  <p className="text-[10px] sm:text-xs text-dark-secondary">
                                     <span className="font-semibold text-dark-accent">Synergy:</span> {meal.micronutrients.synergistic_effects}
                                   </p>
                                 </div>
@@ -1516,8 +1519,8 @@ export default function DashboardPage() {
                           </div>
                         )}
 
-                        <div className="bg-dark-background/50 rounded-lg p-3 border-l-4 border-dark-accent">
-                          <p className="text-dark-secondary text-sm">
+                        <div className="bg-dark-background/50 rounded-lg p-2.5 sm:p-3 border-l-4 border-dark-accent">
+                          <p className="text-dark-secondary text-xs sm:text-sm">
                             <span className="font-semibold text-dark-accent">Why this works for you:</span> {meal.benefits}
                           </p>
                         </div>
@@ -1531,23 +1534,23 @@ export default function DashboardPage() {
 
           {/* Contraindications Section */}
           {dietPlan.contraindications && (
-            <div className="bg-dark-panel rounded-xl p-6 border border-dark-border border-l-4 border-l-yellow-500">
-              <h3 className="text-lg font-semibold text-yellow-400 mb-3 flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5" />
+            <div className="bg-dark-panel rounded-lg sm:rounded-xl p-4 sm:p-6 border border-dark-border border-l-4 border-l-yellow-500">
+              <h3 className="text-base sm:text-lg font-semibold text-yellow-400 mb-2 sm:mb-3 flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5" />
                 Important Safety Considerations
               </h3>
-              <p className="text-dark-primary leading-relaxed">{dietPlan.contraindications}</p>
+              <p className="text-dark-primary leading-relaxed text-sm sm:text-base">{dietPlan.contraindications}</p>
             </div>
           )}
         </div>
       ) : (
-        <div className="text-center py-20 bg-dark-panel border border-dark-border rounded-lg">
-          <Apple className="h-12 w-12 text-dark-secondary mx-auto mb-4" />
-          <h3 className="text-xl font-medium text-dark-primary mb-2">No Diet Plan Generated</h3>
-          <p className="text-dark-secondary mb-4">
+        <div className="text-center py-12 sm:py-16 lg:py-20 bg-dark-panel border border-dark-border rounded-lg mx-4 sm:mx-0">
+          <Apple className="h-10 w-10 sm:h-12 sm:w-12 text-dark-secondary mx-auto mb-3 sm:mb-4" />
+          <h3 className="text-base sm:text-lg lg:text-xl font-medium text-dark-primary mb-2">No Diet Plan Generated</h3>
+          <p className="text-dark-secondary mb-3 sm:mb-4 text-sm sm:text-base px-4 sm:px-0">
             Generate your personalized whole food nutrition plan to get started.
           </p>
-          <Button onClick={generateDietPlan} disabled={isGeneratingDiet} className="bg-dark-accent text-white hover:bg-dark-accent/80">
+          <Button onClick={generateDietPlan} disabled={isGeneratingDiet} className="bg-dark-accent text-white hover:bg-dark-accent/80 text-sm sm:text-base touch-target">
             {isGeneratingDiet ? 'Generating...' : 'Generate Diet Plan'}
           </Button>
         </div>
@@ -2409,54 +2412,56 @@ export default function DashboardPage() {
   );
 
   const renderTracking = () => (
-    <div className="space-y-8">
+    <div className="space-y-4 sm:space-y-6 lg:space-y-8">
       {/* Header Section */}
-      <div className="text-center">
-        <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
+      <div className="text-center px-4 sm:px-0">
+        <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-1 sm:mb-2">
           AI-Powered Health Tracking
         </h2>
-        <p className="text-dark-secondary">Personalized questions generated just for you based on your health profile</p>
+        <p className="text-dark-secondary text-sm sm:text-base">Personalized questions generated just for you based on your health profile</p>
       </div>
 
       {/* Dynamic Tracker Component */}
-                  {user && <DynamicTracker userId={user.id} key={`tracker-${new Date().toISOString().split('T')[0]}`} />}
+      <div className="px-4 sm:px-0">
+        {user && <DynamicTracker userId={user.id} key={`tracker-${new Date().toISOString().split('T')[0]}`} />}
+      </div>
     </div>
   );
 
   const renderSettings = () => (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-4xl font-bold text-dark-primary">Settings</h1>
-        <p className="text-lg text-dark-secondary mt-1">
+    <div className="space-y-4 sm:space-y-6 lg:space-y-8">
+      <div className="px-4 sm:px-0">
+        <h1 className="text-xl sm:text-2xl lg:text-4xl font-bold text-dark-primary">Settings</h1>
+        <p className="text-sm sm:text-base lg:text-lg text-dark-secondary mt-1">
           Manage your account settings and preferences.
         </p>
       </div>
 
       {/* Referral System */}
-      <div className="bg-dark-panel border border-dark-border rounded-xl p-8">
-        <div className="flex items-center gap-3 mb-6">
-          <Network className="h-6 w-6 text-dark-accent" />
-          <h3 className="text-2xl font-semibold text-dark-primary">Refer Friends</h3>
+      <div className="bg-dark-panel border border-dark-border rounded-lg sm:rounded-xl p-4 sm:p-6 lg:p-8">
+        <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+          <Network className="h-5 w-5 sm:h-6 sm:w-6 text-dark-accent" />
+          <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold text-dark-primary">Refer Friends</h3>
         </div>
-        <p className="text-dark-secondary mb-6">
+        <p className="text-dark-secondary mb-4 sm:mb-6 text-sm sm:text-base">
           Share SupplementScribe with friends and help them optimize their health too!
         </p>
         
         {profile?.referral_code ? (
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {/* Referral Code */}
             <div>
-              <label className="text-sm font-medium text-dark-secondary mb-2 block">
+              <label className="text-xs sm:text-sm font-medium text-dark-secondary mb-1.5 sm:mb-2 block">
                 Your Referral Code
               </label>
-              <div className="flex items-center gap-3">
-                <div className="flex-1 bg-dark-background border border-dark-border rounded-lg px-4 py-3">
-                  <code className="text-lg font-mono text-dark-accent">{profile.referral_code}</code>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+                <div className="flex-1 bg-dark-background border border-dark-border rounded-lg px-3 sm:px-4 py-2.5 sm:py-3">
+                  <code className="text-base sm:text-lg font-mono text-dark-accent">{profile.referral_code}</code>
                 </div>
                 <Button
                   onClick={copyReferralCode}
                   variant="outline"
-                  className="px-4 py-3 border-dark-border hover:bg-dark-border text-dark-primary hover:text-dark-primary bg-dark-panel"
+                  className="px-3 sm:px-4 py-2.5 sm:py-3 border-dark-border hover:bg-dark-border text-dark-primary hover:text-dark-primary bg-dark-panel touch-target"
                 >
                   {copiedReferralCode ? (
                     <Check className="h-4 w-4 text-green-400" />
@@ -2469,19 +2474,19 @@ export default function DashboardPage() {
 
             {/* Referral URL */}
             <div>
-              <label className="text-sm font-medium text-dark-secondary mb-2 block">
+              <label className="text-xs sm:text-sm font-medium text-dark-secondary mb-1.5 sm:mb-2 block">
                 Your Referral Link
               </label>
-              <div className="flex items-center gap-3">
-                <div className="flex-1 bg-dark-background border border-dark-border rounded-lg px-4 py-3">
-                  <code className="text-sm text-dark-primary break-all">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+                <div className="flex-1 bg-dark-background border border-dark-border rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 overflow-hidden">
+                  <code className="text-xs sm:text-sm text-dark-primary break-all">
                     {generateReferralUrl(profile.referral_code)}
                   </code>
                 </div>
                 <Button
                   onClick={copyReferralUrl}
                   variant="outline"
-                  className="px-4 py-3 border-dark-border hover:bg-dark-border text-dark-primary hover:text-dark-primary bg-dark-panel"
+                  className="px-3 sm:px-4 py-2.5 sm:py-3 border-dark-border hover:bg-dark-border text-dark-primary hover:text-dark-primary bg-dark-panel touch-target"
                 >
                   {copiedReferralUrl ? (
                     <Check className="h-4 w-4 text-green-400" />
@@ -2493,35 +2498,35 @@ export default function DashboardPage() {
             </div>
 
             {/* Referral Stats */}
-            <div className="bg-dark-background border border-dark-border rounded-lg p-4 mt-6">
+            <div className="bg-dark-background border border-dark-border rounded-lg p-3 sm:p-4 mt-4 sm:mt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-dark-secondary">People you've referred</p>
-                  <p className="text-2xl font-bold text-dark-accent">{profile.referral_count || 0}</p>
+                  <p className="text-xs sm:text-sm text-dark-secondary">People you've referred</p>
+                  <p className="text-xl sm:text-2xl font-bold text-dark-accent">{profile.referral_count || 0}</p>
                 </div>
-                <Star className="h-8 w-8 text-dark-accent" />
+                <Star className="h-6 w-6 sm:h-8 sm:w-8 text-dark-accent" />
               </div>
             </div>
           </div>
         ) : (
-          <div className="text-center py-8">
-            <div className="bg-dark-background border border-dark-border rounded-lg p-6">
-              <Network className="h-12 w-12 text-dark-accent mx-auto mb-4" />
-              <h4 className="text-lg font-semibold text-dark-primary mb-2">Setting up your referral code...</h4>
-              <p className="text-dark-secondary mb-4">
+          <div className="text-center py-6 sm:py-8">
+            <div className="bg-dark-background border border-dark-border rounded-lg p-4 sm:p-6">
+              <Network className="h-10 w-10 sm:h-12 sm:w-12 text-dark-accent mx-auto mb-3 sm:mb-4" />
+              <h4 className="text-base sm:text-lg font-semibold text-dark-primary mb-1.5 sm:mb-2">Setting up your referral code...</h4>
+              <p className="text-dark-secondary mb-3 sm:mb-4 text-sm sm:text-base">
                 Click the button below to generate your unique referral code.
               </p>
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 <Button 
                   onClick={generateReferralCodeForExistingUser}
-                  className="bg-dark-accent text-white hover:bg-dark-accent/80"
+                  className="bg-dark-accent text-white hover:bg-dark-accent/80 w-full sm:w-auto text-sm sm:text-base touch-target"
                 >
                   Generate My Referral Code
                 </Button>
                 <Button 
                   onClick={() => window.location.reload()} 
                   variant="outline"
-                  className="border-dark-border text-dark-primary hover:bg-dark-border hover:text-dark-primary bg-dark-panel"
+                  className="border-dark-border text-dark-primary hover:bg-dark-border hover:text-dark-primary bg-dark-panel w-full sm:w-auto text-sm sm:text-base touch-target"
                 >
                   Refresh Page
                 </Button>
@@ -2532,28 +2537,28 @@ export default function DashboardPage() {
       </div>
 
       {/* Subscription Management */}
-      <div className="bg-dark-panel border border-dark-border rounded-xl p-8">
-        <div className="flex items-center gap-3 mb-6">
-          <CreditCard className="h-6 w-6 text-dark-accent" />
-          <h3 className="text-2xl font-semibold text-dark-primary">Subscription & Orders</h3>
+      <div className="bg-dark-panel border border-dark-border rounded-lg sm:rounded-xl p-4 sm:p-6 lg:p-8">
+        <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+          <CreditCard className="h-5 w-5 sm:h-6 sm:w-6 text-dark-accent" />
+          <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold text-dark-primary">Subscription & Orders</h3>
         </div>
         
         {/* Current Plan */}
-        <div className="bg-dark-background border border-dark-border rounded-lg p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-dark-background border border-dark-border rounded-lg p-4 sm:p-6 mb-4 sm:mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-3 sm:mb-4">
             <div>
-              <h4 className="text-lg font-semibold text-dark-primary">Current Plan</h4>
-              <p className="text-dark-secondary text-sm">Your active subscription tier</p>
+              <h4 className="text-base sm:text-lg font-semibold text-dark-primary">Current Plan</h4>
+              <p className="text-dark-secondary text-xs sm:text-sm">Your active subscription tier</p>
             </div>
-            <div className="text-right">
-              <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+            <div className="sm:text-right">
+              <div className={`inline-flex items-center px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-medium ${
                 profile?.subscription_tier === 'full' 
                   ? 'bg-green-500/10 text-green-400 border border-green-500/20' 
                   : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
               }`}>
                 {profile?.subscription_tier === 'full' ? 'Complete Package' : 'Software Only'}
               </div>
-              <p className="text-dark-accent font-bold text-lg mt-1">
+              <p className="text-dark-accent font-bold text-base sm:text-lg mt-1">
                 {profile?.subscription_tier === 'full' ? '$75.00/month' : '$19.99/month'}
               </p>
             </div>
