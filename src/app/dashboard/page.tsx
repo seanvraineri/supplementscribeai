@@ -1650,30 +1650,30 @@ export default function DashboardPage() {
     }
 
     return (
-      <div className="space-y-8">
+      <div className="space-y-4 sm:space-y-6 lg:space-y-8">
         {/* Hero Section with User Goals */}
         <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-cyan-500/5 rounded-2xl"></div>
-          <div className="relative p-8 text-center">
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent mb-4">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-cyan-500/5 rounded-xl sm:rounded-2xl"></div>
+          <div className="relative p-4 sm:p-6 lg:p-8 text-center">
+            <h1 className="text-2xl sm:text-3xl lg:text-5xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent mb-2 sm:mb-3 lg:mb-4">
               Comprehensive Analysis
             </h1>
-            <p className="text-xl text-dark-secondary max-w-3xl mx-auto leading-relaxed mb-6">
+            <p className="text-sm sm:text-base lg:text-xl text-dark-secondary max-w-3xl mx-auto leading-relaxed mb-4 sm:mb-6">
               Educational insights across 5 health domains based on your onboarding responses
             </p>
             
             {/* User Goals Display */}
             {domainsData.userProfile && (
-              <div className="bg-dark-panel/60 border border-dark-accent/20 rounded-xl p-6 max-w-2xl mx-auto">
-                <h2 className="text-2xl font-bold text-dark-primary mb-3 flex items-center justify-center">
-                  <Target className="h-6 w-6 text-dark-accent mr-3" />
-                  Your Health Goals, {domainsData.userProfile.name}
+              <div className="bg-dark-panel/60 border border-dark-accent/20 rounded-lg sm:rounded-xl p-4 sm:p-6 max-w-2xl mx-auto">
+                <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-dark-primary mb-2 sm:mb-3 flex items-center justify-center">
+                  <Target className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-dark-accent mr-2 sm:mr-3" />
+                  <span className="line-clamp-1">Your Health Goals, {domainsData.userProfile.name}</span>
                 </h2>
-                <div className="text-lg text-dark-secondary mb-4">
+                <div className="text-sm sm:text-base lg:text-lg text-dark-secondary mb-3 sm:mb-4">
                   You want to: <span className="text-dark-accent font-semibold">{domainsData.userProfile.goalDescription}</span>
                 </div>
                 {domainsData.userProfile.goals && domainsData.userProfile.goals.length > 0 && (
-                  <div className="flex flex-wrap gap-2 justify-center">
+                  <div className="flex flex-wrap gap-1.5 sm:gap-2 justify-center">
                     {domainsData.userProfile.goals.map((goal: string, index: number) => {
                       // Create proper goal labels
                       const goalLabels: {[key: string]: string} = {
@@ -1695,14 +1695,14 @@ export default function DashboardPage() {
                       const displayLabel = goalLabels[goal] || goal.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
                       
                       return (
-                        <span key={index} className="px-3 py-1 bg-dark-accent/10 text-dark-accent border border-dark-accent/20 rounded-full text-sm font-medium">
+                        <span key={index} className="px-2 sm:px-3 py-0.5 sm:py-1 bg-dark-accent/10 text-dark-accent border border-dark-accent/20 rounded-full text-xs sm:text-sm font-medium">
                           {displayLabel}
                         </span>
                       );
                     })}
                   </div>
                 )}
-                <p className="text-sm text-dark-secondary mt-3">
+                <p className="text-xs sm:text-sm text-dark-secondary mt-2 sm:mt-3">
                   Every recommendation below is tailored to support these specific goals
                 </p>
               </div>
@@ -1712,16 +1712,16 @@ export default function DashboardPage() {
 
         {/* Cross-Domain Connections */}
         {domainsData.crossDomainConnections && (
-          <div className="bg-gradient-to-r from-dark-accent/5 to-blue-500/5 border border-dark-accent/20 rounded-xl p-6">
-            <h2 className="text-2xl font-bold text-dark-primary mb-4 flex items-center">
-              <Network className="h-6 w-6 text-dark-accent mr-3" />
+          <div className="bg-gradient-to-r from-dark-accent/5 to-blue-500/5 border border-dark-accent/20 rounded-lg sm:rounded-xl p-4 sm:p-6">
+            <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-dark-primary mb-3 sm:mb-4 flex items-center">
+              <Network className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-dark-accent mr-2 sm:mr-3" />
               Cross-Domain Connections
             </h2>
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {domainsData.crossDomainConnections.map((connection: string, index: number) => (
-                <div key={index} className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-dark-accent rounded-full mt-2 flex-shrink-0"></div>
-                  <p className="text-dark-secondary">{connection}</p>
+                <div key={index} className="flex items-start space-x-2 sm:space-x-3">
+                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-dark-accent rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
+                  <p className="text-dark-secondary text-sm sm:text-base">{connection}</p>
                 </div>
               ))}
             </div>
@@ -1730,29 +1730,29 @@ export default function DashboardPage() {
 
         {/* Priority Protocols */}
         {domainsData.priorityProtocols && (
-          <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-6">
-            <h2 className="text-2xl font-bold text-dark-primary mb-4 flex items-center">
-              <Star className="h-6 w-6 text-yellow-400 mr-3" />
+          <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-lg sm:rounded-xl p-4 sm:p-6">
+            <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-dark-primary mb-3 sm:mb-4 flex items-center">
+              <Star className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-yellow-400 mr-2 sm:mr-3" />
               Priority Protocols for Your Goals
             </h2>
-            <div className="grid gap-4">
+            <div className="grid gap-3 sm:gap-4">
               {domainsData.priorityProtocols.map((protocolItem: any, index: number) => {
                 // Handle both old string format and new object format
                 const protocol = typeof protocolItem === 'string' ? protocolItem : protocolItem.protocol;
                 const goalConnection = typeof protocolItem === 'object' ? protocolItem.goalConnection : null;
                 
                 return (
-                  <div key={index} className="bg-dark-panel border border-yellow-500/20 rounded-lg p-4">
-                    <div className="flex items-start space-x-3">
-                      <div className="w-6 h-6 bg-yellow-500/20 text-yellow-400 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 mt-0.5">
+                  <div key={index} className="bg-dark-panel border border-yellow-500/20 rounded-lg p-3 sm:p-4">
+                    <div className="flex items-start space-x-2 sm:space-x-3">
+                      <div className="w-5 h-5 sm:w-6 sm:h-6 bg-yellow-500/20 text-yellow-400 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold flex-shrink-0 mt-0.5">
                         {index + 1}
                       </div>
                       <div className="flex-1">
-                        <p className="text-dark-primary font-medium mb-2">{protocol}</p>
+                        <p className="text-dark-primary font-medium mb-1.5 sm:mb-2 text-sm sm:text-base">{protocol}</p>
                         {goalConnection && (
-                          <div className="flex items-center space-x-2">
-                            <Target className="h-4 w-4 text-dark-accent" />
-                            <span className="text-sm text-dark-accent font-medium">{goalConnection}</span>
+                          <div className="flex items-center space-x-1.5 sm:space-x-2">
+                            <Target className="h-3 w-3 sm:h-4 sm:w-4 text-dark-accent" />
+                            <span className="text-xs sm:text-sm text-dark-accent font-medium">{goalConnection}</span>
                           </div>
                         )}
                       </div>
@@ -1765,7 +1765,7 @@ export default function DashboardPage() {
         )}
 
         {/* Health Domains */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {domainsData.domains && Object.entries(domainsData.domains).map(([domainKey, domain]: [string, any]) => {
             const IconComponent = domainIcons[domainKey] || Activity;
             const isExpanded = expandedDomains.has(domainKey);
@@ -1775,50 +1775,50 @@ export default function DashboardPage() {
                 key={domainKey} 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-dark-panel border border-dark-border rounded-xl p-6"
+                className="bg-dark-panel border border-dark-border rounded-lg sm:rounded-xl p-4 sm:p-6"
               >
                 {/* Domain Header */}
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center space-x-4">
-                    <div className="p-3 bg-dark-accent/10 rounded-xl">
-                      <IconComponent className="h-6 w-6 text-dark-accent" />
+                <div className="flex items-center justify-between mb-4 sm:mb-6">
+                  <div className="flex items-center space-x-3 sm:space-x-4">
+                    <div className="p-2 sm:p-3 bg-dark-accent/10 rounded-lg sm:rounded-xl">
+                      <IconComponent className="h-5 w-5 sm:h-6 sm:w-6 text-dark-accent" />
                     </div>
-                    <div>
-                      <h2 className="text-2xl font-bold text-dark-primary">{domain.title}</h2>
-                      <p className="text-dark-secondary">{domain.subtitle}</p>
+                    <div className="flex-1 min-w-0">
+                      <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-dark-primary truncate">{domain.title}</h2>
+                      <p className="text-dark-secondary text-sm sm:text-base">{domain.subtitle}</p>
                     </div>
                   </div>
                   <Button
                     onClick={() => toggleDomain(domainKey)}
                     variant="outline"
                     size="sm"
-                    className="border-dark-border hover:bg-dark-accent/10"
+                    className="border-dark-border hover:bg-dark-accent/10 ml-2"
                   >
                     {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                   </Button>
                 </div>
 
                 {/* Insights Preview */}
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-dark-primary mb-3">Key Insights</h3>
-                  <div className="grid gap-3">
+                <div className="mb-4 sm:mb-6">
+                  <h3 className="text-base sm:text-lg font-semibold text-dark-primary mb-2 sm:mb-3">Key Insights</h3>
+                  <div className="grid gap-2 sm:gap-3">
                     {domain.insights?.slice(0, 2).map((insight: string, index: number) => (
-                      <div key={index} className="flex items-start space-x-3">
-                        <Info className="h-5 w-5 text-blue-400 mt-0.5 flex-shrink-0" />
-                        <p className="text-dark-secondary">{insight}</p>
+                      <div key={index} className="flex items-start space-x-2 sm:space-x-3">
+                        <Info className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400 mt-0.5 flex-shrink-0" />
+                        <p className="text-dark-secondary text-sm sm:text-base">{insight}</p>
                       </div>
                     ))}
                   </div>
                 </div>
 
                 {/* Personalized Findings */}
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-dark-primary mb-3">Your Profile</h3>
-                  <div className="grid gap-3">
+                <div className="mb-4 sm:mb-6">
+                  <h3 className="text-base sm:text-lg font-semibold text-dark-primary mb-2 sm:mb-3">Your Profile</h3>
+                  <div className="grid gap-2 sm:gap-3">
                     {domain.personalizedFindings?.map((finding: string, index: number) => (
-                      <div key={index} className="flex items-start space-x-3">
-                        <Target className="h-5 w-5 text-green-400 mt-0.5 flex-shrink-0" />
-                        <p className="text-dark-secondary">{finding}</p>
+                      <div key={index} className="flex items-start space-x-2 sm:space-x-3">
+                        <Target className="h-4 w-4 sm:h-5 sm:w-5 text-green-400 mt-0.5 flex-shrink-0" />
+                        <p className="text-dark-secondary text-sm sm:text-base">{finding}</p>
                       </div>
                     ))}
                   </div>
@@ -1832,17 +1832,17 @@ export default function DashboardPage() {
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
                       transition={{ duration: 0.3 }}
-                      className="space-y-6"
+                      className="space-y-4 sm:space-y-6"
                     >
                       {/* All Insights */}
                       {domain.insights?.length > 2 && (
                         <div>
-                          <h3 className="text-lg font-semibold text-dark-primary mb-3">Complete Educational Insights</h3>
-                          <div className="grid gap-3">
+                          <h3 className="text-base sm:text-lg font-semibold text-dark-primary mb-2 sm:mb-3">Complete Educational Insights</h3>
+                          <div className="grid gap-2 sm:gap-3">
                             {domain.insights.slice(2).map((insight: string, index: number) => (
-                              <div key={index + 2} className="flex items-start space-x-3">
-                                <Info className="h-5 w-5 text-blue-400 mt-0.5 flex-shrink-0" />
-                                <p className="text-dark-secondary">{insight}</p>
+                              <div key={index + 2} className="flex items-start space-x-2 sm:space-x-3">
+                                <Info className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400 mt-0.5 flex-shrink-0" />
+                                <p className="text-dark-secondary text-sm sm:text-base">{insight}</p>
                               </div>
                             ))}
                           </div>
@@ -1851,15 +1851,15 @@ export default function DashboardPage() {
 
                       {/* Recommendations */}
                       <div>
-                        <h3 className="text-lg font-semibold text-dark-primary mb-3">Holistic Protocols</h3>
-                        <div className="grid gap-4">
+                        <h3 className="text-base sm:text-lg font-semibold text-dark-primary mb-2 sm:mb-3">Holistic Protocols</h3>
+                        <div className="grid gap-3 sm:gap-4">
                           {domain.recommendations?.map((rec: string, index: number) => (
-                            <div key={index} className="bg-dark-background border border-dark-border rounded-lg p-4">
-                              <div className="flex items-start space-x-3">
-                                <div className="w-6 h-6 bg-dark-accent/20 text-dark-accent rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 mt-0.5">
+                            <div key={index} className="bg-dark-background border border-dark-border rounded-lg p-3 sm:p-4">
+                              <div className="flex items-start space-x-2 sm:space-x-3">
+                                <div className="w-5 h-5 sm:w-6 sm:h-6 bg-dark-accent/20 text-dark-accent rounded-full flex items-center justify-center text-xs sm:text-sm font-bold flex-shrink-0 mt-0.5">
                                   {index + 1}
                                 </div>
-                                <p className="text-dark-primary font-medium">{rec}</p>
+                                <p className="text-dark-primary font-medium text-sm sm:text-base">{rec}</p>
                               </div>
                             </div>
                           ))}
@@ -1868,12 +1868,12 @@ export default function DashboardPage() {
 
                       {/* Goal Alignment */}
                       {domain.goalAlignment && (
-                        <div className="bg-gradient-to-r from-dark-accent/10 to-blue-500/10 border-2 border-dark-accent/30 rounded-lg p-5">
-                          <h4 className="font-bold text-dark-primary mb-3 flex items-center text-lg">
-                            <Target className="h-6 w-6 text-dark-accent mr-2" />
+                        <div className="bg-gradient-to-r from-dark-accent/10 to-blue-500/10 border-2 border-dark-accent/30 rounded-lg p-4 sm:p-5">
+                          <h4 className="font-bold text-dark-primary mb-2 sm:mb-3 flex items-center text-base sm:text-lg">
+                            <Target className="h-5 w-5 sm:h-6 sm:w-6 text-dark-accent mr-1.5 sm:mr-2" />
                             How This Supports Your Goals
                           </h4>
-                          <p className="text-dark-primary font-medium leading-relaxed">{domain.goalAlignment}</p>
+                          <p className="text-dark-primary font-medium leading-relaxed text-sm sm:text-base">{domain.goalAlignment}</p>
                         </div>
                       )}
                     </motion.div>
@@ -1886,12 +1886,12 @@ export default function DashboardPage() {
 
         {/* Safety Check */}
         {domainsData.conflictCheck && (
-          <div className="bg-green-500/5 border border-green-500/20 rounded-xl p-6">
-            <h2 className="text-xl font-bold text-dark-primary mb-3 flex items-center">
-              <Shield className="h-6 w-6 text-green-400 mr-3" />
+          <div className="bg-green-500/5 border border-green-500/20 rounded-lg sm:rounded-xl p-4 sm:p-6">
+            <h2 className="text-base sm:text-lg lg:text-xl font-bold text-dark-primary mb-2 sm:mb-3 flex items-center">
+              <Shield className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-green-400 mr-2 sm:mr-3" />
               Safety Verification
             </h2>
-            <p className="text-dark-secondary">{domainsData.conflictCheck}</p>
+            <p className="text-dark-secondary text-sm sm:text-base">{domainsData.conflictCheck}</p>
           </div>
         )}
 
@@ -1920,10 +1920,10 @@ export default function DashboardPage() {
               }
             }}
             disabled={domainsLoading}
-            className="bg-dark-accent text-white hover:bg-dark-accent/80 px-8 py-3 disabled:opacity-50"
+            className="bg-dark-accent text-white hover:bg-dark-accent/80 px-6 sm:px-8 py-2.5 sm:py-3 disabled:opacity-50 touch-target"
           >
-            <Sparkles className="h-5 w-5 mr-2" />
-            {domainsLoading ? 'Generating...' : 'Refresh Analysis'}
+            <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" />
+            <span className="text-sm sm:text-base">{domainsLoading ? 'Generating...' : 'Refresh Analysis'}</span>
           </Button>
         </div>
       </div>
@@ -1931,15 +1931,15 @@ export default function DashboardPage() {
   };
 
   const renderAnalysis = () => (
-    <div className="space-y-8">
+    <div className="space-y-4 sm:space-y-6 lg:space-y-8">
       {/* Hero Section */}
       <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-cyan-500/5 rounded-2xl"></div>
-        <div className="relative p-8 text-center">
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent mb-4">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-cyan-500/5 rounded-xl sm:rounded-2xl"></div>
+        <div className="relative p-4 sm:p-6 lg:p-8 text-center">
+          <h1 className="text-2xl sm:text-3xl lg:text-5xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent mb-2 sm:mb-3 lg:mb-4">
             Comprehensive Analysis
           </h1>
-          <p className="text-xl text-dark-secondary max-w-3xl mx-auto leading-relaxed">
+          <p className="text-sm sm:text-base lg:text-xl text-dark-secondary max-w-3xl mx-auto leading-relaxed">
             AI-powered insights from your key health markers focused on metabolic syndrome, cognitive health, hormonal balance, and nutritional status
           </p>
         </div>
@@ -1950,16 +1950,16 @@ export default function DashboardPage() {
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-cyan-500/10 border border-blue-500/20 rounded-2xl p-8"
+          className="bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-cyan-500/10 border border-blue-500/20 rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8"
         >
-          <div className="flex items-center justify-center space-x-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center space-y-3 sm:space-y-0 sm:space-x-4">
             <div className="relative">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500/20"></div>
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent absolute inset-0"></div>
+              <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-4 border-blue-500/20"></div>
+              <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-4 border-blue-500 border-t-transparent absolute inset-0"></div>
             </div>
-            <div className="text-center">
-              <h3 className="text-2xl font-semibold text-dark-primary mb-2">AI Analysis in Progress</h3>
-              <p className="text-dark-secondary">Our advanced algorithms are processing your health data to generate personalized insights</p>
+            <div className="text-center sm:text-left">
+              <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold text-dark-primary mb-1 sm:mb-2">AI Analysis in Progress</h3>
+              <p className="text-dark-secondary text-sm sm:text-base">Our advanced algorithms are processing your health data</p>
             </div>
           </div>
         </motion.div>
@@ -2851,20 +2851,20 @@ export default function DashboardPage() {
 
   const renderAIChat = () => {
     return (
-      <div className="flex flex-col h-[calc(100vh-10rem)]"> {/* Adjusted height */}
+      <div className="flex flex-col h-[calc(100vh-10rem)] sm:h-[calc(100vh-10rem)]"> {/* Adjusted height */}
         {/* Fixed Header */}
-        <div className="flex-shrink-0 mb-6">
-          <div className="flex items-center justify-between">
+        <div className="flex-shrink-0 mb-4 sm:mb-6 px-4 sm:px-0">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <h1 className="text-4xl font-bold tracking-tight text-dark-primary">AI Assistant</h1>
-              <p className="mt-1 text-dark-secondary">Your personalized health optimization expert.</p>
+              <h1 className="text-xl sm:text-2xl lg:text-4xl font-bold tracking-tight text-dark-primary">AI Assistant</h1>
+              <p className="mt-1 text-dark-secondary text-sm sm:text-base">Your personalized health optimization expert.</p>
             </div>
-            <Button onClick={startNewConversation} variant="outline" className="text-dark-secondary border-dark-border bg-dark-panel hover:bg-dark-border hover:text-dark-primary">
+            <Button onClick={startNewConversation} variant="outline" className="text-dark-secondary border-dark-border bg-dark-panel hover:bg-dark-border hover:text-dark-primary w-full sm:w-auto touch-target">
               New Chat
             </Button>
           </div>
         </div>
-        <div className="flex flex-1 min-h-0 gap-8">
+        <div className="flex flex-1 min-h-0 gap-4 sm:gap-6 lg:gap-8 px-4 sm:px-0">
           <div className="hidden lg:flex lg:flex-col w-1/3 max-w-sm flex-shrink-0">
             <div className="flex flex-col h-full bg-dark-panel border border-dark-border rounded-lg">
               <h3 className="flex-shrink-0 p-4 font-semibold border-b border-dark-border text-dark-primary">Chat History</h3>
@@ -2885,41 +2885,41 @@ export default function DashboardPage() {
           <div className="flex flex-col flex-1 h-full min-w-0">
             <div className="flex flex-col h-full bg-dark-panel border border-dark-border rounded-lg">
               {/* Messages Container - This is the scrollable part */}
-              <div ref={chatContainerRef} className="flex-1 p-6 overflow-y-auto">
+              <div ref={chatContainerRef} className="flex-1 p-3 sm:p-4 lg:p-6 overflow-y-auto">
                 {chatMessages.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full text-center text-dark-secondary">
-                    <div className="flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-dark-accent/10 text-dark-accent">
-                      <MessageSquare className="w-8 h-8" />
+                    <div className="flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 mb-3 sm:mb-4 rounded-full bg-dark-accent/10 text-dark-accent">
+                      <MessageSquare className="w-6 h-6 sm:w-8 sm:h-8" />
                     </div>
-                    <h3 className="text-lg font-semibold text-dark-primary">AI Health Assistant</h3>
-                    <p>Ask me anything about your health data.</p>
+                    <h3 className="text-base sm:text-lg font-semibold text-dark-primary">AI Health Assistant</h3>
+                    <p className="text-sm sm:text-base">Ask me anything about your health data.</p>
                   </div>
                 ) : (
-                  <div className="space-y-6">
+                  <div className="space-y-4 sm:space-y-6">
                     {chatMessages.map((msg, index) => (
-                      <div key={index} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <div key={index} className={`flex gap-2 sm:gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                         {msg.role === 'assistant' &&
-                          <div className="flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-full bg-dark-accent">
-                            <Sparkles className="w-5 h-5 text-white" />
+                          <div className="flex items-center justify-center flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-dark-accent">
+                            <Sparkles className="w-3 h-3 sm:w-5 sm:h-5 text-white" />
                           </div>
                         }
-                        <div className={`p-4 rounded-lg max-w-2xl ${msg.role === 'user' ? 'bg-dark-accent text-white' : 'bg-dark-background'}`}>
-                          <div className="prose prose-sm prose-invert max-w-none prose-p:my-0 prose-p:text-dark-primary">
+                        <div className={`p-3 sm:p-4 rounded-lg max-w-[85%] sm:max-w-2xl ${msg.role === 'user' ? 'bg-dark-accent text-white' : 'bg-dark-background'}`}>
+                          <div className="prose prose-sm prose-invert max-w-none prose-p:my-0 prose-p:text-dark-primary text-xs sm:text-sm">
                             <ReactMarkdown>{msg.content}</ReactMarkdown>
                           </div>
                         </div>
                       </div>
                     ))}
                     {isChatLoading && (
-                      <div className="flex justify-start gap-3">
-                        <div className="flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-full bg-dark-accent">
-                          <Sparkles className="w-5 h-5 text-white" />
+                      <div className="flex justify-start gap-2 sm:gap-3">
+                        <div className="flex items-center justify-center flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-dark-accent">
+                          <Sparkles className="w-3 h-3 sm:w-5 sm:h-5 text-white" />
                         </div>
-                        <div className="p-4 rounded-lg bg-dark-border">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-dark-accent animate-pulse" style={{ animationDelay: '0s' }} />
-                            <div className="w-2 h-2 rounded-full bg-dark-accent animate-pulse" style={{ animationDelay: '0.1s' }} />
-                            <div className="w-2 h-2 rounded-full bg-dark-accent animate-pulse" style={{ animationDelay: '0.2s' }} />
+                        <div className="p-3 sm:p-4 rounded-lg bg-dark-border">
+                          <div className="flex items-center gap-1.5 sm:gap-2">
+                            <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-dark-accent animate-pulse" style={{ animationDelay: '0s' }} />
+                            <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-dark-accent animate-pulse" style={{ animationDelay: '0.1s' }} />
+                            <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-dark-accent animate-pulse" style={{ animationDelay: '0.2s' }} />
                           </div>
                         </div>
                       </div>
@@ -2927,7 +2927,7 @@ export default function DashboardPage() {
                   </div>
                 )}
               </div>
-              <div className="flex-shrink-0 p-4 bg-dark-panel border-t border-dark-border">
+              <div className="flex-shrink-0 p-3 sm:p-4 bg-dark-panel border-t border-dark-border">
                 <form onSubmit={(e) => { e.preventDefault(); if (chatInput.trim()) sendMessage(chatInput); }} className="relative">
                   <textarea
                     value={chatInput}
@@ -2939,16 +2939,16 @@ export default function DashboardPage() {
                       }
                     }}
                     placeholder="Ask about your results, supplements, or health..."
-                    className="w-full p-3 pr-20 text-white bg-dark-background border-2 border-dark-border rounded-lg resize-none placeholder-dark-secondary focus:outline-none focus:ring-2 focus:ring-dark-accent"
+                    className="w-full p-2.5 sm:p-3 pr-14 sm:pr-20 text-white bg-dark-background border-2 border-dark-border rounded-lg resize-none placeholder-dark-secondary focus:outline-none focus:ring-2 focus:ring-dark-accent text-sm sm:text-base"
                     rows={1}
                     disabled={isChatLoading}
                   />
                   <Button
                     type="submit"
                     disabled={isChatLoading || !chatInput.trim()}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 p-0 bg-dark-accent text-white rounded-full hover:bg-dark-accent/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl"
+                    className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 p-0 bg-dark-accent text-white rounded-full hover:bg-dark-accent/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl touch-target"
                   >
-                    <Send className="w-4 h-4" />
+                    <Send className="w-3 h-3 sm:w-4 sm:h-4" />
                   </Button>
                 </form>
               </div>
@@ -2960,79 +2960,79 @@ export default function DashboardPage() {
   };
 
   const renderProductChecker = () => (
-    <div className="space-y-8">
-      <div className="flex justify-between items-center">
+    <div className="space-y-4 sm:space-y-6 lg:space-y-8">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <div>
-          <h2 className="text-3xl font-bold text-dark-primary">Product Compatibility Checker</h2>
-          <p className="text-dark-secondary mt-1">Analyze any supplement product against your unique health profile.</p>
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-dark-primary">Product Compatibility Checker</h2>
+          <p className="text-dark-secondary mt-1 text-sm sm:text-base">Analyze any supplement product against your unique health profile.</p>
         </div>
         <Button 
           variant="outline" 
           onClick={toggleArchive}
-          className="bg-dark-panel border-dark-border text-dark-primary hover:bg-dark-border"
+          className="bg-dark-panel border-dark-border text-dark-primary hover:bg-dark-border w-full sm:w-auto touch-target"
         >
           {showArchive ? 'Hide Archive' : 'View Archive'}
         </Button>
       </div>
 
-      <div className="flex space-x-2">
+      <div className="flex flex-col sm:flex-row gap-2 sm:space-x-2">
         <input
           type="url"
           value={productUrl}
           onChange={(e) => setProductUrl(e.target.value)}
           placeholder="Paste direct product link"
-          className="flex-grow bg-dark-panel border border-dark-border rounded-md px-4 py-2 text-dark-primary placeholder-dark-secondary focus:ring-2 focus:ring-dark-accent focus:outline-none"
+          className="flex-grow bg-dark-panel border border-dark-border rounded-md px-3 sm:px-4 py-2.5 sm:py-2 text-dark-primary placeholder-dark-secondary focus:ring-2 focus:ring-dark-accent focus:outline-none text-sm sm:text-base"
           disabled={isCheckingProduct}
         />
-        <Button onClick={checkProduct} disabled={isCheckingProduct || !productUrl}>
-          {isCheckingProduct ? 'Analyzing...' : <><Search className="w-4 h-4 mr-2" /> Analyze</>}
+        <Button onClick={checkProduct} disabled={isCheckingProduct || !productUrl} className="w-full sm:w-auto touch-target">
+          {isCheckingProduct ? 'Analyzing...' : <><Search className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" /> Analyze</>}
         </Button>
       </div>
 
       {productCheckError && (
-        <div className="p-4 bg-red-900/50 border border-red-700 text-red-300 rounded-md">
+        <div className="p-3 sm:p-4 bg-red-900/50 border border-red-700 text-red-300 rounded-md text-sm sm:text-base">
           <p><strong>Analysis Failed:</strong> {productCheckError}</p>
         </div>
       )}
 
       {isCheckingProduct && (
-        <div className="text-center py-10">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-dark-accent mx-auto"></div>
-          <p className="mt-4 text-dark-secondary">Scraping product page and running analysis...</p>
+        <div className="text-center py-6 sm:py-8 lg:py-10">
+          <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-dark-accent mx-auto"></div>
+          <p className="mt-3 sm:mt-4 text-dark-secondary text-sm sm:text-base">Scraping product page and running analysis...</p>
         </div>
       )}
 
       {productAnalysis && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 sm:space-y-6">
           <Card className="bg-dark-panel border-dark-border">
-            <CardHeader>
-              <CardTitle className="text-2xl text-dark-primary">{productAnalysis.productName}</CardTitle>
-              <CardDescription className="text-dark-secondary">{productAnalysis.brand}</CardDescription>
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-lg sm:text-xl lg:text-2xl text-dark-primary">{productAnalysis.productName}</CardTitle>
+              <CardDescription className="text-dark-secondary text-sm sm:text-base">{productAnalysis.brand}</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="flex items-center space-x-4">
-                <div className={`text-4xl font-bold ${productAnalysis.overallScore > 75 ? 'text-green-400' : productAnalysis.overallScore > 50 ? 'text-yellow-400' : 'text-red-400'}`}>{productAnalysis.overallScore}/100</div>
-                <div>
-                  <h4 className="font-semibold text-dark-primary">Overall Compatibility</h4>
-                  <p className="text-dark-secondary">{productAnalysis.summary}</p>
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:space-x-4">
+                <div className={`text-3xl sm:text-4xl font-bold ${productAnalysis.overallScore > 75 ? 'text-green-400' : productAnalysis.overallScore > 50 ? 'text-yellow-400' : 'text-red-400'}`}>{productAnalysis.overallScore}/100</div>
+                <div className="flex-1">
+                  <h4 className="font-semibold text-dark-primary text-sm sm:text-base">Overall Compatibility</h4>
+                  <p className="text-dark-secondary text-sm sm:text-base">{productAnalysis.summary}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             <Card className="bg-dark-panel border-dark-border">
-              <CardHeader><CardTitle className="text-lg text-green-400 flex items-center"><CheckCircle className="w-5 h-5 mr-2"/>Pros</CardTitle></CardHeader>
-              <CardContent>
-                <ul className="space-y-2 list-disc list-inside text-dark-secondary">
+              <CardHeader className="p-4 sm:p-6"><CardTitle className="text-base sm:text-lg text-green-400 flex items-center"><CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2"/>Pros</CardTitle></CardHeader>
+              <CardContent className="p-4 sm:p-6">
+                <ul className="space-y-1.5 sm:space-y-2 list-disc list-inside text-dark-secondary text-sm sm:text-base">
                   {productAnalysis.pros.map((pro: string, i: number) => <li key={i}>{pro}</li>)}
                 </ul>
               </CardContent>
             </Card>
             <Card className="bg-dark-panel border-dark-border">
-              <CardHeader><CardTitle className="text-lg text-yellow-400 flex items-center"><AlertTriangle className="w-5 h-5 mr-2"/>Cons & Considerations</CardTitle></CardHeader>
-              <CardContent>
-                <ul className="space-y-2 list-disc list-inside text-dark-secondary">
+              <CardHeader className="p-4 sm:p-6"><CardTitle className="text-base sm:text-lg text-yellow-400 flex items-center"><AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2"/>Cons & Considerations</CardTitle></CardHeader>
+              <CardContent className="p-4 sm:p-6">
+                <ul className="space-y-1.5 sm:space-y-2 list-disc list-inside text-dark-secondary text-sm sm:text-base">
                   {productAnalysis.cons.map((con: string, i: number) => <li key={i}>{con}</li>)}
                 </ul>
               </CardContent>
@@ -3041,9 +3041,9 @@ export default function DashboardPage() {
           
           {productAnalysis.warnings?.length > 0 && (
             <Card className="bg-red-900/30 border-red-700">
-              <CardHeader><CardTitle className="text-lg text-red-300 flex items-center"><AlertCircle className="w-5 h-5 mr-2"/>Important Warnings</CardTitle></CardHeader>
-              <CardContent>
-                <ul className="space-y-2 list-disc list-inside text-red-300">
+              <CardHeader className="p-4 sm:p-6"><CardTitle className="text-base sm:text-lg text-red-300 flex items-center"><AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2"/>Important Warnings</CardTitle></CardHeader>
+              <CardContent className="p-4 sm:p-6">
+                <ul className="space-y-1.5 sm:space-y-2 list-disc list-inside text-red-300 text-sm sm:text-base">
                   {productAnalysis.warnings.map((warning: string, i: number) => <li key={i}>{warning}</li>)}
                 </ul>
               </CardContent>
@@ -3060,44 +3060,44 @@ export default function DashboardPage() {
           exit={{ opacity: 0, height: 0 }}
           className="space-y-4"
         >
-          <div className="border-t border-dark-border pt-8">
-            <h3 className="text-2xl font-bold text-dark-primary mb-4">Product Check History</h3>
+          <div className="border-t border-dark-border pt-6 sm:pt-8">
+            <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-dark-primary mb-3 sm:mb-4">Product Check History</h3>
             
             {isLoadingHistory ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-dark-accent mx-auto"></div>
-                <p className="mt-2 text-dark-secondary">Loading history...</p>
+              <div className="text-center py-6 sm:py-8">
+                <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-dark-accent mx-auto"></div>
+                <p className="mt-2 text-dark-secondary text-sm sm:text-base">Loading history...</p>
               </div>
             ) : productHistory.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-dark-secondary">No product checks yet. Analyze a product to start building your history!</p>
+              <div className="text-center py-6 sm:py-8">
+                <p className="text-dark-secondary text-sm sm:text-base">No product checks yet. Analyze a product to start building your history!</p>
               </div>
             ) : (
-              <div className="grid gap-4">
+              <div className="grid gap-3 sm:gap-4">
                 {productHistory.map((check) => (
                   <Card key={check.id} className="bg-dark-panel border-dark-border">
-                    <CardContent className="p-4">
-                      <div className="flex justify-between items-start">
+                    <CardContent className="p-3 sm:p-4">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
                         <div className="flex-1">
-                          <h4 className="font-semibold text-dark-primary">{check.product_name}</h4>
-                          <p className="text-sm text-dark-secondary">{check.brand}</p>
+                          <h4 className="font-semibold text-dark-primary text-sm sm:text-base">{check.product_name}</h4>
+                          <p className="text-xs sm:text-sm text-dark-secondary">{check.brand}</p>
                           <p className="text-xs text-dark-secondary mt-1">{getTimeAgo(check.created_at)}</p>
                         </div>
-                        <div className="flex items-center space-x-4">
-                          <div className={`text-2xl font-bold ${check.overall_score > 75 ? 'text-green-400' : check.overall_score > 50 ? 'text-yellow-400' : 'text-red-400'}`}>
+                        <div className="flex items-center justify-between sm:space-x-4">
+                          <div className={`text-xl sm:text-2xl font-bold ${check.overall_score > 75 ? 'text-green-400' : check.overall_score > 50 ? 'text-yellow-400' : 'text-red-400'}`}>
                             {check.overall_score}/100
                           </div>
                           <Button 
                             variant="outline" 
                             size="sm"
                             onClick={() => setProductAnalysis(check.full_analysis)}
-                            className="bg-dark-background border-dark-border text-dark-primary hover:bg-dark-border"
+                            className="bg-dark-background border-dark-border text-dark-primary hover:bg-dark-border text-xs sm:text-sm"
                           >
                             View Details
                           </Button>
                         </div>
                       </div>
-                      <p className="text-sm text-dark-secondary mt-2 line-clamp-2">{check.analysis_summary}</p>
+                      <p className="text-xs sm:text-sm text-dark-secondary mt-2 line-clamp-2">{check.analysis_summary}</p>
                     </CardContent>
                   </Card>
                 ))}
@@ -3110,16 +3110,16 @@ export default function DashboardPage() {
   );
 
   const renderStudyBuddy = () => (
-    <div className="space-y-8">
+    <div className="space-y-4 sm:space-y-6 lg:space-y-8">
       {/* Header */}
-      <div className="bg-dark-panel border border-dark-border rounded-xl p-8">
-        <div className="flex items-center gap-4 mb-4">
-          <div className="p-3 bg-dark-border rounded-lg">
-            <BookOpen className="h-6 w-6 text-dark-accent" />
+      <div className="bg-dark-panel border border-dark-border rounded-xl p-4 sm:p-6 lg:p-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
+          <div className="p-2 sm:p-3 bg-dark-border rounded-lg">
+            <BookOpen className="h-5 w-5 sm:h-6 sm:w-6 text-dark-accent" />
           </div>
           <div>
-            <h1 className="text-4xl font-bold text-dark-primary">Study Buddy</h1>
-            <p className="text-lg text-dark-secondary mt-1">
+            <h1 className="text-xl sm:text-2xl lg:text-4xl font-bold text-dark-primary">Study Buddy</h1>
+            <p className="text-sm sm:text-base lg:text-lg text-dark-secondary mt-1">
               Personalized analysis of scientific research based on your genetics, biomarkers, and health profile
             </p>
           </div>
@@ -3127,85 +3127,85 @@ export default function DashboardPage() {
       </div>
 
       {/* URL Input Section */}
-      <div className="bg-dark-panel border border-dark-border rounded-xl p-6">
-        <h2 className="text-xl font-semibold text-dark-primary mb-4">Analyze a New Study</h2>
-        <div className="flex gap-4">
+      <div className="bg-dark-panel border border-dark-border rounded-xl p-4 sm:p-6">
+        <h2 className="text-base sm:text-lg lg:text-xl font-semibold text-dark-primary mb-3 sm:mb-4">Analyze a New Study</h2>
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
           <div className="flex-1">
             <input
               type="url"
               value={studyUrl}
               onChange={(e) => setStudyUrl(e.target.value)}
               placeholder="Enter PubMed URL or any scientific study link..."
-              className="w-full px-4 py-3 bg-dark-background border border-dark-border rounded-lg text-dark-primary placeholder-dark-secondary focus:outline-none focus:ring-2 focus:ring-dark-accent"
+              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-dark-background border border-dark-border rounded-lg text-dark-primary placeholder-dark-secondary focus:outline-none focus:ring-2 focus:ring-dark-accent text-sm sm:text-base"
             />
           </div>
           <Button
             onClick={analyzeStudy}
             disabled={isAnalyzingStudy || !studyUrl}
-            className="bg-dark-accent text-white hover:bg-dark-accent/80 px-6 py-3"
+            className="bg-dark-accent text-white hover:bg-dark-accent/80 px-4 sm:px-6 py-2.5 sm:py-3 w-full sm:w-auto touch-target"
           >
             {isAnalyzingStudy ? (
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                Analyzing...
+              <div className="flex items-center justify-center gap-2">
+                <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                <span className="text-sm sm:text-base">Analyzing...</span>
               </div>
             ) : (
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4" />
-                Analyze Study
+              <div className="flex items-center justify-center gap-2">
+                <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="text-sm sm:text-base">Analyze Study</span>
               </div>
             )}
           </Button>
         </div>
         {studyError && (
-          <div className="mt-4 p-4 bg-red-900/50 border border-red-600 rounded-lg">
-            <p className="text-red-400">{studyError}</p>
+          <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-red-900/50 border border-red-600 rounded-lg">
+            <p className="text-red-400 text-sm sm:text-base">{studyError}</p>
           </div>
         )}
       </div>
 
       {/* Latest Analysis */}
       {studyAnalysis && (
-        <div className="bg-dark-panel border border-dark-border rounded-xl p-6">
-          <h2 className="text-xl font-semibold text-dark-primary mb-4">Latest Analysis</h2>
-          <div className="space-y-6">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Star className="h-5 w-5 text-yellow-400" />
-                <span className="text-dark-secondary">Personal Relevance:</span>
-                <span className="text-2xl font-bold text-dark-accent">{studyAnalysis.relevanceScore}/10</span>
+        <div className="bg-dark-panel border border-dark-border rounded-xl p-4 sm:p-6">
+          <h2 className="text-base sm:text-lg lg:text-xl font-semibold text-dark-primary mb-3 sm:mb-4">Latest Analysis</h2>
+          <div className="space-y-4 sm:space-y-6">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <Star className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-400" />
+                <span className="text-dark-secondary text-sm sm:text-base">Personal Relevance:</span>
+                <span className="text-xl sm:text-2xl font-bold text-dark-accent">{studyAnalysis.relevanceScore}/10</span>
               </div>
             </div>
             
             <div>
-              <h3 className="font-semibold text-dark-accent mb-2">Personalized Summary</h3>
-              <p className="text-dark-secondary">{studyAnalysis.personalizedSummary}</p>
+              <h3 className="font-semibold text-dark-accent mb-1.5 sm:mb-2 text-sm sm:text-base">Personalized Summary</h3>
+              <p className="text-dark-secondary text-sm sm:text-base">{studyAnalysis.personalizedSummary}</p>
             </div>
             
             <div>
-              <h3 className="font-semibold text-dark-accent mb-2">Personal Explanation</h3>
-              <p className="text-dark-secondary">{studyAnalysis.personalizedExplanation}</p>
+              <h3 className="font-semibold text-dark-accent mb-1.5 sm:mb-2 text-sm sm:text-base">Personal Explanation</h3>
+              <p className="text-dark-secondary text-sm sm:text-base">{studyAnalysis.personalizedExplanation}</p>
             </div>
             
             <div>
-              <h3 className="font-semibold text-dark-accent mb-2">Key Findings</h3>
-              <ul className="space-y-2">
+              <h3 className="font-semibold text-dark-accent mb-1.5 sm:mb-2 text-sm sm:text-base">Key Findings</h3>
+              <ul className="space-y-1.5 sm:space-y-2">
                 {studyAnalysis.keyFindings?.map((finding: string, index: number) => (
-                  <li key={index} className="flex items-start gap-2">
-                    <span className="text-dark-accent mt-1">•</span>
-                    <span className="text-dark-secondary">{finding}</span>
+                  <li key={index} className="flex items-start gap-1.5 sm:gap-2">
+                    <span className="text-dark-accent mt-0.5 sm:mt-1">•</span>
+                    <span className="text-dark-secondary text-sm sm:text-base">{finding}</span>
                   </li>
                 ))}
               </ul>
             </div>
             
             <div>
-              <h3 className="font-semibold text-dark-accent mb-2">Your Personalized Recommendations</h3>
-              <ul className="space-y-2">
+              <h3 className="font-semibold text-dark-accent mb-1.5 sm:mb-2 text-sm sm:text-base">Your Personalized Recommendations</h3>
+              <ul className="space-y-1.5 sm:space-y-2">
                 {studyAnalysis.actionableRecommendations?.map((rec: string, index: number) => (
-                  <li key={index} className="flex items-start gap-2">
-                    <span className="text-green-400 mt-1">✓</span>
-                    <span className="text-dark-secondary">{rec}</span>
+                  <li key={index} className="flex items-start gap-1.5 sm:gap-2">
+                    <span className="text-green-400 mt-0.5 sm:mt-1">✓</span>
+                    <span className="text-dark-secondary text-sm sm:text-base">{rec}</span>
                   </li>
                 ))}
               </ul>
@@ -3215,40 +3215,40 @@ export default function DashboardPage() {
       )}
 
       {/* Study History */}
-      <div className="bg-dark-panel border border-dark-border rounded-xl p-6">
-        <h2 className="text-xl font-semibold text-dark-primary mb-4">Your Study History</h2>
+      <div className="bg-dark-panel border border-dark-border rounded-xl p-4 sm:p-6">
+        <h2 className="text-base sm:text-lg lg:text-xl font-semibold text-dark-primary mb-3 sm:mb-4">Your Study History</h2>
         {isLoadingStudies ? (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-dark-accent mx-auto"></div>
-            <p className="mt-2 text-dark-secondary">Loading studies...</p>
+          <div className="text-center py-6 sm:py-8">
+            <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-dark-accent mx-auto"></div>
+            <p className="mt-2 text-dark-secondary text-sm sm:text-base">Loading studies...</p>
           </div>
         ) : userStudies.length > 0 ? (
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {userStudies.map((study) => (
               <div
                 key={study.id}
-                className="p-4 bg-dark-background border border-dark-border rounded-lg hover:border-dark-accent transition-colors cursor-pointer"
+                className="p-3 sm:p-4 bg-dark-background border border-dark-border rounded-lg hover:border-dark-accent transition-colors cursor-pointer"
                 onClick={() => setSelectedStudy(study)}
               >
-                <div className="flex items-start justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                   <div className="flex-1">
-                    <h3 className="font-semibold text-dark-primary mb-1">
+                    <h3 className="font-semibold text-dark-primary mb-1 text-sm sm:text-base">
                       {study.study_title || 'Unknown Title'}
                     </h3>
-                    <p className="text-dark-secondary text-sm mb-2 line-clamp-2">
+                    <p className="text-dark-secondary text-xs sm:text-sm mb-2 line-clamp-2">
                       {study.personalized_summary || 'No summary available'}
                     </p>
-                    <div className="flex items-center gap-4 text-xs text-dark-secondary">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-dark-secondary">
                       <span>Relevance: {study.relevance_score}/10</span>
                       <span>{new Date(study.created_at).toLocaleDateString()}</span>
                       {study.pmid && <span>PMID: {study.pmid}</span>}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 self-end sm:self-auto">
                     <Button
                       variant="outline"
                       size="sm"
-                      className="border-dark-border text-dark-secondary hover:bg-dark-border"
+                      className="border-dark-border text-dark-secondary hover:bg-dark-border h-8 w-8 p-0"
                       onClick={(e) => {
                         e.stopPropagation();
                         window.open(study.study_url, '_blank');
@@ -3262,82 +3262,82 @@ export default function DashboardPage() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-8">
-            <BookOpen className="h-12 w-12 text-dark-secondary mx-auto mb-4" />
-            <p className="text-dark-secondary">No studies analyzed yet.</p>
-            <p className="text-dark-secondary text-sm">Add a study URL above to get started!</p>
+          <div className="text-center py-6 sm:py-8">
+            <BookOpen className="h-10 w-10 sm:h-12 sm:w-12 text-dark-secondary mx-auto mb-3 sm:mb-4" />
+            <p className="text-dark-secondary text-sm sm:text-base">No studies analyzed yet.</p>
+            <p className="text-dark-secondary text-xs sm:text-sm">Add a study URL above to get started!</p>
           </div>
         )}
       </div>
 
       {/* Selected Study Detail Modal */}
       {selectedStudy && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-dark-panel border border-dark-border rounded-xl p-6 max-w-4xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-dark-primary">Study Analysis</h2>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-3 sm:p-4 z-50">
+          <div className="bg-dark-panel border border-dark-border rounded-xl p-4 sm:p-6 w-full max-w-full sm:max-w-2xl lg:max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h2 className="text-base sm:text-lg lg:text-xl font-semibold text-dark-primary">Study Analysis</h2>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setSelectedStudy(null)}
-                className="border-dark-border text-dark-secondary hover:bg-dark-border"
+                className="border-dark-border text-dark-secondary hover:bg-dark-border h-8 w-8 p-0"
               >
                 ✕
               </Button>
             </div>
             
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* Study Header */}
               <div>
-                <h3 className="text-xl font-semibold text-dark-primary mb-2">{selectedStudy.study_title}</h3>
+                <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-dark-primary mb-1.5 sm:mb-2">{selectedStudy.study_title}</h3>
                 {selectedStudy.study_authors && (
-                  <p className="text-dark-secondary text-sm mb-2">{selectedStudy.study_authors}</p>
+                  <p className="text-dark-secondary text-xs sm:text-sm mb-1.5 sm:mb-2">{selectedStudy.study_authors}</p>
                 )}
-                <div className="flex items-center gap-4 text-xs text-dark-secondary mb-4">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-dark-secondary mb-3 sm:mb-4">
                   <span className="flex items-center gap-1">
                     <Star className="h-3 w-3 text-yellow-400" />
                     Personal Relevance: {selectedStudy.relevance_score}/10
                   </span>
                   <span>{new Date(selectedStudy.created_at).toLocaleDateString()}</span>
                   {selectedStudy.pmid && <span>PMID: {selectedStudy.pmid}</span>}
-                  {selectedStudy.journal_name && <span>{selectedStudy.journal_name}</span>}
+                  {selectedStudy.journal_name && <span className="hidden sm:inline">{selectedStudy.journal_name}</span>}
                 </div>
               </div>
               
               {/* Personalized Summary */}
               <div>
-                <h4 className="text-lg font-semibold text-dark-primary mb-3 flex items-center gap-2">
-                  <User className="h-5 w-5 text-dark-accent" />
+                <h4 className="text-sm sm:text-base lg:text-lg font-semibold text-dark-primary mb-2 sm:mb-3 flex items-center gap-1.5 sm:gap-2">
+                  <User className="h-4 w-4 sm:h-5 sm:w-5 text-dark-accent" />
                   Personalized Summary
                 </h4>
-                <div className="bg-dark-background border border-dark-border rounded-lg p-4">
-                  <p className="text-dark-primary leading-relaxed">{selectedStudy.personalized_summary}</p>
+                <div className="bg-dark-background border border-dark-border rounded-lg p-3 sm:p-4">
+                  <p className="text-dark-primary leading-relaxed text-sm sm:text-base">{selectedStudy.personalized_summary}</p>
                 </div>
               </div>
 
               {/* Personal Explanation */}
               <div>
-                <h4 className="text-lg font-semibold text-dark-primary mb-3 flex items-center gap-2">
-                  <Brain className="h-5 w-5 text-dark-accent" />
+                <h4 className="text-sm sm:text-base lg:text-lg font-semibold text-dark-primary mb-2 sm:mb-3 flex items-center gap-1.5 sm:gap-2">
+                  <Brain className="h-4 w-4 sm:h-5 sm:w-5 text-dark-accent" />
                   Personal Explanation
                 </h4>
-                <div className="bg-dark-background border border-dark-border rounded-lg p-4">
-                  <p className="text-dark-primary leading-relaxed">{selectedStudy.personalized_explanation}</p>
+                <div className="bg-dark-background border border-dark-border rounded-lg p-3 sm:p-4">
+                  <p className="text-dark-primary leading-relaxed text-sm sm:text-base">{selectedStudy.personalized_explanation}</p>
                 </div>
               </div>
               
               {/* Key Findings */}
               <div>
-                <h4 className="text-lg font-semibold text-dark-primary mb-3 flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-dark-accent" />
+                <h4 className="text-sm sm:text-base lg:text-lg font-semibold text-dark-primary mb-2 sm:mb-3 flex items-center gap-1.5 sm:gap-2">
+                  <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-dark-accent" />
                   Key Findings
                 </h4>
-                <div className="bg-dark-background border border-dark-border rounded-lg p-4">
-                  <ul className="space-y-3">
+                <div className="bg-dark-background border border-dark-border rounded-lg p-3 sm:p-4">
+                  <ul className="space-y-2 sm:space-y-3">
                     {selectedStudy.key_findings?.map((finding: string, index: number) => (
-                      <li key={index} className="flex items-start gap-3">
-                        <span className="text-dark-accent mt-1 text-lg">•</span>
-                        <span className="text-dark-primary leading-relaxed">{finding}</span>
+                      <li key={index} className="flex items-start gap-2 sm:gap-3">
+                        <span className="text-dark-accent mt-0.5 sm:mt-1 text-base sm:text-lg">•</span>
+                        <span className="text-dark-primary leading-relaxed text-sm sm:text-base">{finding}</span>
                       </li>
                     ))}
                   </ul>
@@ -3346,16 +3346,16 @@ export default function DashboardPage() {
               
               {/* Your Personalized Recommendations */}
               <div>
-                <h4 className="text-lg font-semibold text-dark-primary mb-3 flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-400" />
+                <h4 className="text-sm sm:text-base lg:text-lg font-semibold text-dark-primary mb-2 sm:mb-3 flex items-center gap-1.5 sm:gap-2">
+                  <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-400" />
                   Your Personalized Recommendations
                 </h4>
-                <div className="bg-dark-background border border-dark-border rounded-lg p-4">
-                  <ul className="space-y-3">
+                <div className="bg-dark-background border border-dark-border rounded-lg p-3 sm:p-4">
+                  <ul className="space-y-2 sm:space-y-3">
                     {selectedStudy.actionable_recommendations?.map((rec: string, index: number) => (
-                      <li key={index} className="flex items-start gap-3">
-                        <span className="text-green-400 mt-1 text-lg font-bold">✓</span>
-                        <span className="text-dark-primary leading-relaxed">{rec}</span>
+                      <li key={index} className="flex items-start gap-2 sm:gap-3">
+                        <span className="text-green-400 mt-0.5 sm:mt-1 text-base sm:text-lg font-bold">✓</span>
+                        <span className="text-dark-primary leading-relaxed text-sm sm:text-base">{rec}</span>
                       </li>
                     ))}
                   </ul>
@@ -3365,16 +3365,16 @@ export default function DashboardPage() {
               {/* Important Considerations */}
               {selectedStudy.limitations && selectedStudy.limitations.length > 0 && (
                 <div>
-                  <h4 className="text-lg font-semibold text-dark-primary mb-3 flex items-center gap-2">
-                    <AlertTriangle className="h-5 w-5 text-yellow-400" />
+                  <h4 className="text-sm sm:text-base lg:text-lg font-semibold text-dark-primary mb-2 sm:mb-3 flex items-center gap-1.5 sm:gap-2">
+                    <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-400" />
                     Important Considerations
                   </h4>
-                  <div className="bg-dark-background border border-dark-border rounded-lg p-4">
-                    <ul className="space-y-3">
+                  <div className="bg-dark-background border border-dark-border rounded-lg p-3 sm:p-4">
+                    <ul className="space-y-2 sm:space-y-3">
                       {selectedStudy.limitations.map((limitation: string, index: number) => (
-                        <li key={index} className="flex items-start gap-3">
-                          <span className="text-yellow-400 mt-1 text-lg">⚠</span>
-                          <span className="text-dark-primary leading-relaxed">{limitation}</span>
+                        <li key={index} className="flex items-start gap-2 sm:gap-3">
+                          <span className="text-yellow-400 mt-0.5 sm:mt-1 text-base sm:text-lg">⚠</span>
+                          <span className="text-dark-primary leading-relaxed text-sm sm:text-base">{limitation}</span>
                         </li>
                       ))}
                     </ul>
@@ -3383,13 +3383,13 @@ export default function DashboardPage() {
               )}
             </div>
             
-            <div className="pt-4 border-t border-dark-border">
+            <div className="pt-3 sm:pt-4 mt-4 sm:mt-6 border-t border-dark-border">
               <Button
                 onClick={() => window.open(selectedStudy.study_url, '_blank')}
-                className="bg-dark-accent text-white hover:bg-dark-accent/80"
+                className="bg-dark-accent text-white hover:bg-dark-accent/80 w-full sm:w-auto touch-target"
               >
-                <ExternalLink className="h-4 w-4 mr-2" />
-                View Original Study
+                <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+                <span className="text-sm sm:text-base">View Original Study</span>
               </Button>
             </div>
           </div>
@@ -3935,16 +3935,16 @@ export default function DashboardPage() {
 
       {/* Share Graphics Modal */}
       {showShareGraphics && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-dark-background border border-dark-border rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-dark-primary">Share Your Stack</h2>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-dark-background border border-dark-border rounded-xl sm:rounded-2xl max-w-full sm:max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-4 sm:p-6">
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-dark-primary">Share Your Stack</h2>
                 <Button
                   onClick={() => setShowShareGraphics(false)}
                   variant="outline"
                   size="sm"
-                  className="border-dark-border text-dark-secondary hover:bg-dark-border"
+                  className="border-dark-border text-dark-secondary hover:bg-dark-border h-8 w-8 p-0"
                 >
                   ✕
                 </Button>
