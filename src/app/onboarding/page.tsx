@@ -341,6 +341,42 @@ export default function OnboardingPage() {
     })));
   };
 
+  // ANIMATION TRIGGER - This makes the steps actually animate!
+  useEffect(() => {
+    if (!isSubmitting) return;
+
+    let mounted = true;
+    let currentStepIndex = 0;
+    const stepDuration = 6000; // 6 seconds per step
+
+    // Start the first step immediately
+    if (mounted && processingSteps.length > 0) {
+      updateProcessingStep(processingSteps[0].id, false, true);
+    }
+
+    const interval = setInterval(() => {
+      if (!mounted) return;
+      
+      if (currentStepIndex < processingSteps.length - 1) {
+        // Complete current step
+        updateProcessingStep(processingSteps[currentStepIndex].id, true, false);
+        
+        // Move to next step
+        currentStepIndex++;
+        updateProcessingStep(processingSteps[currentStepIndex].id, false, true);
+      } else {
+        // All steps complete
+        clearInterval(interval);
+        updateProcessingStep(processingSteps[currentStepIndex].id, true, false);
+      }
+    }, stepDuration);
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, [isSubmitting, processingSteps.length]); // Safe dependencies
+
   const form = useForm<OnboardingData>({
     resolver: zodResolver(onboardingSchema),
     mode: 'onChange',
@@ -487,7 +523,7 @@ export default function OnboardingPage() {
   };
 
   // Upsell modal handlers
-  const handleUpgradeToComplete = () => {
+  const handleUpgradeToComplete = async () => {
     logger.info('User chose to upgrade to Complete Package');
     
     // Update the subscription tier in the pending data
@@ -497,6 +533,19 @@ export default function OnboardingPage() {
       
       // Update the form data as well
       form.setValue('subscription_tier', 'full');
+      
+      // CRITICAL: Update the subscription tier in the database immediately
+      try {
+        const { updateSubscriptionTier } = await import('./actions');
+        const result = await updateSubscriptionTier('full');
+        if (!result.success) {
+          logger.error('Failed to update subscription tier in database', result.error);
+        } else {
+          logger.success('Subscription tier updated in database to full');
+        }
+      } catch (error) {
+        logger.error('Error updating subscription tier', error instanceof Error ? error : { message: String(error) });
+      }
     }
     
     // Close upsell modal and show payment modal

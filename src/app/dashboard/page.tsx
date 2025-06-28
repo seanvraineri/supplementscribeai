@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
 import ReactMarkdown from 'react-markdown';
+import { cancelSubscription } from './actions';
 import { 
   Dna, 
   FileText, 
@@ -219,6 +220,10 @@ export default function DashboardPage() {
 
   // Mobile menu state
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  // Subscription cancellation state
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
@@ -2815,12 +2820,10 @@ export default function DashboardPage() {
                 <Button 
                   variant="outline" 
                   className="border-red-500/20 hover:bg-red-500/10 text-red-400 hover:text-red-300 bg-dark-panel"
-                  onClick={() => {
-                    // TODO: Implement subscription cancellation
-                    alert('Subscription cancellation feature coming soon!');
-                  }}
+                  onClick={() => setShowCancelConfirm(true)}
+                  disabled={isCancelling}
                 >
-                  Cancel
+                  {isCancelling ? 'Cancelling...' : 'Cancel'}
                 </Button>
               </div>
             </div>
@@ -3814,6 +3817,38 @@ export default function DashboardPage() {
       loadProductHistory();
     }
   };
+  
+  const handleCancelSubscription = async () => {
+    setIsCancelling(true);
+    try {
+      const result = await cancelSubscription();
+      
+      if (result.success) {
+        // Update local profile state
+        setProfile((prev: any) => ({ 
+          ...prev, 
+          subscription_tier: null,
+          subscription_cancelled_at: new Date().toISOString()
+        }));
+        
+        // Show success message
+        alert(result.message || 'Your subscription has been cancelled successfully.');
+        
+        // Reset confirmation state
+        setShowCancelConfirm(false);
+        
+        // Reload orders to reflect changes
+        loadSubscriptionOrders();
+      } else {
+        alert(result.error || 'Failed to cancel subscription. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error cancelling subscription:', error);
+      alert('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsCancelling(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-dark-background text-dark-primary font-sans">
@@ -3954,6 +3989,52 @@ export default function DashboardPage() {
                   referralUrl={generateReferralUrl(profile.referral_code)}
                 />
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Cancel Subscription Confirmation Modal */}
+      {showCancelConfirm && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-dark-background border border-dark-border rounded-2xl max-w-md w-full p-6">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-dark-primary mb-2">Cancel Subscription?</h2>
+              <p className="text-dark-secondary">
+                Are you sure you want to cancel your subscription? This will:
+              </p>
+              <ul className="mt-4 space-y-2 text-dark-secondary">
+                <li className="flex items-start gap-2">
+                  <span className="text-red-400 mt-1">•</span>
+                  <span>Stop all future monthly shipments</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-red-400 mt-1">•</span>
+                  <span>Remove access to full features</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-red-400 mt-1">•</span>
+                  <span>End your personalized supplement plan</span>
+                </li>
+              </ul>
+            </div>
+            
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1 border-dark-border text-dark-secondary hover:bg-dark-border"
+                onClick={() => setShowCancelConfirm(false)}
+                disabled={isCancelling}
+              >
+                Keep Subscription
+              </Button>
+              <Button
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                onClick={handleCancelSubscription}
+                disabled={isCancelling}
+              >
+                {isCancelling ? 'Cancelling...' : 'Yes, Cancel'}
+              </Button>
             </div>
           </div>
         </div>

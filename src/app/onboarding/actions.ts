@@ -635,4 +635,34 @@ export async function generateAIContentAfterPayment() {
       error: error.message || 'Failed to generate AI content' 
     };
   }
+}
+
+// MINIMAL FUNCTION: Update subscription tier when user upgrades via upsell modal
+export async function updateSubscriptionTier(newTier: 'full' | 'software_only') {
+  try {
+    const supabase = await createClient();
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: 'Not authenticated' };
+    }
+
+    logger.info('Updating subscription tier after upsell', { userId: user.id, newTier });
+
+    const { error } = await supabase
+      .from('user_profiles')
+      .update({ subscription_tier: newTier })
+      .eq('id', user.id);
+
+    if (error) {
+      logger.error('Failed to update subscription tier', error);
+      return { success: false, error: error.message };
+    }
+
+    logger.success(`Subscription tier updated successfully to ${newTier}`);
+    return { success: true };
+  } catch (error: any) {
+    logger.error('Error updating subscription tier', error);
+    return { success: false, error: error.message };
+  }
 } 
