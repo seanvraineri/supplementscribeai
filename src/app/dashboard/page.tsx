@@ -3923,14 +3923,16 @@ export default function DashboardPage() {
                           setActiveTab(item.id as TabType);
                           setIsMobileMenuOpen(false); // Auto-close on mobile
                         }}
-                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors duration-200 ${
+                        className={`w-full flex items-start gap-3 px-4 py-3 rounded-lg text-left transition-colors duration-200 ${
                           activeTab === item.id
                             ? 'bg-dark-accent text-white font-semibold'
                             : 'text-dark-secondary hover:bg-dark-border hover:text-dark-primary'
                         }`}
                       >
-                        <item.icon className="h-5 w-5" />
-                        {item.label}
+                        <div className="w-5 h-5 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <item.icon className="h-5 w-5" />
+                        </div>
+                        <span className="text-left flex-1 leading-tight">{item.label}</span>
                       </button>
                     </li>
                   ))}
@@ -3939,14 +3941,18 @@ export default function DashboardPage() {
               <div className="p-4 border-t border-dark-border">
                 <Button
                   variant="outline"
-                  className="w-full justify-start bg-transparent border-dark-border text-dark-secondary hover:bg-dark-border hover:text-dark-primary"
+                  className="w-full justify-start bg-transparent border-dark-border text-dark-secondary hover:bg-dark-border hover:text-dark-primary px-4 py-3"
                   onClick={() => {
                     supabase.auth.signOut();
                     router.push('/login');
                   }}
                 >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Sign Out
+                  <div className="flex items-center gap-3">
+                    <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
+                      <LogOut className="h-4 w-4" />
+                    </div>
+                    <span className="text-left">Sign Out</span>
+                  </div>
                 </Button>
               </div>
             </div>

@@ -1169,6 +1169,7 @@ export default function DashboardPage() {
 
   // Mobile menu state
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isChatHistoryOpen, setIsChatHistoryOpen] = useState(false);
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
@@ -1647,7 +1648,7 @@ export default function DashboardPage() {
   };
 
   const renderDashboardContent = () => (
-    <div className="h-full flex flex-col space-y-6">
+    <div className="space-y-4 lg:space-y-6">
       {/* Compact Welcome Header */}
       <div className="text-center">
         <h1 className="text-3xl font-bold text-dark-primary tracking-tight">Dashboard</h1>
@@ -1684,10 +1685,10 @@ export default function DashboardPage() {
         </motion.div>
       )}
 
-      {/* Main Content - Single Row Layout */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-5 gap-6">
-        {/* Health Score - Takes up 3/5 of the space and is static */}
-        <div className="lg:col-span-3">
+      {/* Main Content - Mobile-friendly Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-6">
+        {/* Health Score - Takes up 3/5 on desktop, full width on mobile */}
+        <div className="lg:col-span-3 order-2 lg:order-1">
           <div className="h-full">
             {/* Mock Health Score Card - No API Calls */}
             <Card className="bg-dark-panel border-dark-border h-full">
@@ -1932,8 +1933,8 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Right Sidebar - Takes up 2/5 of the space */}
-        <div className="lg:col-span-2 space-y-4">
+        {/* Right Sidebar - Takes up 2/5 on desktop, full width on mobile, appears first on mobile */}
+        <div className="lg:col-span-2 space-y-3 lg:space-y-4 order-1 lg:order-2">
           {/* Quick Supplements Count */}
           <div className="bg-dark-panel border border-dark-border rounded-xl p-3">
             <div className="flex items-center gap-3">
@@ -2086,19 +2087,19 @@ export default function DashboardPage() {
   );
 
   const renderSupplementPlan = () => (
-    <div className="space-y-8">
+    <div className="space-y-6 lg:space-y-8">
       {/* Hero Header */}
-      <div className="relative bg-dark-panel border border-dark-border rounded-xl p-8">
-        <div className="flex items-center justify-between">
+      <div className="relative bg-dark-panel border border-dark-border rounded-xl p-4 lg:p-8">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-bold text-dark-primary mb-2">
+            <h1 className="text-2xl lg:text-4xl font-bold text-dark-primary mb-2">
               Your Personalized Supplement Plan
             </h1>
-            <p className="text-lg text-dark-secondary">
+            <p className="text-base lg:text-lg text-dark-secondary">
               AI-powered recommendations based on your unique health data
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 lg:gap-3">
             {plan && (
               <Button 
                 onClick={() => {
@@ -2108,27 +2109,29 @@ export default function DashboardPage() {
                     alert('Please visit Settings to set up your referral code first, then you can share your stack!');
                   }
                 }}
-                size="lg"
-                className="bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-semibold px-6 py-3"
+                className="bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-semibold px-4 lg:px-6 py-2 lg:py-3 text-sm lg:text-base"
               >
-                <ExternalLink className="h-5 w-5 mr-2" />
-                SHARE YOUR STACK
+                <ExternalLink className="h-4 w-4 lg:h-5 lg:w-5 mr-2" />
+                <span className="hidden sm:inline">SHARE YOUR STACK</span>
+                <span className="sm:hidden">SHARE</span>
               </Button>
             )}
             <Button 
               onClick={generatePlan} 
               disabled={isGenerating}
-              className="bg-dark-accent text-white hover:bg-dark-accent/80 transition-all duration-300"
+              className="bg-dark-accent text-white hover:bg-dark-accent/80 transition-all duration-300 px-4 lg:px-6 py-2 lg:py-3 text-sm lg:text-base"
             >
               {isGenerating ? (
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  Regenerating...
+                  <span className="hidden sm:inline">Regenerating...</span>
+                  <span className="sm:hidden">...</span>
             </div>
               ) : (
                 <div className="flex items-center gap-2">
                   <Sparkles className="h-4 w-4" />
-                  Regenerate Plan
+                  <span className="hidden sm:inline">Regenerate Plan</span>
+                  <span className="sm:hidden">Regenerate</span>
                 </div>
               )}
             </Button>
@@ -2200,15 +2203,15 @@ export default function DashboardPage() {
   );
 
   const renderDietGroceries = () => (
-    <div className="space-y-8">
+    <div className="space-y-6 lg:space-y-8">
       {/* Hero Header */}
-      <div className="relative bg-dark-panel border border-dark-border rounded-xl p-8">
-        <div className="flex items-center justify-between">
+      <div className="relative bg-dark-panel border border-dark-border rounded-xl p-4 lg:p-8">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-bold text-dark-primary mb-2">
+            <h1 className="text-2xl lg:text-4xl font-bold text-dark-primary mb-2">
               Your Personalized Whole Food Diet Plan
             </h1>
-            <p className="text-lg text-dark-secondary">
+            <p className="text-base lg:text-lg text-dark-secondary">
               Traditional nutrition principles with grocery list & meal suggestions
             </p>
           </div>
@@ -2216,17 +2219,19 @@ export default function DashboardPage() {
             <Button 
               onClick={generateDietPlan} 
               disabled={isGeneratingDiet}
-              className="bg-dark-accent text-white hover:bg-dark-accent/80 transition-all duration-300"
+              className="bg-dark-accent text-white hover:bg-dark-accent/80 transition-all duration-300 px-4 lg:px-6 py-2 lg:py-3 text-sm lg:text-base"
             >
               {isGeneratingDiet ? (
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  Regenerating...
+                  <span className="hidden sm:inline">Regenerating...</span>
+                  <span className="sm:hidden">...</span>
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
                   <Apple className="h-4 w-4" />
-                  Regenerate Diet Plan
+                  <span className="hidden sm:inline">Regenerate Diet Plan</span>
+                  <span className="sm:hidden">Regenerate</span>
                 </div>
               )}
             </Button>
@@ -4071,20 +4076,73 @@ export default function DashboardPage() {
 
   const renderAIChat = () => {
     return (
-      <div className="flex flex-col h-[calc(100vh-10rem)]"> {/* Adjusted height */}
+      <div className="flex flex-col h-[calc(100vh-12rem)] lg:h-[calc(100vh-10rem)]"> {/* Better mobile height */}
         {/* Fixed Header */}
-        <div className="flex-shrink-0 mb-6">
-          <div className="flex items-center justify-between">
+        <div className="flex-shrink-0 mb-4 lg:mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <h1 className="text-4xl font-bold tracking-tight text-dark-primary">AI Assistant</h1>
-              <p className="mt-1 text-dark-secondary">Your personalized health optimization expert.</p>
+              <h1 className="text-2xl lg:text-4xl font-bold tracking-tight text-dark-primary">AI Assistant</h1>
+              <p className="mt-1 text-sm lg:text-base text-dark-secondary">Your personalized health optimization expert.</p>
             </div>
-            <Button onClick={startNewConversation} variant="outline" className="text-dark-secondary border-dark-border bg-dark-panel hover:bg-dark-border hover:text-dark-primary">
-              New Chat
-            </Button>
+            <div className="flex items-center gap-2">
+              {/* Mobile Chat History Toggle */}
+              <Button 
+                onClick={() => setIsChatHistoryOpen(true)} 
+                variant="outline" 
+                className="lg:hidden text-dark-secondary border-dark-border bg-dark-panel hover:bg-dark-border hover:text-dark-primary"
+                size="sm"
+              >
+                <MessageSquare className="w-4 h-4 mr-1" />
+                History
+              </Button>
+              <Button onClick={startNewConversation} variant="outline" className="text-dark-secondary border-dark-border bg-dark-panel hover:bg-dark-border hover:text-dark-primary" size={typeof window !== 'undefined' && window.innerWidth < 640 ? "sm" : "default"}>
+                <span className="hidden sm:inline">New Chat</span>
+                <span className="sm:hidden">New</span>
+              </Button>
+            </div>
           </div>
         </div>
-        <div className="flex flex-1 min-h-0 gap-8">
+
+        {/* Mobile Chat History Modal */}
+        {isChatHistoryOpen && (
+          <div className="lg:hidden fixed inset-0 bg-black/50 z-50 flex items-end">
+            <div 
+              className="absolute inset-0"
+              onClick={() => setIsChatHistoryOpen(false)}
+            />
+            <div className="relative w-full max-h-[70vh] bg-dark-panel border-t border-dark-border rounded-t-lg">
+              <div className="flex items-center justify-between p-4 border-b border-dark-border">
+                <h3 className="font-semibold text-dark-primary">Chat History</h3>
+                <Button
+                  onClick={() => setIsChatHistoryOpen(false)}
+                  variant="outline"
+                  size="sm"
+                  className="border-dark-border text-dark-secondary hover:bg-dark-border"
+                >
+                  ✕
+                </Button>
+              </div>
+              <div className="p-2 space-y-2 overflow-y-auto max-h-[50vh]">
+                {chatHistory.map((conv) => (
+                  <button
+                    key={conv.id}
+                    onClick={() => {
+                      loadConversation(conv.id);
+                      setIsChatHistoryOpen(false);
+                    }}
+                    className={`w-full p-3 text-left rounded-md transition-colors ${currentConversationId === conv.id ? 'bg-dark-accent text-white' : 'hover:bg-dark-border'}`}
+                  >
+                    <p className="font-semibold truncate">{conv.title}</p>
+                    <p className={`text-xs ${currentConversationId === conv.id ? 'text-white/70' : 'text-dark-secondary'}`}>{getTimeAgo(conv.updated_at)}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="flex flex-1 min-h-0 gap-4 lg:gap-8">
+          {/* Desktop Chat History Sidebar */}
           <div className="hidden lg:flex lg:flex-col w-1/3 max-w-sm flex-shrink-0">
             <div className="flex flex-col h-full bg-dark-panel border border-dark-border rounded-lg">
               <h3 className="flex-shrink-0 p-4 font-semibold border-b border-dark-border text-dark-primary">Chat History</h3>
@@ -4102,40 +4160,42 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </div>
+          
+          {/* Main Chat Area */}
           <div className="flex flex-col flex-1 h-full min-w-0">
             <div className="flex flex-col h-full bg-dark-panel border border-dark-border rounded-lg">
               {/* Messages Container - This is the scrollable part */}
-              <div ref={chatContainerRef} className="flex-1 p-6 overflow-y-auto">
+              <div ref={chatContainerRef} className="flex-1 p-3 lg:p-6 overflow-y-auto">
                 {chatMessages.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full text-center text-dark-secondary">
-                    <div className="flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-dark-accent/10 text-dark-accent">
-                      <MessageSquare className="w-8 h-8" />
+                    <div className="flex items-center justify-center w-12 h-12 lg:w-16 lg:h-16 mb-4 rounded-full bg-dark-accent/10 text-dark-accent">
+                      <MessageSquare className="w-6 h-6 lg:w-8 lg:h-8" />
           </div>
-                    <h3 className="text-lg font-semibold text-dark-primary">AI Health Assistant</h3>
-                    <p>Ask me anything about your health data.</p>
+                    <h3 className="text-base lg:text-lg font-semibold text-dark-primary">AI Health Assistant</h3>
+                    <p className="text-sm lg:text-base">Ask me anything about your health data.</p>
                   </div>
                 ) : (
-                  <div className="space-y-6">
+                  <div className="space-y-4 lg:space-y-6">
                     {chatMessages.map((msg, index) => (
-                      <div key={index} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <div key={index} className={`flex gap-2 lg:gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                         {msg.role === 'assistant' &&
-                          <div className="flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-full bg-dark-accent">
-                            <Sparkles className="w-5 h-5 text-white" />
+                          <div className="flex items-center justify-center flex-shrink-0 w-6 h-6 lg:w-8 lg:h-8 rounded-full bg-dark-accent">
+                            <Sparkles className="w-3 h-3 lg:w-5 lg:h-5 text-white" />
                           </div>
                         }
-                        <div className={`p-4 rounded-lg max-w-2xl ${msg.role === 'user' ? 'bg-dark-accent text-white' : 'bg-dark-background'}`}>
-                          <div className="prose prose-sm prose-invert max-w-none prose-p:my-0 prose-p:text-dark-primary">
+                        <div className={`p-3 lg:p-4 rounded-lg max-w-[85%] lg:max-w-2xl ${msg.role === 'user' ? 'bg-dark-accent text-white' : 'bg-dark-background'}`}>
+                          <div className="prose prose-sm prose-invert max-w-none prose-p:my-0 prose-p:text-dark-primary text-sm lg:text-base">
                             <ReactMarkdown>{msg.content}</ReactMarkdown>
                           </div>
                         </div>
                       </div>
                     ))}
                     {isChatLoading && (
-                      <div className="flex justify-start gap-3">
-                        <div className="flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-full bg-dark-accent">
-                          <Sparkles className="w-5 h-5 text-white" />
+                      <div className="flex justify-start gap-2 lg:gap-3">
+                        <div className="flex items-center justify-center flex-shrink-0 w-6 h-6 lg:w-8 lg:h-8 rounded-full bg-dark-accent">
+                          <Sparkles className="w-3 h-3 lg:w-5 lg:h-5 text-white" />
                         </div>
-                        <div className="p-4 rounded-lg bg-dark-border">
+                        <div className="p-3 lg:p-4 rounded-lg bg-dark-border">
                           <div className="flex items-center gap-2">
                             <div className="w-2 h-2 rounded-full bg-dark-accent animate-pulse" style={{ animationDelay: '0s' }} />
                             <div className="w-2 h-2 rounded-full bg-dark-accent animate-pulse" style={{ animationDelay: '0.1s' }} />
@@ -4147,7 +4207,7 @@ export default function DashboardPage() {
                   </div>
                 )}
               </div>
-              <div className="flex-shrink-0 p-4 bg-dark-panel border-t border-dark-border">
+              <div className="flex-shrink-0 p-3 lg:p-4 bg-dark-panel border-t border-dark-border">
                 <form onSubmit={(e) => { e.preventDefault(); if (chatInput.trim()) sendMessage(chatInput); }} className="relative">
                   <textarea
                     value={chatInput}
@@ -4159,16 +4219,16 @@ export default function DashboardPage() {
                       }
                     }}
                     placeholder="Ask about your results, supplements, or health..."
-                    className="w-full p-3 pr-20 text-white bg-dark-background border-2 border-dark-border rounded-lg resize-none placeholder-dark-secondary focus:outline-none focus:ring-2 focus:ring-dark-accent"
+                    className="w-full p-3 pr-12 lg:pr-16 text-white bg-dark-background border-2 border-dark-border rounded-lg resize-none placeholder-dark-secondary focus:outline-none focus:ring-2 focus:ring-dark-accent text-sm lg:text-base"
                     rows={1}
                     disabled={isChatLoading}
                   />
                   <Button
                     type="submit"
                     disabled={isChatLoading || !chatInput.trim()}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 p-0 bg-dark-accent text-white rounded-full hover:bg-dark-accent/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl"
+                    className="absolute right-2 lg:right-3 top-1/2 -translate-y-1/2 w-8 h-8 lg:w-10 lg:h-10 p-0 bg-dark-accent text-white rounded-full hover:bg-dark-accent/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl"
                   >
-                    <Send className="w-4 h-4" />
+                    <Send className="w-3 h-3 lg:w-4 lg:h-4" />
                   </Button>
                 </form>
               </div>
@@ -4180,32 +4240,39 @@ export default function DashboardPage() {
   };
 
   const renderProductChecker = () => (
-    <div className="space-y-8">
-      <div className="flex justify-between items-center">
+    <div className="space-y-6 lg:space-y-8">
+      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-dark-primary">Product Compatibility Checker</h2>
-          <p className="text-dark-secondary mt-1">Analyze any supplement product against your unique health profile.</p>
+          <h2 className="text-2xl lg:text-3xl font-bold text-dark-primary">Product Compatibility Checker</h2>
+          <p className="text-dark-secondary mt-1 text-sm lg:text-base">Analyze any supplement product against your unique health profile.</p>
         </div>
         <Button 
           variant="outline" 
           onClick={toggleArchive}
-          className="bg-dark-panel border-dark-border text-dark-primary hover:bg-dark-border"
+          className="bg-dark-panel border-dark-border text-dark-primary hover:bg-dark-border self-start lg:self-auto"
+          size="sm"
         >
           {showArchive ? 'Hide Archive' : 'View Archive'}
         </Button>
       </div>
 
-      <div className="flex space-x-2">
+      <div className="flex flex-col sm:flex-row gap-2">
         <input
           type="url"
           value={productUrl}
           onChange={(e) => setProductUrl(e.target.value)}
           placeholder="Paste direct product link"
-          className="flex-grow bg-dark-panel border border-dark-border rounded-md px-4 py-2 text-dark-primary placeholder-dark-secondary focus:ring-2 focus:ring-dark-accent focus:outline-none"
+          className="flex-grow bg-dark-panel border border-dark-border rounded-md px-3 lg:px-4 py-2 text-dark-primary placeholder-dark-secondary focus:ring-2 focus:ring-dark-accent focus:outline-none text-sm lg:text-base"
           disabled={isCheckingProduct}
         />
-        <Button onClick={checkProduct} disabled={isCheckingProduct || !productUrl}>
-          {isCheckingProduct ? 'Analyzing...' : <><Search className="w-4 h-4 mr-2" /> Analyze</>}
+        <Button onClick={checkProduct} disabled={isCheckingProduct || !productUrl} className="sm:flex-shrink-0">
+          {isCheckingProduct ? 'Analyzing...' : 
+            <>
+              <Search className="w-4 h-4 mr-2" /> 
+              <span className="hidden sm:inline">Analyze</span>
+              <span className="sm:hidden">Check</span>
+            </>
+          }
         </Button>
       </div>
 
@@ -4227,17 +4294,17 @@ export default function DashboardPage() {
           {/* Overall Score Card */}
           <Card className="bg-dark-panel border-dark-border">
             <CardHeader>
-              <CardTitle className="text-2xl text-dark-primary">{productAnalysis.productName}</CardTitle>
-              <CardDescription className="text-dark-secondary">{productAnalysis.brand}</CardDescription>
+              <CardTitle className="text-lg sm:text-xl md:text-2xl text-dark-primary">{productAnalysis.productName}</CardTitle>
+              <CardDescription className="text-dark-secondary text-sm">{productAnalysis.brand}</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center space-x-4">
-                <div className={`text-4xl font-bold ${productAnalysis.overallScore > 75 ? 'text-green-400' : productAnalysis.overallScore > 50 ? 'text-yellow-400' : 'text-red-400'}`}>{productAnalysis.overallScore}/100</div>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <div className={`text-3xl sm:text-4xl font-bold ${productAnalysis.overallScore > 75 ? 'text-green-400' : productAnalysis.overallScore > 50 ? 'text-yellow-400' : 'text-red-400'}`}>{productAnalysis.overallScore}/100</div>
                 <div className="flex-1">
-                  <h4 className="font-semibold text-dark-primary">Overall Compatibility</h4>
-                  <p className="text-dark-secondary">{productAnalysis.summary}</p>
+                  <h4 className="font-semibold text-dark-primary text-base">Overall Compatibility</h4>
+                  <p className="text-dark-secondary text-sm sm:text-base mt-1">{productAnalysis.summary}</p>
                 </div>
-                <div className={`px-4 py-2 rounded-lg font-semibold ${
+                <div className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-semibold text-xs sm:text-sm ${
                   productAnalysis.recommendation === 'HIGHLY RECOMMENDED' ? 'bg-green-900/50 text-green-400' :
                   productAnalysis.recommendation === 'PROCEED WITH CAUTION' ? 'bg-yellow-900/50 text-yellow-400' :
                   'bg-red-900/50 text-red-400'
@@ -4249,7 +4316,7 @@ export default function DashboardPage() {
           </Card>
 
           {/* Personalized Analysis Grid */}
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
             <Card className="bg-dark-panel border-dark-border">
               <CardHeader>
                 <CardTitle className="text-lg text-green-400 flex items-center">
@@ -4422,16 +4489,16 @@ export default function DashboardPage() {
   );
 
   const renderStudyBuddy = () => (
-    <div className="space-y-8">
+    <div className="space-y-6 lg:space-y-8">
       {/* Header */}
-      <div className="bg-dark-panel border border-dark-border rounded-xl p-8">
-        <div className="flex items-center gap-4 mb-4">
-          <div className="p-3 bg-dark-border rounded-lg">
-            <BookOpen className="h-6 w-6 text-dark-accent" />
+      <div className="bg-dark-panel border border-dark-border rounded-xl p-4 lg:p-8">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-4">
+          <div className="p-3 bg-dark-border rounded-lg self-start">
+            <BookOpen className="h-5 w-5 lg:h-6 lg:w-6 text-dark-accent" />
                     </div>
           <div>
-            <h1 className="text-4xl font-bold text-dark-primary">Study Buddy</h1>
-            <p className="text-lg text-dark-secondary mt-1">
+            <h1 className="text-2xl lg:text-4xl font-bold text-dark-primary">Study Buddy</h1>
+            <p className="text-base lg:text-lg text-dark-secondary mt-1">
               Personalized analysis of scientific research based on your genetics, biomarkers, and health profile
             </p>
                     </div>
@@ -4439,39 +4506,41 @@ export default function DashboardPage() {
                 </div>
 
       {/* URL Input Section */}
-      <div className="bg-dark-panel border border-dark-border rounded-xl p-6">
-        <h2 className="text-xl font-semibold text-dark-primary mb-4">Analyze a New Study</h2>
-        <div className="flex gap-4">
+      <div className="bg-dark-panel border border-dark-border rounded-xl p-4 lg:p-6">
+        <h2 className="text-lg lg:text-xl font-semibold text-dark-primary mb-4">Analyze a New Study</h2>
+        <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <input
               type="url"
               value={studyUrl}
               onChange={(e) => setStudyUrl(e.target.value)}
               placeholder="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3869616/"
-              className="w-full px-4 py-3 bg-dark-background border border-dark-border rounded-lg text-dark-primary placeholder-dark-secondary focus:outline-none focus:ring-2 focus:ring-dark-accent"
+              className="w-full px-3 lg:px-4 py-2 lg:py-3 bg-dark-background border border-dark-border rounded-lg text-dark-primary placeholder-dark-secondary focus:outline-none focus:ring-2 focus:ring-dark-accent text-sm lg:text-base"
             />
           </div>
           <Button
             onClick={analyzeStudy}
             disabled={isAnalyzingStudy || !studyUrl}
-            className="bg-dark-accent text-white hover:bg-dark-accent/80 px-6 py-3"
+            className="bg-dark-accent text-white hover:bg-dark-accent/80 px-4 lg:px-6 py-2 lg:py-3 sm:flex-shrink-0"
           >
             {isAnalyzingStudy ? (
                   <div className="flex items-center gap-2">
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                Analyzing...
+                <span className="hidden sm:inline">Analyzing...</span>
+                <span className="sm:hidden">...</span>
                     </div>
             ) : (
               <div className="flex items-center gap-2">
                 <TrendingUp className="h-4 w-4" />
-                Analyze Study
+                <span className="hidden sm:inline">Analyze Study</span>
+                <span className="sm:hidden">Analyze</span>
                     </div>
             )}
           </Button>
                   </div>
         {studyError && (
-          <div className="mt-4 p-4 bg-red-900/50 border border-red-600 rounded-lg">
-            <p className="text-red-400">{studyError}</p>
+          <div className="mt-4 p-3 lg:p-4 bg-red-900/50 border border-red-600 rounded-lg">
+            <p className="text-red-400 text-sm lg:text-base">{studyError}</p>
           </div>
         )}
                 </div>
@@ -4948,94 +5017,140 @@ export default function DashboardPage() {
       <AnimatePresence>
         {!isLoading && (
         <motion.div 
-            className="flex h-screen relative"
+            className="flex min-h-screen relative bg-dark-background"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
           >
-            {/* Mobile Menu Button - Only visible on small screens */}
+            {/* Mobile Menu Button - Fixed position with proper z-index */}
             <button
               onClick={() => setIsMobileMenuOpen(true)}
-              className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-dark-panel border border-dark-border rounded-lg"
+              className="lg:hidden fixed top-4 left-4 z-[100] p-3 bg-dark-panel border border-dark-border rounded-xl shadow-xl hover:bg-dark-border transition-all duration-200 hover:scale-105"
+              aria-label="Open navigation menu"
             >
               <Menu className="h-5 w-5 text-dark-primary" />
             </button>
 
-            {/* Mobile Backdrop */}
+            {/* Mobile Backdrop - Proper z-index */}
             {isMobileMenuOpen && (
               <div 
-                className="lg:hidden fixed inset-0 bg-black/50 z-40"
+                className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[90]"
                 onClick={() => setIsMobileMenuOpen(false)}
               />
             )}
 
-            {/* Sidebar - IDENTICAL design, just responsive positioning */}
-            <div className={`
-              w-64 bg-dark-panel border-r border-dark-border flex flex-col
-              lg:relative lg:block
-              ${isMobileMenuOpen ? 'fixed' : 'hidden lg:flex'}
-              ${isMobileMenuOpen ? 'inset-y-0 left-0 z-50' : ''}
-            `}>
-              {/* Mobile Close Button - Only shows on mobile when open */}
-              {isMobileMenuOpen && (
-                <button
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="lg:hidden absolute top-4 right-4 p-1 text-dark-secondary hover:text-dark-primary"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              )}
+            {/* Desktop Sidebar */}
+            <div className="hidden lg:flex w-64 bg-dark-panel border-r border-dark-border flex-col">
+              {/* Desktop Sidebar Content */}
+              <div className="flex-1 p-6 overflow-y-auto">
+                {/* User Profile */}
+                <div className="flex items-center space-x-3 mb-8">
+                  <div className="w-10 h-10 bg-dark-accent/20 rounded-full flex items-center justify-center">
+                    <span className="text-dark-accent font-semibold text-sm">A</span>
+                  </div>
+                  <div>
+                    <h3 className="text-dark-primary font-medium">Alex Thompson</h3>
+                    <p className="text-dark-secondary text-sm">user: Alex Thompson</p>
+                  </div>
+                </div>
 
-              {/* EXACT SAME CONTENT - ZERO CHANGES */}
-              <div className="p-6 border-b border-dark-border flex items-center gap-3 flex-shrink-0">
-                <h1 className="text-xl font-bold text-dark-primary tracking-tighter">SupplementScribe</h1>
-              </div>
-              <div className="p-4 flex-shrink-0">
-                 {profile?.full_name && (
-                  <p className="text-sm text-dark-secondary">user: {profile.full_name}</p>
-                )}
-              </div>
-              <nav className="flex-1 p-4">
-                <ul className="space-y-2">
+                {/* Navigation */}
+                <nav className="space-y-1">
                   {sidebarItems.map((item) => (
-                    <li key={item.id}>
-                      <button
-                        onClick={() => {
-                          setActiveTab(item.id as TabType);
-                          setIsMobileMenuOpen(false); // Auto-close on mobile
-                        }}
-                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors duration-200 ${
-                          activeTab === item.id
-                            ? 'bg-dark-accent text-white font-semibold'
-                            : 'text-dark-secondary hover:bg-dark-border hover:text-dark-primary'
-                        }`}
-                      >
-                        <item.icon className="h-5 w-5" />
-                        {item.label}
-                      </button>
-                    </li>
+                    <button
+                      key={item.id}
+                      onClick={() => setActiveTab(item.id as TabType)}
+                      className={`w-full flex items-center space-x-3 px-3 py-3 rounded-lg text-left transition-all duration-200 ${
+                        activeTab === item.id
+                          ? 'bg-dark-accent/10 text-dark-accent border-r-2 border-dark-accent'
+                          : 'text-dark-secondary hover:bg-dark-border hover:text-dark-primary'
+                      }`}
+                    >
+                      <item.icon className="h-5 w-5 flex-shrink-0" />
+                      <span className="font-medium">{item.label}</span>
+                    </button>
                   ))}
-                </ul>
-              </nav>
-              <div className="p-4 border-t border-dark-border">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start bg-transparent border-dark-border text-dark-secondary hover:bg-dark-border hover:text-dark-primary"
-                  onClick={() => {
-                    // MOCK FUNCTION - No API calls, just redirect
-                    router.push('/login');
-                  }}
-                >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Sign Out
-                </Button>
+                </nav>
+
+                {/* Sign Out Button */}
+                <div className="mt-8 pt-6 border-t border-dark-border">
+                  <button className="w-full flex items-center space-x-3 px-3 py-3 text-dark-secondary hover:text-red-400 hover:bg-red-500/5 rounded-lg transition-colors">
+                    <LogOut className="h-5 w-5" />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* Main Content - Add mobile padding only */}
-            <main className="flex-1 flex flex-col">
-              <div className={`container mx-auto ${activeTab === 'dashboard' ? 'h-full flex-1 p-4' : 'overflow-auto p-6'} lg:pt-4 pt-16`}>
+            {/* Mobile Slide-out Sidebar */}
+            <div className={`
+              lg:hidden fixed inset-y-0 left-0 w-80 max-w-[85vw] bg-dark-panel border-r border-dark-border z-[95]
+              transform transition-transform duration-300 ease-in-out
+              ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+            `}>
+              <div className="flex flex-col h-full">
+                {/* Mobile Header */}
+                <div className="flex justify-between items-center p-4 border-b border-dark-border">
+                  <h2 className="text-lg font-semibold text-dark-primary">SupplementScribe</h2>
+                  <button
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="p-2 hover:bg-dark-border rounded-lg transition-colors"
+                    aria-label="Close navigation menu"
+                  >
+                    <X className="h-5 w-5 text-dark-primary" />
+                  </button>
+                </div>
+
+                {/* Mobile User Profile */}
+                <div className="p-4 border-b border-dark-border">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-dark-accent/20 rounded-full flex items-center justify-center">
+                      <span className="text-dark-accent font-semibold">A</span>
+                    </div>
+                    <div>
+                      <h3 className="text-dark-primary font-medium">Alex Thompson</h3>
+                      <p className="text-dark-secondary text-sm">user: Alex Thompson</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mobile Navigation */}
+                <div className="flex-1 overflow-y-auto p-4">
+                  <nav className="space-y-2">
+                    {sidebarItems.map((item) => (
+                      <button
+                        key={item.id}
+                        onClick={() => {
+                          setActiveTab(item.id as TabType);
+                          setIsMobileMenuOpen(false);
+                        }}
+                        className={`w-full flex items-center space-x-3 px-4 py-4 rounded-xl text-left transition-all duration-200 ${
+                          activeTab === item.id
+                            ? 'bg-dark-accent/10 text-dark-accent border border-dark-accent/20'
+                            : 'text-dark-secondary hover:bg-dark-border hover:text-dark-primary'
+                        }`}
+                      >
+                        <item.icon className="h-6 w-6 flex-shrink-0" />
+                        <span className="font-medium text-base">{item.label}</span>
+                      </button>
+                    ))}
+                  </nav>
+                </div>
+
+                {/* Mobile Sign Out */}
+                <div className="p-4 border-t border-dark-border">
+                  <button className="w-full flex items-center space-x-3 px-4 py-4 text-dark-secondary hover:text-red-400 hover:bg-red-500/5 rounded-xl transition-colors">
+                    <LogOut className="h-6 w-6" />
+                    <span className="font-medium">Sign Out</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Main Content - Fixed mobile layout */}
+            <main className="flex-1 overflow-auto bg-dark-background">
+              <div className="pt-20 lg:pt-4 px-4 lg:px-6 pb-6">
                 {renderContent()}
               </div>
             </main>

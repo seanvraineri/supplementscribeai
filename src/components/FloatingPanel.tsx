@@ -8,14 +8,14 @@ interface Props {
   className?: string
 }
 
-const FloatingPanel: React.FC<Props> = ({ children, className }) => {
+const FloatingPanel: React.FC<Props> = ({ children, className = '' }) => {
   return (
     <motion.div
-      className={className}
-      initial={{ opacity: 0, y: 40 }}
+      className={`bg-dark-background relative z-10 ${className}`}
+      initial={{ opacity: 1, y: 0 }}
       whileInView={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }} // Using a more elegant ease-out curve
-      viewport={{ once: true, amount: 0.1 }} // Trigger animation when 10% of the element is visible
+      transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+      viewport={{ once: true, margin: "-10%" }}
     >
       {children}
     </motion.div>

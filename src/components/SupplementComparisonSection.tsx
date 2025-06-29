@@ -215,7 +215,7 @@ export default function SupplementComparisonSection() {
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl"></div>
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl"></div>
       
-      <div className="container mx-auto px-6 max-w-7xl relative z-10">
+      <div className="container mx-auto px-3 sm:px-4 md:px-6 max-w-7xl relative z-10">
         {/* Header */}
         <motion.div 
           className="text-center mb-16"
@@ -224,12 +224,12 @@ export default function SupplementComparisonSection() {
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
         >
-          <h2 className="text-4xl md:text-5xl font-bold mb-6 text-dark-primary">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-6 text-dark-primary px-2">
             You're Spending $100+ on Supplements.
             <br />
             <span className="text-dark-accent">Are They Actually Working?</span>
           </h2>
-          <p className="text-xl text-dark-secondary max-w-4xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-lg md:text-xl text-dark-secondary max-w-4xl mx-auto leading-relaxed px-2">
             Most people waste money on generic formulas. Find out what your body
             *actually* needs with our Deep Health Analysis.
           </p>
@@ -256,7 +256,7 @@ export default function SupplementComparisonSection() {
         </div>
 
         {/* Comparison Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6 mb-16 overflow-x-hidden">
           {comparisonOptions.map((option, index) => (
             <motion.div
               key={option.id}
@@ -280,7 +280,7 @@ export default function SupplementComparisonSection() {
               {/* Gradient Background */}
               <div className={`absolute inset-0 bg-gradient-to-br ${option.gradient} opacity-50`}></div>
               
-              <div className="relative p-6">
+              <div className="relative p-4 sm:p-5 md:p-6">
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div className={`p-3 rounded-xl ${
@@ -291,7 +291,7 @@ export default function SupplementComparisonSection() {
                     {option.icon}
                   </div>
                   <div className="text-right">
-                    <div className="text-2xl font-bold text-dark-primary">{option.price}</div>
+                    <div className="text-xl sm:text-2xl font-bold text-dark-primary">{option.price}</div>
                     <div className="text-xs text-dark-secondary">{option.priceDetail}</div>
                   </div>
                 </div>
@@ -405,31 +405,31 @@ export default function SupplementComparisonSection() {
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
         >
-          <div className="text-center mb-16">
-            <h3 className="text-4xl font-bold text-dark-primary mb-4">
+          <div className="text-center mb-8 sm:mb-12 md:mb-16">
+            <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-dark-primary mb-4 px-2">
               Our Approach vs. The Traditional Way
             </h3>
-            <p className="text-xl text-dark-secondary">
+            <p className="text-base sm:text-lg md:text-xl text-dark-secondary px-2">
               Why our data-driven personalization beats expensive consultations
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-12 items-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 md:gap-12 items-stretch">
             {/* Traditional Health Consultant */}
-            <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-8">
+            <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-4 sm:p-6 md:p-8">
               <div className="flex items-center mb-6">
                 <div className="p-3 bg-red-500/20 rounded-xl mr-4">
                   <Clock className="w-6 h-6 text-red-400" />
                 </div>
                 <div>
-                  <h4 className="text-2xl font-bold text-dark-primary">Health Consultant</h4>
-                  <p className="text-red-400 font-semibold">$300-500 per session</p>
+                  <h4 className="text-lg sm:text-xl md:text-2xl font-bold text-dark-primary">Health Consultant</h4>
+                  <p className="text-red-400 font-semibold text-sm sm:text-base">$300-500 per session</p>
                 </div>
               </div>
               
-              <div className="space-y-4 text-dark-secondary">
+              <div className="space-y-3 sm:space-y-4 text-dark-secondary text-sm sm:text-base">
                 <div className="flex items-start">
-                  <XCircle className="w-5 h-5 text-red-400 mt-0.5 mr-3 flex-shrink-0" />
+                  <XCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-400 mt-0.5 mr-2 sm:mr-3 flex-shrink-0" />
                   <span>26-day average wait for appointment scheduling</span>
                 </div>
                 <div className="flex items-start">
@@ -460,8 +460,8 @@ export default function SupplementComparisonSection() {
             </div>
 
             {/* SupplementScribe AI */}
-            <div className="bg-dark-accent/10 border border-dark-accent rounded-2xl p-8 relative">
-              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-dark-accent text-dark-background px-4 py-1 rounded-full text-sm font-bold">
+            <div className="bg-dark-accent/10 border border-dark-accent rounded-2xl p-4 sm:p-6 md:p-8 relative">
+              <div className="absolute -top-5 left-1/2 transform -translate-x-1/2 bg-dark-accent text-dark-background px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap z-10">
                 BETTER • FASTER • CHEAPER
               </div>
               
@@ -470,14 +470,14 @@ export default function SupplementComparisonSection() {
                   <Target className="w-6 h-6 text-dark-accent" />
                 </div>
                 <div>
-                  <h4 className="text-2xl font-bold text-dark-primary">SupplementScribe</h4>
-                  <p className="text-dark-accent font-semibold">$75/month Complete or $20/month Software-Only</p>
+                  <h4 className="text-lg sm:text-xl md:text-2xl font-bold text-dark-primary">SupplementScribe</h4>
+                  <p className="text-dark-accent font-semibold text-sm sm:text-base">$75/month Complete or $20/month Software-Only</p>
                 </div>
               </div>
               
-              <div className="space-y-4 text-dark-secondary">
+              <div className="space-y-3 sm:space-y-4 text-dark-secondary text-sm sm:text-base">
                 <div className="flex items-start">
-                  <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 mr-3 flex-shrink-0" />
+                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-400 mt-0.5 mr-2 sm:mr-3 flex-shrink-0" />
                   <span><strong className="text-dark-primary">5-minute Deep Health Analysis</strong> - comprehensive lifestyle and symptom analysis</span>
                 </div>
                 <div className="flex items-start">
@@ -545,7 +545,7 @@ export default function SupplementComparisonSection() {
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
         >
-          <h3 className="text-4xl md:text-5xl font-bold text-center mb-16 text-dark-primary">
+          <h3 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-center mb-8 sm:mb-12 md:mb-16 text-dark-primary px-4">
             Why Smart People Choose SupplementScribe
           </h3>
           <div className="grid md:grid-cols-1 lg:grid-cols-3 gap-8">

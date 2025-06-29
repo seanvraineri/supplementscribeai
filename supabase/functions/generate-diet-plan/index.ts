@@ -270,7 +270,7 @@ Deno.serve(async (req) => {
             content: prompt
           }
         ],
-        max_tokens: 12000,
+        max_tokens: 16000,
         temperature: 0.7,
       }),
     });
@@ -429,7 +429,15 @@ function getDietSystemPrompt(tier: string, biomarkerCount: number, geneticCount:
 
   const basePrompt = `You are a deeply caring, empathetic nutritionist who specializes in traditional whole food nutrition. You have a gift for making people feel truly seen, understood, and hopeful about their health journey.
 ${dietaryConstraints}
-🎯 ULTIMATE MISSION: Create a personalized whole food grocery list + exactly 20 meal suggestions (5 breakfast, 5 lunch, 5 dinner, 5 snacks) with DEEPLY PERSONAL explanations
+🎯 ULTIMATE MISSION: Create a personalized whole food grocery list + EXACTLY 20 meal suggestions (MUST BE: 5 breakfast, 5 lunch, 5 dinner, 5 snacks - NO LESS) with DEEPLY PERSONAL explanations
+
+🚨🚨🚨 CRITICAL MEAL COUNT REQUIREMENT 🚨🚨🚨
+You MUST provide EXACTLY:
+- 5 breakfast recipes (not 1, not 3, EXACTLY 5)
+- 5 lunch recipes (not 1, not 3, EXACTLY 5)
+- 5 dinner recipes (not 1, not 3, EXACTLY 5)
+- 5 snack recipes (not 1, not 3, EXACTLY 5)
+TOTAL: 20 recipes (if you provide less than 20, the system will fail)
 
 WHOLE FOOD PRINCIPLES (NON-NEGOTIABLE):
 - ZERO seed oils (canola, soybean, corn, vegetable oil, sunflower oil)
@@ -510,33 +518,33 @@ Your response must be valid JSON with exactly this structure:
   },
   "meal_suggestions": {
     "breakfast": [
-      {
-        "name": "...", 
-        "ingredients": ["EXACTLY from grocery list"], 
-        "benefits": "deeply personal explanation",
-        "prep_time": "5 minutes",
-        "cook_time": "10 minutes", 
-        "servings": "1",
-        "instructions": [
-          "Step 1: Specific action with exact amounts",
-          "Step 2: Specific cooking instruction", 
-          "Step 3: Specific technique or timing",
-          "Step 4: Final preparation step",
-          "Step 5: Serving or finishing instruction"
-        ],
-        "micronutrients": {
-          "primary_nutrients": ["Vitamin D: 400 IU", "Omega-3: 1.2g", "Magnesium: 180mg"],
-          "nutrient_density_score": "9.2/10 - Exceptionally dense for your energy needs",
-          "key_vitamins": ["B12 (supports your low energy)", "Folate (helps with your brain fog)", "Vitamin C (boosts your weak immune system)"],
-          "key_minerals": ["Iron (addresses your fatigue)", "Zinc (supports your slow wound healing)", "Magnesium (calms your anxiety)"],
-          "bioactive_compounds": ["Choline (improves your memory issues)", "Antioxidants (fights your inflammation)", "Probiotics (heals your digestive problems)"],
-          "synergistic_effects": "The vitamin C enhances iron absorption for your anemia, while healthy fats boost vitamin D uptake for your deficiency"
-        }
-      }
+      {"name": "Breakfast 1", "ingredients": ["..."], "benefits": "...", "prep_time": "...", "cook_time": "...", "servings": "...", "instructions": ["Step 1: ...", "Step 2: ...", "Step 3: ...", "Step 4: ...", "Step 5: ..."], "micronutrients": {"primary_nutrients": ["..."], "nutrient_density_score": "...", "key_vitamins": ["..."], "key_minerals": ["..."], "bioactive_compounds": ["..."], "synergistic_effects": "..."}},
+      {"name": "Breakfast 2", "ingredients": ["..."], "benefits": "...", "prep_time": "...", "cook_time": "...", "servings": "...", "instructions": ["Step 1: ...", "Step 2: ...", "Step 3: ...", "Step 4: ...", "Step 5: ..."], "micronutrients": {"primary_nutrients": ["..."], "nutrient_density_score": "...", "key_vitamins": ["..."], "key_minerals": ["..."], "bioactive_compounds": ["..."], "synergistic_effects": "..."}},
+      {"name": "Breakfast 3", "ingredients": ["..."], "benefits": "...", "prep_time": "...", "cook_time": "...", "servings": "...", "instructions": ["Step 1: ...", "Step 2: ...", "Step 3: ...", "Step 4: ...", "Step 5: ..."], "micronutrients": {"primary_nutrients": ["..."], "nutrient_density_score": "...", "key_vitamins": ["..."], "key_minerals": ["..."], "bioactive_compounds": ["..."], "synergistic_effects": "..."}},
+      {"name": "Breakfast 4", "ingredients": ["..."], "benefits": "...", "prep_time": "...", "cook_time": "...", "servings": "...", "instructions": ["Step 1: ...", "Step 2: ...", "Step 3: ...", "Step 4: ...", "Step 5: ..."], "micronutrients": {"primary_nutrients": ["..."], "nutrient_density_score": "...", "key_vitamins": ["..."], "key_minerals": ["..."], "bioactive_compounds": ["..."], "synergistic_effects": "..."}},
+      {"name": "Breakfast 5", "ingredients": ["..."], "benefits": "...", "prep_time": "...", "cook_time": "...", "servings": "...", "instructions": ["Step 1: ...", "Step 2: ...", "Step 3: ...", "Step 4: ...", "Step 5: ..."], "micronutrients": {"primary_nutrients": ["..."], "nutrient_density_score": "...", "key_vitamins": ["..."], "key_minerals": ["..."], "bioactive_compounds": ["..."], "synergistic_effects": "..."}}
     ],
-    "lunch": [{"name": "...", "ingredients": ["EXACTLY from grocery list"], "benefits": "deeply personal explanation", "prep_time": "...", "cook_time": "...", "servings": "...", "instructions": ["Step 1: ...", "Step 2: ...", "Step 3: ...", "Step 4: ...", "Step 5: ..."], "micronutrients": {"primary_nutrients": ["Specific amounts based on their deficiencies"], "nutrient_density_score": "X/10 - Personalized for their needs", "key_vitamins": ["Connect to their symptoms"], "key_minerals": ["Address their biomarker deficiencies"], "bioactive_compounds": ["Target their health concerns"], "synergistic_effects": "Explain how nutrients work together for THEIR body"}}],
-    "dinner": [{"name": "...", "ingredients": ["EXACTLY from grocery list"], "benefits": "deeply personal explanation", "prep_time": "...", "cook_time": "...", "servings": "...", "instructions": ["Step 1: ...", "Step 2: ...", "Step 3: ...", "Step 4: ...", "Step 5: ..."], "micronutrients": {"primary_nutrients": ["Specific amounts based on their deficiencies"], "nutrient_density_score": "X/10 - Personalized for their needs", "key_vitamins": ["Connect to their symptoms"], "key_minerals": ["Address their biomarker deficiencies"], "bioactive_compounds": ["Target their health concerns"], "synergistic_effects": "Explain how nutrients work together for THEIR body"}}],
-    "snacks": [{"name": "...", "ingredients": ["EXACTLY from grocery list"], "benefits": "deeply personal explanation", "prep_time": "...", "cook_time": "...", "servings": "...", "instructions": ["Step 1: ...", "Step 2: ...", "Step 3: ...", "Step 4: ...", "Step 5: ..."], "micronutrients": {"primary_nutrients": ["Specific amounts based on their deficiencies"], "nutrient_density_score": "X/10 - Personalized for their needs", "key_vitamins": ["Connect to their symptoms"], "key_minerals": ["Address their biomarker deficiencies"], "bioactive_compounds": ["Target their health concerns"], "synergistic_effects": "Explain how nutrients work together for THEIR body"}}]
+    "lunch": [
+      {"name": "Lunch 1", "ingredients": ["..."], "benefits": "...", "prep_time": "...", "cook_time": "...", "servings": "...", "instructions": ["Step 1: ...", "Step 2: ...", "Step 3: ...", "Step 4: ...", "Step 5: ..."], "micronutrients": {"primary_nutrients": ["..."], "nutrient_density_score": "...", "key_vitamins": ["..."], "key_minerals": ["..."], "bioactive_compounds": ["..."], "synergistic_effects": "..."}},
+      {"name": "Lunch 2", "ingredients": ["..."], "benefits": "...", "prep_time": "...", "cook_time": "...", "servings": "...", "instructions": ["Step 1: ...", "Step 2: ...", "Step 3: ...", "Step 4: ...", "Step 5: ..."], "micronutrients": {"primary_nutrients": ["..."], "nutrient_density_score": "...", "key_vitamins": ["..."], "key_minerals": ["..."], "bioactive_compounds": ["..."], "synergistic_effects": "..."}},
+      {"name": "Lunch 3", "ingredients": ["..."], "benefits": "...", "prep_time": "...", "cook_time": "...", "servings": "...", "instructions": ["Step 1: ...", "Step 2: ...", "Step 3: ...", "Step 4: ...", "Step 5: ..."], "micronutrients": {"primary_nutrients": ["..."], "nutrient_density_score": "...", "key_vitamins": ["..."], "key_minerals": ["..."], "bioactive_compounds": ["..."], "synergistic_effects": "..."}},
+      {"name": "Lunch 4", "ingredients": ["..."], "benefits": "...", "prep_time": "...", "cook_time": "...", "servings": "...", "instructions": ["Step 1: ...", "Step 2: ...", "Step 3: ...", "Step 4: ...", "Step 5: ..."], "micronutrients": {"primary_nutrients": ["..."], "nutrient_density_score": "...", "key_vitamins": ["..."], "key_minerals": ["..."], "bioactive_compounds": ["..."], "synergistic_effects": "..."}},
+      {"name": "Lunch 5", "ingredients": ["..."], "benefits": "...", "prep_time": "...", "cook_time": "...", "servings": "...", "instructions": ["Step 1: ...", "Step 2: ...", "Step 3: ...", "Step 4: ...", "Step 5: ..."], "micronutrients": {"primary_nutrients": ["..."], "nutrient_density_score": "...", "key_vitamins": ["..."], "key_minerals": ["..."], "bioactive_compounds": ["..."], "synergistic_effects": "..."}}
+    ],
+    "dinner": [
+      {"name": "Dinner 1", "ingredients": ["..."], "benefits": "...", "prep_time": "...", "cook_time": "...", "servings": "...", "instructions": ["Step 1: ...", "Step 2: ...", "Step 3: ...", "Step 4: ...", "Step 5: ..."], "micronutrients": {"primary_nutrients": ["..."], "nutrient_density_score": "...", "key_vitamins": ["..."], "key_minerals": ["..."], "bioactive_compounds": ["..."], "synergistic_effects": "..."}},
+      {"name": "Dinner 2", "ingredients": ["..."], "benefits": "...", "prep_time": "...", "cook_time": "...", "servings": "...", "instructions": ["Step 1: ...", "Step 2: ...", "Step 3: ...", "Step 4: ...", "Step 5: ..."], "micronutrients": {"primary_nutrients": ["..."], "nutrient_density_score": "...", "key_vitamins": ["..."], "key_minerals": ["..."], "bioactive_compounds": ["..."], "synergistic_effects": "..."}},
+      {"name": "Dinner 3", "ingredients": ["..."], "benefits": "...", "prep_time": "...", "cook_time": "...", "servings": "...", "instructions": ["Step 1: ...", "Step 2: ...", "Step 3: ...", "Step 4: ...", "Step 5: ..."], "micronutrients": {"primary_nutrients": ["..."], "nutrient_density_score": "...", "key_vitamins": ["..."], "key_minerals": ["..."], "bioactive_compounds": ["..."], "synergistic_effects": "..."}},
+      {"name": "Dinner 4", "ingredients": ["..."], "benefits": "...", "prep_time": "...", "cook_time": "...", "servings": "...", "instructions": ["Step 1: ...", "Step 2: ...", "Step 3: ...", "Step 4: ...", "Step 5: ..."], "micronutrients": {"primary_nutrients": ["..."], "nutrient_density_score": "...", "key_vitamins": ["..."], "key_minerals": ["..."], "bioactive_compounds": ["..."], "synergistic_effects": "..."}},
+      {"name": "Dinner 5", "ingredients": ["..."], "benefits": "...", "prep_time": "...", "cook_time": "...", "servings": "...", "instructions": ["Step 1: ...", "Step 2: ...", "Step 3: ...", "Step 4: ...", "Step 5: ..."], "micronutrients": {"primary_nutrients": ["..."], "nutrient_density_score": "...", "key_vitamins": ["..."], "key_minerals": ["..."], "bioactive_compounds": ["..."], "synergistic_effects": "..."}}
+    ],
+    "snacks": [
+      {"name": "Snack 1", "ingredients": ["..."], "benefits": "...", "prep_time": "...", "cook_time": "...", "servings": "...", "instructions": ["Step 1: ...", "Step 2: ...", "Step 3: ...", "Step 4: ...", "Step 5: ..."], "micronutrients": {"primary_nutrients": ["..."], "nutrient_density_score": "...", "key_vitamins": ["..."], "key_minerals": ["..."], "bioactive_compounds": ["..."], "synergistic_effects": "..."}},
+      {"name": "Snack 2", "ingredients": ["..."], "benefits": "...", "prep_time": "...", "cook_time": "...", "servings": "...", "instructions": ["Step 1: ...", "Step 2: ...", "Step 3: ...", "Step 4: ...", "Step 5: ..."], "micronutrients": {"primary_nutrients": ["..."], "nutrient_density_score": "...", "key_vitamins": ["..."], "key_minerals": ["..."], "bioactive_compounds": ["..."], "synergistic_effects": "..."}},
+      {"name": "Snack 3", "ingredients": ["..."], "benefits": "...", "prep_time": "...", "cook_time": "...", "servings": "...", "instructions": ["Step 1: ...", "Step 2: ...", "Step 3: ...", "Step 4: ...", "Step 5: ..."], "micronutrients": {"primary_nutrients": ["..."], "nutrient_density_score": "...", "key_vitamins": ["..."], "key_minerals": ["..."], "bioactive_compounds": ["..."], "synergistic_effects": "..."}},
+      {"name": "Snack 4", "ingredients": ["..."], "benefits": "...", "prep_time": "...", "cook_time": "...", "servings": "...", "instructions": ["Step 1: ...", "Step 2: ...", "Step 3: ...", "Step 4: ...", "Step 5: ..."], "micronutrients": {"primary_nutrients": ["..."], "nutrient_density_score": "...", "key_vitamins": ["..."], "key_minerals": ["..."], "bioactive_compounds": ["..."], "synergistic_effects": "..."}},
+      {"name": "Snack 5", "ingredients": ["..."], "benefits": "...", "prep_time": "...", "cook_time": "...", "servings": "...", "instructions": ["Step 1: ...", "Step 2: ...", "Step 3: ...", "Step 4: ...", "Step 5: ..."], "micronutrients": {"primary_nutrients": ["..."], "nutrient_density_score": "...", "key_vitamins": ["..."], "key_minerals": ["..."], "bioactive_compounds": ["..."], "synergistic_effects": "..."}}
+    ]
   },
   "micronutrient_analysis": {
     "key_nutrients": [
@@ -563,7 +571,15 @@ Your response must be valid JSON with exactly this structure:
   "contraindications": "Traditional whole food safety considerations"
 }
 
-EXACTLY 5 meals in each category (breakfast, lunch, dinner, snacks) = 20 total meals.
+🚨🚨🚨 FINAL CRITICAL REQUIREMENT 🚨🚨🚨
+You MUST provide EXACTLY 5 meals in each category:
+- breakfast array MUST contain 5 complete meal objects
+- lunch array MUST contain 5 complete meal objects  
+- dinner array MUST contain 5 complete meal objects
+- snacks array MUST contain 5 complete meal objects
+TOTAL = 20 meals (NOT 4, NOT 8, NOT 12 - EXACTLY 20)
+
+If you provide less than 20 meals, the response will be rejected and regenerated.
 
 ⚠️ REMEMBER: Dietary preference and allergies OVERRIDE all other considerations. Check every single food item against the constraints at the top of this prompt.`;
 

@@ -63,7 +63,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#00BFFF',
+  themeColor: '#0D0D0D',
 }
 
 export default function RootLayout({
@@ -79,7 +79,7 @@ export default function RootLayout({
         <link rel="icon" href="/favicon-32x32.png" sizes="32x32" type="image/png" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/site.webmanifest" />
-        <meta name="theme-color" content="#00BFFF" />
+        <meta name="theme-color" content="#0D0D0D" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

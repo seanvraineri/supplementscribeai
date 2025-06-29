@@ -176,6 +176,44 @@ export default function OnboardingPage() {
   const [currentSubStep, setCurrentSubStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
+  const [isCheckingCompletion, setIsCheckingCompletion] = useState(true);
+
+  // Check if onboarding is already completed and redirect to dashboard
+  useEffect(() => {
+    const checkCompletion = async () => {
+      try {
+        const { createBrowserClient } = await import('@supabase/ssr');
+        const supabase = createBrowserClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        );
+        
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user) {
+          // Check if they have AI-generated content (meaning onboarding is DONE)
+          const { data: plan } = await supabase
+            .from('supplement_plans')
+            .select('id')
+            .eq('user_id', user.id)
+            .maybeSingle();
+          
+          if (plan) {
+            // They have a supplement plan = onboarding is complete, redirect to dashboard
+            console.log('User has completed onboarding with AI content, redirecting to dashboard');
+            router.push('/dashboard');
+            return;
+          }
+        }
+      } catch (error) {
+        console.log('Check error:', error);
+      }
+      
+      setIsCheckingCompletion(false);
+    };
+    
+    checkCompletion();
+  }, [router]);
 
   // Payment modal state
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -257,6 +295,7 @@ export default function OnboardingPage() {
   useEffect(() => {
     if (!isSubmitting) return;
 
+    console.log('🎬 Starting loading animation');
     let mounted = true;
     let currentStepIndex = 0;
     const stepDuration = 6000; // 6 seconds per step
@@ -276,10 +315,12 @@ export default function OnboardingPage() {
         // Move to next step
         currentStepIndex++;
         updateProcessingStep(processingSteps[currentStepIndex].id, false, true);
+        console.log(`🎬 Animation step ${currentStepIndex + 1}/${processingSteps.length}`);
       } else {
         // All steps complete
         clearInterval(interval);
         updateProcessingStep(processingSteps[currentStepIndex].id, true, false);
+        console.log('🎬 Animation complete');
       }
     }, stepDuration);
 
@@ -422,11 +463,120 @@ export default function OnboardingPage() {
     }
   };
 
-  const handlePaymentSuccess = () => {
-    // Payment successful - close modal and mark as completed
+  const handlePaymentSuccess = async () => {
+    console.log('🎉 PAYMENT SUCCESS - Starting flow');
+    
+    // Payment successful - close modal IMMEDIATELY
     setShowPaymentModal(false);
+    setShowUpsellModal(false); // Ensure all modals are closed
     setPaymentCompleted(true);
     logger.success('Payment completed successfully');
+    
+    // Small delay to ensure modal is fully closed on mobile
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // IMMEDIATELY start AI generation - no waiting!
+    setIsSubmitting(true);
+    console.log('🔄 Loading animation started');
+    
+    try {
+      logger.info('Starting AI generation immediately after payment');
+      console.log('🤖 Calling AI generation functions...');
+      
+      // Import and call the AI generation function directly
+      const { generateAIContentAfterPayment } = await import('./actions');
+      const result = await generateAIContentAfterPayment();
+      
+      console.log('🤖 AI generation result:', result);
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to generate plan');
+      }
+      
+      logger.success('AI generation completed, redirecting to dashboard');
+      console.log('✅ AI generation successful - preparing redirect');
+      
+      // Mark onboarding as completed with more permanent cookie
+      sessionStorage.setItem('onboarding_completed', 'true');
+      localStorage.setItem('onboarding_completed', 'true');
+      // Set cookie with longer expiration and SameSite=Lax for mobile compatibility
+      document.cookie = 'onboarding_completed=true; path=/; max-age=3600; SameSite=Lax';
+      
+      console.log('🚀 Redirecting to dashboard NOW!');
+      
+      // Ensure profile exists before redirect (critical for mobile)
+      try {
+        const { createBrowserClient } = await import('@supabase/ssr');
+        const supabase = createBrowserClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        );
+        
+        // Quick check to ensure profile exists
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { error } = await supabase
+            .from('user_profiles')
+            .select('id')
+            .eq('id', user.id)
+            .single();
+          
+          if (error) {
+            console.log('Profile check error, but continuing:', error);
+          } else {
+            console.log('✅ Profile confirmed to exist');
+          }
+        }
+      } catch (e) {
+        console.log('Profile check failed, but continuing:', e);
+      }
+      
+      // Longer delay for mobile to ensure everything is synced
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Force close any remaining modals and clear body styles
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      
+      // Mobile-friendly redirect approach with bypass parameter
+      const dashboardUrl = '/dashboard?from=onboarding-complete';
+      
+      // FORCE IMMEDIATE REDIRECT - same approach for mobile and desktop
+      console.log('🚀 Forcing immediate redirect to dashboard');
+      
+      // Method 1: Replace current history entry (no back button)
+      window.location.replace(dashboardUrl);
+      
+      // Method 2: If replace doesn't work, use href (creates history entry)
+      setTimeout(() => {
+        if (window.location.pathname !== '/dashboard') {
+          console.log('Replace failed, using href redirect');
+          window.location.href = dashboardUrl;
+        }
+      }, 100);
+      
+      // Method 3: Final fallback with router
+      setTimeout(async () => {
+        if (window.location.pathname !== '/dashboard') {
+          try {
+            await router.push(dashboardUrl);
+          } catch (e) {
+            console.log('All redirects attempted');
+          }
+        }
+      }, 200);
+      
+    } catch (err: any) {
+      console.error('❌ AI generation failed:', err);
+      logger.error('AI generation failed', err);
+      setIsSubmitting(false);
+      
+      // Ensure body styles are reset on error
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      
+      alert('Failed to generate your plan. Please try again or contact support.');
+    }
   };
 
   const handlePaymentClose = () => {
@@ -479,84 +629,49 @@ export default function OnboardingPage() {
   };
 
   const onFinalSubmit = async () => {
-    if (!paymentCompleted) {
-      // Payment not completed yet, show payment modal
-      const data = form.getValues();
-      setPendingOnboardingData(data);
-      setShowPaymentModal(true);
-      return;
-            }
-
-    // Payment completed, start AI generation
-    setIsSubmitting(true);
-    
-    try {
-      logger.info('Starting AI generation after payment');
-      
-      // Import and call the AI generation function directly
-      const { generateAIContentAfterPayment } = await import('./actions');
-      const result = await generateAIContentAfterPayment();
-              
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to generate plan');
-              }
-              
-      logger.success('AI generation completed, redirecting to dashboard');
-      
-      // CRITICAL: Mark onboarding as completed to prevent redirect loops
-      sessionStorage.setItem('onboarding_completed', 'true');
-      localStorage.setItem('onboarding_completed', 'true');
-      
-      // Set completion cookie to help middleware
-      document.cookie = 'onboarding_completed=true; path=/; max-age=300'; // 5 minutes
-      
-      // EXPLICIT: Never allow redirect back to onboarding after this point
-      console.log('🚫 ONBOARDING COMPLETED - Redirecting to dashboard, preventing any future onboarding redirects');
-      
-      // Success! Redirect to dashboard immediately and reliably
-      router.push('/dashboard');
-
-    } catch (err: any) {
-      logger.error('AI generation failed', err);
-      setIsSubmitting(false);
-      alert('Failed to generate your plan. Please try again or contact support.');
-    }
+    // This should only be called from the last step
+    // It triggers the normal form submission which saves data and shows payment modal
+    form.handleSubmit(onSubmit)();
   };
 
+  // Move LoadingAnimation outside to be accessible throughout component
   const LoadingAnimation = () => (
     <div className="max-w-md w-full p-8 mx-auto">
-        <div className="space-y-4">
-          {processingSteps.map((step, index) => (
-            <motion.div
-              key={`${step.id}-${index}`} // Ensure unique keys even if IDs somehow duplicate
-              className={`flex items-center gap-4 p-4 rounded-lg border transition-all ${
-                step.completed 
-                  ? 'bg-green-500/10 border-green-500/20' 
-                  : step.active 
-                  ? 'bg-dark-accent/10 border-dark-accent/20' 
-                  : 'bg-dark-panel border-dark-border'
-              }`}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <div className={`p-2 rounded-full ${
-                step.completed 
-                  ? 'bg-green-500 text-white' 
-                  : step.active 
-                  ? 'bg-dark-accent text-white animate-pulse' 
-                  : 'bg-dark-border text-dark-secondary'
-              }`}>
-                {step.completed ? <CheckCircle className="h-5 w-5" /> : step.icon}
-              </div>
-              <div className="flex-1 text-left">
-                <h3 className="font-semibold text-dark-primary">{step.title}</h3>
-                <p className="text-sm text-dark-secondary">{step.description}</p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+      <h2 className="text-2xl font-bold text-dark-primary text-center mb-8">
+        Creating Your Personalized Plan
+      </h2>
+      <div className="space-y-4">
+        {processingSteps.map((step, index) => (
+          <motion.div
+            key={`${step.id}-${index}`}
+            className={`flex items-center gap-4 p-4 rounded-lg border transition-all ${
+              step.completed 
+                ? 'bg-green-500/10 border-green-500/20' 
+                : step.active 
+                ? 'bg-dark-accent/10 border-dark-accent/20' 
+                : 'bg-dark-panel border-dark-border'
+            }`}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * 0.1 }}
+          >
+            <div className={`p-2 rounded-full ${
+              step.completed 
+                ? 'bg-green-500 text-white' 
+                : step.active 
+                ? 'bg-dark-accent text-white animate-pulse' 
+                : 'bg-dark-border text-dark-secondary'
+            }`}>
+              {step.completed ? <CheckCircle className="h-5 w-5" /> : step.icon}
+            </div>
+            <div className="flex-1 text-left">
+              <h3 className="font-semibold text-dark-primary">{step.title}</h3>
+              <p className="text-sm text-dark-secondary">{step.description}</p>
+            </div>
+          </motion.div>
+        ))}
       </div>
+    </div>
   );
   
   // For lifestyle assessment, show current question progress
@@ -637,12 +752,20 @@ export default function OnboardingPage() {
 
   const getNextLabel = () => {
     if (isLastStep) {
-      if (form.formState.isSubmitting) return 'Creating Plan...';
-      if (!paymentCompleted) return 'Complete Payment & Create Plan';
-      return 'Generate My Personalized Plan';
+      if (form.formState.isSubmitting) return 'Processing...';
+      return 'Complete & Pay';
     }
     if ([1, 2, 7, 8, 9, 10, 11].includes(step)) return 'Continue';
     return 'Next';
+  }
+
+  // Show loading while checking completion
+  if (isCheckingCompletion) {
+    return (
+      <div className="min-h-screen bg-dark-background flex items-center justify-center">
+        <div className="text-dark-primary">Loading...</div>
+      </div>
+    );
   }
 
   return (
@@ -667,7 +790,7 @@ export default function OnboardingPage() {
         </div>
         
         <FormProvider {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="h-screen">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="min-h-screen">
             <StepContainer
               title={isSubmitting ? 'Creating Your Personalized Plan' : displayTitle}
               subtitle={isSubmitting ? 'Analyzing your health data and generating recommendations...' : displaySubtitle}
@@ -697,6 +820,17 @@ export default function OnboardingPage() {
           </form>
         </FormProvider>
       </div>
+      {/* Show loading animation overlay when processing after payment */}
+      {isSubmitting && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 bg-dark-background/95 backdrop-blur-sm z-50 flex items-center justify-center"
+        >
+          <LoadingAnimation />
+        </motion.div>
+      )}
+      
       {showPaymentModal && pendingOnboardingData && (
         <StripeCheckoutModal
           isOpen={showPaymentModal}

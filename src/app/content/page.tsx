@@ -383,20 +383,20 @@ export default function ContentPage() {
         </div>
       </section>
 
-      {/* Search and Filter */}
+          {/* Search and Filter */}
       <section className="py-8 bg-dark-panel/50 border-y border-dark-border">
         <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
           <div className="flex flex-col sm:flex-row gap-4 items-center">
             <div className="relative flex-1 w-full">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-dark-secondary" />
-              <input
-                type="text"
-                placeholder="Search articles..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-dark-secondary" />
+                <input
+                  type="text"
+                  placeholder="Search articles..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 bg-dark-background border border-dark-border rounded-lg focus:border-dark-accent focus:outline-none transition-colors text-dark-primary placeholder-dark-secondary"
-              />
-            </div>
+                />
+              </div>
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
@@ -420,19 +420,19 @@ export default function ContentPage() {
         <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
           <div className="flex flex-wrap gap-2 justify-center">
             {["All", "Personalized Health", "Supplements", "Nutrition", "Mental Health", "Energy & Performance", "Sleep & Recovery"].map((category) => (
-              <button
-                key={category}
+                  <button
+                    key={category}
                 onClick={() => setSelectedCategory(category === "All" ? "" : category)}
                 className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                   (category === "All" && selectedCategory === "") || selectedCategory === category
                     ? 'bg-dark-accent text-dark-background'
                     : 'bg-dark-panel border border-dark-border text-dark-secondary hover:text-dark-primary hover:border-dark-accent'
-                }`}
-              >
-                {category}
-              </button>
-            ))}
-          </div>
+                    }`}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
         </div>
       </section>
 
@@ -441,35 +441,35 @@ export default function ContentPage() {
         <section className="py-12 sm:py-16 bg-dark-background">
           <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
             <h2 className="text-2xl sm:text-3xl font-bold text-dark-primary mb-8 text-center">Featured Article</h2>
-            <Link href={`/content/${featuredPost.slug}`}>
-              <div className="bg-dark-panel border border-dark-border rounded-2xl overflow-hidden hover:border-dark-accent/50 transition-all duration-300 cursor-pointer group">
-                <div className="md:flex">
-                  <div className="md:w-1/2">
-                    <div className="h-64 md:h-full bg-gradient-to-br from-dark-accent/20 to-blue-900/20 flex items-center justify-center">
+              <Link href={`/content/${featuredPost.slug}`}>
+                <div className="bg-dark-panel border border-dark-border rounded-2xl overflow-hidden hover:border-dark-accent/50 transition-all duration-300 cursor-pointer group">
+                  <div className="md:flex">
+                    <div className="md:w-1/2">
+                      <div className="h-64 md:h-full bg-gradient-to-br from-dark-accent/20 to-blue-900/20 flex items-center justify-center">
                       <featuredPost.icon className="w-24 h-24 text-dark-accent/50" />
                     </div>
                   </div>
                   <div className="p-6 sm:p-8 md:w-1/2">
                     <span className="inline-block px-3 py-1 bg-dark-accent/20 text-dark-accent rounded-full text-xs font-medium mb-4">
-                      {featuredPost.category}
-                    </span>
+                          {featuredPost.category}
+                        </span>
                     <h3 className="text-xl sm:text-2xl font-bold mb-4 text-dark-primary group-hover:text-dark-accent transition-colors">
-                      {featuredPost.title}
-                    </h3>
+                        {featuredPost.title}
+                      </h3>
                     <p className="text-dark-secondary mb-6 line-clamp-3">
-                      {featuredPost.excerpt}
-                    </p>
+                        {featuredPost.excerpt}
+                      </p>
                     <div className="flex items-center gap-2 text-dark-secondary text-sm">
                       <Clock className="w-4 h-4" />
                       <span>{featuredPost.readTime}</span>
                       <span className="mx-2">•</span>
                       <Calendar className="w-4 h-4" />
                       <span>{featuredPost.publishDate}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </Link>
+              </Link>
           </div>
         </section>
       )}
@@ -488,12 +488,12 @@ export default function ContentPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
               {filteredPosts.map((article, index) => (
-                <motion.div
+          <motion.div
                   key={article.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: index * 0.05 }}
-                >
+          >
                   <Link href={`/content/${article.slug}`}>
                     <article
                       className="bg-dark-panel border border-dark-border rounded-xl overflow-hidden hover:border-dark-accent/50 transition-all duration-300 cursor-pointer group h-full flex flex-col"
@@ -526,9 +526,9 @@ export default function ContentPage() {
                     </article>
                   </Link>
                 </motion.div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
         </div>
       </section>
 
@@ -537,16 +537,16 @@ export default function ContentPage() {
         <div className="container mx-auto px-4 sm:px-6 max-w-4xl text-center">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 text-dark-primary">Stay Updated on Health Insights</h2>
           <p className="text-dark-secondary mb-8 text-base sm:text-lg">Get weekly evidence-based articles on personalized nutrition and supplement science.</p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center max-w-md mx-auto">
-            <input
-              type="email"
-              placeholder="Enter your email"
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center max-w-md mx-auto">
+              <input
+                type="email"
+                placeholder="Enter your email"
               className="flex-1 w-full px-4 py-3 bg-dark-panel border border-dark-border rounded-lg text-dark-primary placeholder-dark-secondary focus:border-dark-accent focus:outline-none transition-colors"
-            />
+              />
             <button className="w-full sm:w-auto px-6 py-3 bg-dark-accent text-white rounded-lg hover:bg-dark-accent/90 transition-all duration-200 font-medium whitespace-nowrap">
-              Subscribe
-            </button>
-          </div>
+                Subscribe
+              </button>
+            </div>
         </div>
       </section>
 
@@ -555,12 +555,12 @@ export default function ContentPage() {
         <div className="container mx-auto px-4 sm:px-6 max-w-4xl text-center">
           <h3 className="text-xl sm:text-2xl font-bold mb-4 text-dark-primary">Ready to Optimize Your Health?</h3>
           <p className="text-dark-secondary mb-8 text-sm sm:text-base">Join thousands who've discovered their personalized nutrition path.</p>
-          <Link href="/auth/signup">
+            <Link href="/auth/signup">
             <button className="group relative inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-bold text-dark-background bg-dark-accent rounded-full overflow-hidden transition-all duration-300 transform hover:scale-105">
               Start Your Journey
               <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-            </button>
-          </Link>
+              </button>
+            </Link>
         </div>
       </section>
     </main>

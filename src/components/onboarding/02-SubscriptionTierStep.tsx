@@ -62,9 +62,9 @@ export function SubscriptionTierStep({ onNext }: SubscriptionTierStepProps) {
   };
   
   return (
-    <div className="space-y-6 w-full max-w-4xl mx-auto">
+    <div className="space-y-6 w-full max-w-4xl mx-auto pt-4 overflow-visible">
       {/* Tier Cards */}
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid md:grid-cols-2 gap-6 mt-6 overflow-visible">
         {SUBSCRIPTION_TIERS.map((tier, index) => {
           const isSelected = selectedTier === tier.value;
           const IconComponent = tier.icon;
@@ -75,12 +75,12 @@ export function SubscriptionTierStep({ onNext }: SubscriptionTierStepProps) {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.1, ease: "easeOut" }}
-              className="relative"
+              className="relative overflow-visible"
             >
               {/* Recommended Badge */}
               {tier.recommended && (
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
-                  <span className="bg-dark-accent text-dark-background px-4 py-1 rounded-full text-sm font-semibold">
+                  <span className="inline-block bg-dark-accent text-dark-background px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap">
                     Recommended
                   </span>
                 </div>
@@ -157,25 +157,9 @@ export function SubscriptionTierStep({ onNext }: SubscriptionTierStepProps) {
                       <div key={idx} className="flex items-center gap-2">
                         <CheckCircle className={`w-4 h-4 flex-shrink-0 ${isSelected ? 'text-dark-accent' : 'text-dark-secondary'}`} />
                         <span className="text-sm text-dark-primary">{feature}</span>
-                                      </div>
-              ))}
-            </div>
-
-            {/* Upgrade Option for Software Only - Outside cards to prevent cutoff */}
-            {selectedTier === 'software_only' && (
-              <div className="mt-6 p-4 bg-dark-accent/10 border border-dark-accent/20 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-dark-primary">Add Monthly Supplements</p>
-                    <p className="text-xs text-dark-secondary">Upgrade anytime from your dashboard</p>
+                      </div>
+                    ))}
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-bold text-dark-accent">$75/month total</p>
-                    <p className="text-xs text-dark-secondary">($55.01 more)</p>
-                  </div>
-                </div>
-              </div>
-            )}
                   
                   {/* Additional Info for Software Only */}
                   {tier.value === 'software_only' && (
@@ -193,6 +177,27 @@ export function SubscriptionTierStep({ onNext }: SubscriptionTierStepProps) {
           );
         })}
       </div>
+      
+      {/* Upgrade Option for Software Only */}
+      {selectedTier === 'software_only' && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="mt-4 p-4 bg-dark-accent/10 border border-dark-accent/20 rounded-lg max-w-2xl mx-auto"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-dark-primary">💊 Want to add monthly supplement delivery?</p>
+              <p className="text-xs text-dark-secondary">You can upgrade anytime from your dashboard</p>
+            </div>
+            <div className="text-right">
+              <p className="text-sm font-bold text-dark-accent">+$55.01/month</p>
+              <p className="text-xs text-dark-secondary">($75/month total)</p>
+            </div>
+          </div>
+        </motion.div>
+      )}
       
       {/* Bottom Note */}
       <div className="text-center mt-6">

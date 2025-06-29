@@ -117,6 +117,16 @@ export async function saveOnboardingData(formData: unknown) {
       logger.debug('No referral code found');
     }
     
+    // Log the data types for debugging
+    logger.info('Profile data types', {
+      age: typeof age,
+      height_total_inches: typeof height_total_inches,
+      weight_lbs: typeof weight_lbs,
+      sleep_hours: typeof sleep_hours,
+      healthGoals: Array.isArray(combinedHealthGoals) ? 'array' : typeof combinedHealthGoals,
+      userReferralCode: userReferralCode
+    });
+    
     // Upsert Profile Data with new fields
     const profileData: any = {
       id: user.id,
@@ -135,13 +145,13 @@ export async function saveOnboardingData(formData: unknown) {
       shipping_city,
       shipping_state,
       shipping_postal_code,
-      shipping_country,
+      shipping_country: shipping_country || 'US', // Default to US if not provided
       shipping_phone,
 
       activity_level,
       sleep_hours,
       alcohol_intake,
-      dietary_preference, // 🚨 CRITICAL FIX: Add missing dietary_preference
+      dietary_preference: dietary_preference || 'omnivore', // Default to omnivore if not provided
       // 16 Lifestyle Assessment Questions (Yes/No)
       energy_levels,
       effort_fatigue,
@@ -175,8 +185,25 @@ export async function saveOnboardingData(formData: unknown) {
       .upsert(profileData, { onConflict: 'id' });
 
     if (profileError) {
-      logger.error('Error upserting profile', profileError);
-      return { success: false, error: 'Failed to save profile information.' };
+      logger.error('Error upserting profile', {
+        error: profileError,
+        code: profileError.code,
+        message: profileError.message,
+        details: profileError.details,
+        hint: profileError.hint,
+        userId: user.id
+      });
+      
+      // Provide more specific error messages based on the error type
+      if (profileError.code === '23502') {
+        return { success: false, error: `Missing required field: ${profileError.details}` };
+      } else if (profileError.code === '42703') {
+        return { success: false, error: `Database column missing: ${profileError.message}` };
+      } else if (profileError.code === '23514') {
+        return { success: false, error: `Invalid value for field: ${profileError.details}` };
+      }
+      
+      return { success: false, error: `Failed to save profile: ${profileError.message}` };
     }
     
     // Clear and re-insert allergies, conditions, medications

@@ -1,64 +1,27 @@
 'use client'
 
 import { motion } from 'framer-motion';
-import { Microscope, Dna, FlaskConical, BookOpen, Shield, ArrowRight, CheckCircle, Brain, Activity, Target, LogIn } from 'lucide-react';
+import { Microscope, Dna, FlaskConical, BookOpen, Shield, ArrowRight, CheckCircle, Brain, Activity, Target } from 'lucide-react';
 import Link from 'next/link';
-
-// Navigation Component
-const Navigation = () => (
-  <nav className="fixed top-0 left-0 right-0 z-50 bg-dark-background/80 backdrop-blur-md border-b border-dark-border">
-    <div className="container mx-auto px-6 max-w-6xl">
-      <div className="flex items-center justify-between h-16">
-        <Link href="/" className="text-xl font-bold text-dark-primary tracking-tight">
-          SupplementScribe
-        </Link>
-        <div className="flex items-center gap-6">
-          <Link href="/how-it-works" className="text-dark-secondary hover:text-dark-primary transition-colors">
-            How It Works
-          </Link>
-          <Link href="/for-everyone" className="text-dark-secondary hover:text-dark-primary transition-colors">
-            For Everyone
-          </Link>
-          <Link href="/science" className="text-dark-accent font-medium">
-            Science
-          </Link>
-          <Link href="/content" className="text-dark-secondary hover:text-dark-primary transition-colors">
-            Content
-          </Link>
-          <Link href="/login">
-            <button className="inline-flex items-center px-4 py-2 text-sm font-medium text-dark-secondary hover:text-dark-primary border border-dark-border rounded-lg hover:border-dark-accent transition-all duration-200">
-              <LogIn className="w-4 h-4 mr-2" />
-              Log In
-            </button>
-          </Link>
-          <Link href="/auth/signup">
-            <button className="inline-flex items-center px-4 py-2 text-sm font-bold text-dark-background bg-dark-accent rounded-lg hover:bg-dark-accent/90 transition-all duration-200">
-              Get Started
-            </button>
-          </Link>
-        </div>
-      </div>
-    </div>
-  </nav>
-);
+import Navigation from '@/components/Navigation';
 
 export default function SciencePage() {
   return (
     <main className="bg-dark-background text-dark-primary font-sans">
       <Navigation />
       {/* Hero Section */}
-      <section className="pt-32 pb-24">
-        <div className="container mx-auto px-6 max-w-6xl">
+      <section className="pt-24 sm:pt-32 pb-16 sm:pb-24">
+        <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
           <motion.div 
-            className="text-center mb-16"
+            className="text-center mb-12 sm:mb-16"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 text-dark-primary">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight mb-4 sm:mb-6 text-dark-primary px-4">
               The Science Behind Personalization
             </h1>
-            <p className="text-xl text-dark-secondary max-w-3xl mx-auto leading-relaxed">
+            <p className="text-lg sm:text-xl text-dark-secondary max-w-3xl mx-auto leading-relaxed px-4">
               Understanding how genetics and biomarkers influence our AI's unique
               nutritional recommendations for your mental health
             </p>
@@ -67,57 +30,57 @@ export default function SciencePage() {
       </section>
 
       {/* Scientific Foundation Section */}
-      <section className="py-24 bg-dark-panel/30">
-        <div className="container mx-auto px-6 max-w-6xl">
+      <section className="py-16 sm:py-24 bg-dark-panel/30">
+        <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
           <motion.div 
-            className="text-center mb-16"
+            className="text-center mb-12 sm:mb-16"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl font-bold mb-6">Scientific Foundation</h2>
-            <p className="text-xl text-dark-secondary max-w-4xl mx-auto leading-relaxed">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6 px-4">Scientific Foundation</h2>
+            <p className="text-lg sm:text-xl text-dark-secondary max-w-4xl mx-auto leading-relaxed px-4">
               Decades of research have revealed how individual genetic differences affect nutrient metabolism and mental health
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
             {[
               {
-                icon: <Dna className="w-8 h-8" />,
+                icon: <Dna className="w-6 h-6 sm:w-8 sm:h-8" />,
                 title: "Nutrigenomics",
                 description: "The study of how genes influence the response to nutrients and dietary compounds."
               },
               {
-                icon: <Brain className="w-8 h-8" />,
+                icon: <Brain className="w-6 h-6 sm:w-8 sm:h-8" />,
                 title: "Neurogenomics",
                 description: "How genetic variations affect neurotransmitter production, metabolism, and mental health."
               },
               {
-                icon: <Activity className="w-8 h-8" />,
+                icon: <Activity className="w-6 h-6 sm:w-8 sm:h-8" />,
                 title: "Biomarker Analysis",
                 description: "Our AI can infer biomarker status from your health assessment or use your optional lab data."
               },
               {
-                icon: <BookOpen className="w-8 h-8" />,
+                icon: <BookOpen className="w-6 h-6 sm:w-8 sm:h-8" />,
                 title: "Evidence-Based",
                 description: "Recommendations based on peer-reviewed research and clinical studies."
               }
             ].map((item, index) => (
               <motion.div
                 key={index}
-                className="bg-dark-panel border border-dark-border rounded-2xl p-8 text-center"
+                className="bg-dark-panel border border-dark-border rounded-xl sm:rounded-2xl p-6 sm:p-8 text-center"
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 viewport={{ once: true }}
               >
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-dark-accent/10 rounded-2xl mb-6 text-dark-accent">
+                <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-dark-accent/10 rounded-xl sm:rounded-2xl mb-4 sm:mb-6 text-dark-accent">
                   {item.icon}
                 </div>
-                <h3 className="text-xl font-bold mb-4">{item.title}</h3>
-                <p className="text-dark-secondary leading-relaxed">{item.description}</p>
+                <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">{item.title}</h3>
+                <p className="text-sm sm:text-base text-dark-secondary leading-relaxed">{item.description}</p>
               </motion.div>
             ))}
           </div>
@@ -125,22 +88,22 @@ export default function SciencePage() {
       </section>
 
       {/* Mental Health Research Section */}
-      <section className="py-24 bg-gradient-to-br from-blue-500/5 to-dark-panel/20">
-        <div className="container mx-auto px-6 max-w-6xl">
+      <section className="py-16 sm:py-24 bg-gradient-to-br from-blue-500/5 to-dark-panel/20">
+        <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
           <motion.div 
-            className="text-center mb-16"
+            className="text-center mb-12 sm:mb-16"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl font-bold mb-6">Mental Health & Genetics Research</h2>
-            <p className="text-xl text-dark-secondary max-w-4xl mx-auto leading-relaxed">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6 px-4">Mental Health & Genetics Research</h2>
+            <p className="text-lg sm:text-xl text-dark-secondary max-w-4xl mx-auto leading-relaxed px-4">
               Groundbreaking research reveals why anxiety medications don't work for everyone
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
             {[
               {
                 title: "Medication Response Genetics",
@@ -173,22 +136,22 @@ export default function SciencePage() {
             ].map((study, index) => (
               <motion.div
                 key={index}
-                className="bg-dark-panel border border-dark-border rounded-2xl p-8"
+                className="bg-dark-panel border border-dark-border rounded-xl sm:rounded-2xl p-6 sm:p-8"
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 viewport={{ once: true }}
               >
-                <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-xl font-bold text-dark-accent">{study.title}</h3>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 gap-2">
+                  <h3 className="text-lg sm:text-xl font-bold text-dark-accent">{study.title}</h3>
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium self-start ${
                     study.impact === 'High' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'
                   }`}>
                     {study.impact} Impact
                   </span>
                 </div>
-                <p className="text-dark-secondary mb-4 leading-relaxed text-sm">{study.findings}</p>
-                <div className="flex justify-between items-center text-sm">
+                <p className="text-dark-secondary mb-4 leading-relaxed text-sm sm:text-base">{study.findings}</p>
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 text-sm">
                   <span className="text-dark-accent font-medium">{study.source}</span>
                   <span className="text-dark-secondary">{study.year}</span>
                 </div>
@@ -199,23 +162,23 @@ export default function SciencePage() {
       </section>
 
       {/* Key Genetic Variations Section */}
-      <section className="py-24">
-        <div className="container mx-auto px-6 max-w-6xl">
+      <section className="py-16 sm:py-24">
+        <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
           <motion.div 
-            className="text-center mb-16"
+            className="text-center mb-12 sm:mb-16"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl font-bold mb-6">Key Genetic Variations</h2>
-            <p className="text-xl text-dark-secondary max-w-4xl mx-auto leading-relaxed">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6 px-4">Key Genetic Variations</h2>
+            <p className="text-lg sm:text-xl text-dark-secondary max-w-4xl mx-auto leading-relaxed px-4">
               Our AI understands how these common genetic differences can impact
               nutritional needs and mental health
             </p>
           </motion.div>
 
-          <div className="space-y-12">
+          <div className="space-y-8 sm:space-y-12">
             {[
               {
                 gene: "MTHFR",
@@ -260,15 +223,15 @@ export default function SciencePage() {
             ].map((gene, index) => (
               <motion.div
                 key={index}
-                className="bg-dark-panel border border-dark-border rounded-2xl p-8"
+                className="bg-dark-panel border border-dark-border rounded-xl sm:rounded-2xl p-6 sm:p-8"
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 viewport={{ once: true }}
               >
-                <div className="grid md:grid-cols-4 gap-8">
-                  <div>
-                    <h3 className="text-2xl font-bold mb-2 text-dark-accent">{gene.gene}</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+                  <div className="lg:col-span-1">
+                    <h3 className="text-xl sm:text-2xl font-bold mb-2 text-dark-accent">{gene.gene}</h3>
                     <p className="text-sm text-dark-secondary mb-4">{gene.fullName}</p>
                     <div className="space-y-3">
                       <div>
@@ -281,19 +244,19 @@ export default function SciencePage() {
                       </div>
                     </div>
                   </div>
-                  <div>
+                  <div className="lg:col-span-1">
                     <h4 className="font-semibold text-yellow-400 mb-3">Impact on Health:</h4>
                     <p className="text-sm text-dark-secondary mb-4">{gene.impact}</p>
-                    <div className="bg-dark-background border border-dark-border rounded-lg p-4">
+                    <div className="bg-dark-background border border-dark-border rounded-lg p-3 sm:p-4">
                       <h5 className="font-semibold text-green-400 mb-2">Prevalence:</h5>
                       <p className="text-sm text-dark-secondary">{gene.prevalence}</p>
                     </div>
                   </div>
-                  <div>
+                  <div className="lg:col-span-1">
                     <h4 className="font-semibold text-green-400 mb-3">Personalized Approach:</h4>
                     <p className="text-sm text-dark-secondary">{gene.recommendation}</p>
                   </div>
-                  <div>
+                  <div className="lg:col-span-1">
                     <h4 className="font-semibold text-red-400 mb-3">Mental Health Impact:</h4>
                     <p className="text-sm text-dark-secondary">{gene.mentalHealth}</p>
                   </div>
@@ -305,22 +268,22 @@ export default function SciencePage() {
       </section>
 
       {/* Research Evidence Section */}
-      <section className="py-24 bg-dark-panel/30">
-        <div className="container mx-auto px-6 max-w-6xl">
+      <section className="py-16 sm:py-24 bg-dark-panel/30">
+        <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
           <motion.div 
-            className="text-center mb-16"
+            className="text-center mb-12 sm:mb-16"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl font-bold mb-6">Research Evidence</h2>
-            <p className="text-xl text-dark-secondary max-w-4xl mx-auto leading-relaxed">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6 px-4">Research Evidence</h2>
+            <p className="text-lg sm:text-xl text-dark-secondary max-w-4xl mx-auto leading-relaxed px-4">
               Published studies supporting personalized nutrition approaches for physical and mental health
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
             {[
               {
                 title: "Folate Metabolism & MTHFR",
@@ -361,15 +324,15 @@ export default function SciencePage() {
             ].map((study, index) => (
               <motion.div
                 key={index}
-                className="bg-dark-panel border border-dark-border rounded-2xl p-8"
+                className="bg-dark-panel border border-dark-border rounded-xl sm:rounded-2xl p-6 sm:p-8"
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 viewport={{ once: true }}
               >
-                <h3 className="text-xl font-bold mb-4 text-dark-accent">{study.title}</h3>
-                <p className="text-dark-secondary mb-4 leading-relaxed text-sm">{study.findings}</p>
-                <div className="flex justify-between items-center text-sm">
+                <h3 className="text-lg sm:text-xl font-bold mb-4 text-dark-accent">{study.title}</h3>
+                <p className="text-dark-secondary mb-4 leading-relaxed text-sm sm:text-base">{study.findings}</p>
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 text-sm">
                   <span className="text-dark-accent font-medium">{study.source}</span>
                   <span className="text-dark-secondary">{study.year}</span>
                 </div>
@@ -380,30 +343,30 @@ export default function SciencePage() {
       </section>
 
       {/* How We Apply Science Section */}
-      <section className="py-24">
-        <div className="container mx-auto px-6 max-w-6xl">
+      <section className="py-16 sm:py-24">
+        <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
           <motion.div 
-            className="text-center mb-16"
+            className="text-center mb-12 sm:mb-16"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl font-bold mb-6">How We Apply the Science</h2>
-            <p className="text-xl text-dark-secondary max-w-4xl mx-auto leading-relaxed">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6 px-4">How We Apply the Science</h2>
+            <p className="text-lg sm:text-xl text-dark-secondary max-w-4xl mx-auto leading-relaxed px-4">
               Translating complex research into practical, personalized recommendations for optimal health and mental wellbeing
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 gap-12 items-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-12 items-center">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6 }}
               viewport={{ once: true }}
             >
-              <h3 className="text-2xl font-bold mb-6 text-dark-accent">Our Scientific Process</h3>
-              <div className="space-y-6">
+              <h3 className="text-xl sm:text-2xl font-bold mb-6 text-dark-accent">Our Scientific Process</h3>
+              <div className="space-y-4 sm:space-y-6">
                 {[
                   {
                     step: "1",
@@ -432,7 +395,7 @@ export default function SciencePage() {
                   }
                 ].map((item, index) => (
                   <div key={index} className="flex items-start">
-                    <div className="w-10 h-10 bg-dark-accent text-dark-background rounded-full flex items-center justify-center text-sm font-bold mr-4 flex-shrink-0">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-dark-accent text-dark-background rounded-full flex items-center justify-center text-sm font-bold mr-3 sm:mr-4 flex-shrink-0 mt-1">
                       {item.step}
                     </div>
                     <div>
@@ -475,22 +438,22 @@ export default function SciencePage() {
       </section>
 
       {/* Clinical Evidence Section */}
-      <section className="py-24 bg-gradient-to-br from-green-500/5 to-dark-panel/20">
-        <div className="container mx-auto px-6 max-w-6xl">
+      <section className="py-16 sm:py-24 bg-gradient-to-br from-green-500/5 to-dark-panel/20">
+        <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
           <motion.div 
-            className="text-center mb-16"
+            className="text-center mb-12 sm:mb-16"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl font-bold mb-6">Clinical Evidence</h2>
-            <p className="text-xl text-dark-secondary max-w-4xl mx-auto leading-relaxed">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6 px-4">Clinical Evidence</h2>
+            <p className="text-lg sm:text-xl text-dark-secondary max-w-4xl mx-auto leading-relaxed px-4">
               Real-world outcomes from personalized nutrition interventions
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
             {[
               {
                 metric: "67%",
@@ -513,15 +476,15 @@ export default function SciencePage() {
             ].map((stat, index) => (
               <motion.div
                 key={index}
-                className="bg-dark-panel border border-dark-border rounded-2xl p-8 text-center"
+                className="bg-dark-panel border border-dark-border rounded-xl sm:rounded-2xl p-6 sm:p-8 text-center"
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 viewport={{ once: true }}
               >
-                <div className="text-4xl font-bold text-dark-accent mb-4">{stat.metric}</div>
-                <h3 className="text-xl font-bold mb-4">{stat.title}</h3>
-                <p className="text-dark-secondary mb-4 text-sm leading-relaxed">{stat.description}</p>
+                <div className="text-3xl sm:text-4xl font-bold text-dark-accent mb-4">{stat.metric}</div>
+                <h3 className="text-lg sm:text-xl font-bold mb-4">{stat.title}</h3>
+                <p className="text-dark-secondary mb-4 text-sm sm:text-base leading-relaxed">{stat.description}</p>
                 <p className="text-xs text-dark-secondary opacity-70">{stat.study}</p>
               </motion.div>
             ))}
@@ -530,31 +493,31 @@ export default function SciencePage() {
       </section>
 
       {/* Limitations Section */}
-      <section className="py-24 bg-dark-panel/30">
-        <div className="container mx-auto px-6 max-w-6xl">
+      <section className="py-16 sm:py-24 bg-dark-panel/30">
+        <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
           <motion.div 
-            className="text-center mb-16"
+            className="text-center mb-12 sm:mb-16"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl font-bold mb-6">Scientific Limitations & Transparency</h2>
-            <p className="text-xl text-dark-secondary max-w-4xl mx-auto leading-relaxed">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6 px-4">Scientific Limitations & Transparency</h2>
+            <p className="text-lg sm:text-xl text-dark-secondary max-w-4xl mx-auto leading-relaxed px-4">
               Understanding the current boundaries of personalized nutrition science
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
             <motion.div
-              className="bg-dark-panel border border-dark-border rounded-2xl p-8"
+              className="bg-dark-panel border border-dark-border rounded-xl sm:rounded-2xl p-6 sm:p-8"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
               viewport={{ once: true }}
             >
-              <h3 className="text-xl font-bold mb-4 text-green-400">What We Know</h3>
-              <ul className="space-y-3 text-dark-secondary text-sm">
+              <h3 className="text-lg sm:text-xl font-bold mb-4 text-green-400">What We Know</h3>
+              <ul className="space-y-2 sm:space-y-3 text-dark-secondary text-sm sm:text-base">
                 <li>• Genetic variants significantly affect nutrient metabolism</li>
                 <li>• Biomarkers reflect current nutritional status</li>
                 <li>• Personalized approaches show better outcomes</li>
@@ -566,14 +529,14 @@ export default function SciencePage() {
             </motion.div>
 
             <motion.div
-              className="bg-dark-panel border border-dark-border rounded-2xl p-8"
+              className="bg-dark-panel border border-dark-border rounded-xl sm:rounded-2xl p-6 sm:p-8"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
               viewport={{ once: true }}
             >
-              <h3 className="text-xl font-bold mb-4 text-yellow-400">Current Limitations</h3>
-              <ul className="space-y-3 text-dark-secondary text-sm">
+              <h3 className="text-lg sm:text-xl font-bold mb-4 text-yellow-400">Current Limitations</h3>
+              <ul className="space-y-2 sm:space-y-3 text-dark-secondary text-sm sm:text-base">
                 <li>• Not all genetic variants are fully understood</li>
                 <li>• Environmental factors also play important roles</li>
                 <li>• More research needed for some recommendations</li>
@@ -588,20 +551,20 @@ export default function SciencePage() {
       </section>
 
       {/* Disclaimer Section */}
-      <section className="py-16 bg-dark-panel border-t border-dark-border">
-        <div className="container mx-auto px-6 max-w-6xl">
+      <section className="py-12 sm:py-16 bg-dark-panel border-t border-dark-border">
+        <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
           <motion.div
-            className="bg-dark-background border border-dark-border rounded-2xl p-8"
+            className="bg-dark-background border border-dark-border rounded-xl sm:rounded-2xl p-6 sm:p-8"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <div className="flex items-start">
-              <Shield className="w-6 h-6 text-dark-accent mt-1 mr-4 flex-shrink-0" />
+            <div className="flex flex-col sm:flex-row sm:items-start">
+              <Shield className="w-6 h-6 text-dark-accent mt-1 mr-0 sm:mr-4 mb-4 sm:mb-0 flex-shrink-0" />
               <div>
                 <h3 className="text-lg font-semibold mb-3 text-dark-accent">Scientific Disclaimer</h3>
-                <div className="text-sm text-dark-secondary space-y-2 leading-relaxed">
+                <div className="text-sm sm:text-base text-dark-secondary space-y-3 sm:space-y-2 leading-relaxed">
                   <p>
                     <strong>Educational Purpose:</strong> This information is provided for educational purposes only. 
                     The science of nutrigenomics is rapidly evolving, and individual responses may vary.
@@ -630,25 +593,25 @@ export default function SciencePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-24">
-        <div className="container mx-auto px-6 max-w-6xl text-center">
+      <section className="py-16 sm:py-24">
+        <div className="container mx-auto px-4 sm:px-6 max-w-6xl text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl font-bold mb-6">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6 px-4">
               Ready to Use the Future of Health?
             </h2>
-            <p className="text-xl text-dark-secondary mb-8 max-w-2xl mx-auto">
+            <p className="text-lg sm:text-xl text-dark-secondary mb-6 sm:mb-8 max-w-2xl mx-auto px-4">
               Our AI-powered health assessment is the first step towards a truly
               personalized supplement plan.
             </p>
             <Link href="/auth/signup">
-              <button className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-dark-background bg-dark-accent rounded-full overflow-hidden transition-all duration-300 transform hover:scale-105">
+              <button className="group relative inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-bold text-dark-background bg-dark-accent rounded-full overflow-hidden transition-all duration-300 transform hover:scale-105 touch-target">
                 <span className="relative flex items-center">
-                  Get Started <ArrowRight className="ml-2 h-5 w-5" />
+                  Get Started <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
                 </span>
               </button>
             </Link>

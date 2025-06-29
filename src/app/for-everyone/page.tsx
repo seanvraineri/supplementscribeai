@@ -47,18 +47,18 @@ export default function ForEveryonePage() {
     <main className="bg-dark-background text-dark-primary font-sans">
       <Navigation />
       {/* Hero Section */}
-      <section className="pt-32 pb-24">
-        <div className="container mx-auto px-6 max-w-6xl">
+      <section className="pt-24 sm:pt-32 pb-16 sm:pb-24">
+        <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
           <motion.div 
-            className="text-center mb-16"
+            className="text-center mb-12 sm:mb-16"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 text-dark-primary">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight mb-4 sm:mb-6 text-dark-primary px-4">
               Not Just for Health Enthusiasts
             </h1>
-            <p className="text-xl text-dark-secondary max-w-3xl mx-auto leading-relaxed">
+            <p className="text-lg sm:text-xl text-dark-secondary max-w-3xl mx-auto leading-relaxed px-4">
               Personalized nutrition helps everyday people feel their best without becoming nutrition experts
             </p>
           </motion.div>
@@ -66,55 +66,55 @@ export default function ForEveryonePage() {
       </section>
 
       {/* Common Problems Section */}
-      <section className="py-24 bg-dark-panel/30">
-        <div className="container mx-auto px-6 max-w-6xl">
+      <section className="py-16 sm:py-24 bg-dark-panel/30">
+        <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
           <motion.div 
-            className="text-center mb-16"
+            className="text-center mb-12 sm:mb-16"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl font-bold mb-6">Sound Familiar?</h2>
-            <p className="text-xl text-dark-secondary max-w-4xl mx-auto leading-relaxed">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6 px-4">Sound Familiar?</h2>
+            <p className="text-lg sm:text-xl text-dark-secondary max-w-4xl mx-auto leading-relaxed px-4">
               These everyday health challenges affect millions of people who just want to feel better
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {[
               {
-                icon: <Coffee className="w-8 h-8" />,
+                icon: <Coffee className="w-6 h-6 sm:w-8 sm:h-8" />,
                 title: "Always Tired",
                 description: "You need 3+ cups of coffee just to function, even after 8 hours of sleep",
                 people: "The Busy Parent, Office Worker, Student"
               },
               {
-                icon: <Brain className="w-8 h-8" />,
+                icon: <Brain className="w-6 h-6 sm:w-8 sm:h-8" />,
                 title: "Brain Fog",
                 description: "Struggling to focus during meetings or forgetting simple things",
                 people: "The Professional, New Parent, Anyone Over 30"
               },
               {
-                icon: <AlertTriangle className="w-8 h-8" />,
+                icon: <AlertTriangle className="w-6 h-6 sm:w-8 sm:h-8" />,
                 title: "Anxiety Medications Not Working",
                 description: "On your second or third anxiety med, still feeling anxious with side effects",
                 people: "The Overwhelmed, Medication Resistant, Side Effect Sufferer"
               },
               {
-                icon: <Moon className="w-8 h-8" />,
+                icon: <Moon className="w-6 h-6 sm:w-8 sm:h-8" />,
                 title: "Poor Sleep",
                 description: "Tossing and turning, or waking up feeling unrested",
                 people: "The Stressed Worker, Shift Worker, Anxious Mind"
               },
               {
-                icon: <Heart className="w-8 h-8" />,
+                icon: <Heart className="w-6 h-6 sm:w-8 sm:h-8" />,
                 title: "Mood Swings",
                 description: "Feeling irritable, anxious, or down for no clear reason",
                 people: "The Overwhelmed Parent, Hormonal Changes, High Stress"
               },
               {
-                icon: <Users className="w-8 h-8" />,
+                icon: <Users className="w-6 h-6 sm:w-8 sm:h-8" />,
                 title: "Getting Sick Often",
                 description: "Catching every cold that goes around the office",
                 people: "The Commuter, Parent, Immune System Struggles"
@@ -122,17 +122,17 @@ export default function ForEveryonePage() {
             ].map((problem, index) => (
               <motion.div
                 key={index}
-                className="bg-dark-panel border border-dark-border rounded-2xl p-8"
+                className="bg-dark-panel border border-dark-border rounded-xl sm:rounded-2xl p-6 sm:p-8"
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 viewport={{ once: true }}
               >
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-dark-accent/10 rounded-2xl mb-6 text-dark-accent">
+                <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-dark-accent/10 rounded-xl sm:rounded-2xl mb-4 sm:mb-6 text-dark-accent">
                   {problem.icon}
                 </div>
-                <h3 className="text-xl font-bold mb-4">{problem.title}</h3>
-                <p className="text-dark-secondary mb-4 leading-relaxed">{problem.description}</p>
+                <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">{problem.title}</h3>
+                <p className="text-dark-secondary mb-3 sm:mb-4 leading-relaxed text-sm sm:text-base">{problem.description}</p>
                 <p className="text-sm text-dark-accent font-medium">{problem.people}</p>
               </motion.div>
             ))}
@@ -141,56 +141,56 @@ export default function ForEveryonePage() {
       </section>
 
       {/* Mental Health Reality Section */}
-      <section className="py-24 bg-gradient-to-br from-red-500/5 to-dark-panel/20">
-        <div className="container mx-auto px-6 max-w-6xl">
+      <section className="py-16 sm:py-24 bg-gradient-to-br from-red-500/5 to-dark-panel/20">
+        <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
           <motion.div 
-            className="text-center mb-16"
+            className="text-center mb-12 sm:mb-16"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl font-bold mb-6">The Anxiety Medication Reality</h2>
-            <p className="text-xl text-dark-secondary max-w-4xl mx-auto leading-relaxed">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6 px-4">The Anxiety Medication Reality</h2>
+            <p className="text-lg sm:text-xl text-dark-secondary max-w-4xl mx-auto leading-relaxed px-4">
               Millions of people are stuck in the anxiety medication cycle - and it's not their fault
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 gap-12 items-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-12 items-center">
             <motion.div
-              className="bg-dark-panel border border-red-500/20 rounded-2xl p-8"
+              className="bg-dark-panel border border-red-500/20 rounded-xl sm:rounded-2xl p-6 sm:p-8"
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6 }}
               viewport={{ once: true }}
             >
-              <h3 className="text-2xl font-bold mb-6 text-red-400">The Frustrating Cycle</h3>
+              <h3 className="text-xl sm:text-2xl font-bold mb-6 text-red-400">The Frustrating Cycle</h3>
               <div className="space-y-4">
                 <div className="flex items-start">
-                  <div className="w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center text-red-400 font-bold text-sm mr-4 mt-1">1</div>
+                  <div className="w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center text-red-400 font-bold text-sm mr-3 sm:mr-4 mt-1 flex-shrink-0">1</div>
                   <div>
-                    <h4 className="font-semibold mb-1">First Medication Doesn't Work</h4>
+                    <h4 className="font-semibold mb-1 text-sm sm:text-base">First Medication Doesn't Work</h4>
                     <p className="text-dark-secondary text-sm">40% of people don't respond to their first anxiety medication</p>
                   </div>
                 </div>
                 <div className="flex items-start">
-                  <div className="w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center text-red-400 font-bold text-sm mr-4 mt-1">2</div>
+                  <div className="w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center text-red-400 font-bold text-sm mr-3 sm:mr-4 mt-1 flex-shrink-0">2</div>
                   <div>
-                    <h4 className="font-semibold mb-1">Side Effects Pile Up</h4>
+                    <h4 className="font-semibold mb-1 text-sm sm:text-base">Side Effects Pile Up</h4>
                     <p className="text-dark-secondary text-sm">Weight gain, brain fog, fatigue, sexual dysfunction</p>
                   </div>
                 </div>
                 <div className="flex items-start">
-                  <div className="w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center text-red-400 font-bold text-sm mr-4 mt-1">3</div>
+                  <div className="w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center text-red-400 font-bold text-sm mr-3 sm:mr-4 mt-1 flex-shrink-0">3</div>
                   <div>
-                    <h4 className="font-semibold mb-1">Try Another Medication</h4>
+                    <h4 className="font-semibold mb-1 text-sm sm:text-base">Try Another Medication</h4>
                     <p className="text-dark-secondary text-sm">Months of trial and error, hoping the next one works</p>
                   </div>
                 </div>
                 <div className="flex items-start">
-                  <div className="w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center text-red-400 font-bold text-sm mr-4 mt-1">4</div>
+                  <div className="w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center text-red-400 font-bold text-sm mr-3 sm:mr-4 mt-1 flex-shrink-0">4</div>
                   <div>
-                    <h4 className="font-semibold mb-1">Accept "Good Enough"</h4>
+                    <h4 className="font-semibold mb-1 text-sm sm:text-base">Accept "Good Enough"</h4>
                     <p className="text-dark-secondary text-sm">Settle for partial relief because "this is as good as it gets"</p>
                   </div>
                 </div>

@@ -14,34 +14,55 @@ import FloatingPanel from '@/components/FloatingPanel';
 
 const ParallaxBackground = () => {
   const { scrollY } = useScroll();
-  const y = useTransform(scrollY, [0, 1000], [0, -150]); // Move background slower than scroll
+  // Disable parallax movement entirely to prevent mobile issues
+  const y = useTransform(scrollY, [0, 1000], [0, 0]); // No movement
 
   return (
     <motion.div 
-      className="absolute inset-0 -z-10 overflow-hidden bg-dark-background"
-      style={{ y }}
+      className="fixed inset-0 -z-50 overflow-hidden"
+      style={{ 
+        background: 'linear-gradient(135deg, #0d0d0d 0%, #0d0d0d 100%)',
+        y: 0 // Completely disable movement
+      }}
     >
       <motion.div
-        className="absolute"
-        style={{ top: '20%', left: '10%', width: '800px', height: '800px' }}
-        animate={{
-          backgroundImage: [
-            "radial-gradient(circle, rgba(0, 191, 255, 0.08), rgba(13, 13, 13, 0) 60%)",
-            "radial-gradient(circle, rgba(0, 191, 255, 0.05), rgba(13, 13, 13, 0) 70%)",
-          ],
+        className="absolute opacity-30"
+        style={{ 
+          top: '20%', 
+          left: '10%', 
+          width: '800px', 
+          height: '800px',
+          background: 'radial-gradient(circle, rgba(0, 191, 255, 0.03), rgba(13, 13, 13, 0) 60%)'
         }}
-        transition={{ duration: 15, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }}
+        animate={{
+          scale: [1, 1.1, 1],
+          opacity: [0.3, 0.1, 0.3],
+        }}
+        transition={{
+          duration: 8,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }}
       />
       <motion.div
-        className="absolute"
-        style={{ bottom: '10%', right: '5%', width: '600px', height: '600px' }}
-        animate={{
-          backgroundImage: [
-            "radial-gradient(circle, rgba(0, 191, 255, 0.04), rgba(13, 13, 13, 0) 65%)",
-            "radial-gradient(circle, rgba(0, 191, 255, 0.07), rgba(13, 13, 13, 0) 55%)",
-          ],
+        className="absolute opacity-20"
+        style={{ 
+          top: '60%', 
+          right: '10%', 
+          width: '600px', 
+          height: '600px',
+          background: 'radial-gradient(circle, rgba(0, 191, 255, 0.02), rgba(13, 13, 13, 0) 70%)'
         }}
-        transition={{ duration: 20, repeat: Infinity, repeatType: "mirror", ease: "easeInOut", delay: 5 }}
+        animate={{
+          scale: [1, 0.9, 1],
+          opacity: [0.2, 0.05, 0.2],
+        }}
+        transition={{
+          duration: 10,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: 2
+        }}
       />
     </motion.div>
   );
@@ -113,7 +134,7 @@ const Navigation = () => {
           <>
             {/* Backdrop */}
             <motion.div
-              initial={{ opacity: 0 }}
+              initial={{ opacity: 1 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
@@ -365,7 +386,7 @@ export default function HomePage() {
   const duplicatedTestimonials = [...testimonials, ...testimonials];
 
   return (
-    <main className="bg-dark-background text-dark-primary font-sans overflow-x-hidden">
+    <main className="bg-dark-background text-dark-primary font-sans overflow-x-hidden min-h-screen">
       {/* Structured Data for SEO & AI GEO */}
       <script 
         type="application/ld+json"
@@ -376,7 +397,7 @@ export default function HomePage() {
       <ParallaxBackground />
       
       {/* Hero Section */}
-      <section className="min-h-screen relative flex items-center justify-center pt-32 pb-24">
+      <section className="min-h-screen relative flex items-center justify-center pt-32 pb-24 bg-dark-background">
         <BackgroundAnimation />
         
         {/* SEO-Optimized Hidden Content for Search Engines & AI GEO */}
@@ -409,7 +430,7 @@ export default function HomePage() {
         </div>
 
         <motion.div 
-          className="container mx-auto px-4 z-10 text-center"
+          className="container mx-auto px-4 z-10 text-center relative"
           initial="hidden"
           animate="show"
           viewport={{ once: true }}
@@ -428,8 +449,8 @@ export default function HomePage() {
               AI-Powered Personalized Supplement Plans Based on Deep Health Analysis
             </h1>
             
-                        {/* Visible Animated Display - The beloved flipping text */}
-            <div className="h-24 sm:h-32 md:h-40 lg:h-48 xl:h-56 flex items-center justify-center">
+            {/* Visible Animated Display - The beloved flipping text */}
+            <div className="h-20 sm:h-24 md:h-32 lg:h-40 xl:h-48 flex items-center justify-center px-2">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={headlines[index].text}
@@ -437,41 +458,41 @@ export default function HomePage() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -20, scale: 0.95 }}
                   transition={{ duration: 0.5 }}
-                  className="text-center text-2xl sm:text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tighter leading-tight px-4"
+                  className="text-center text-2xl sm:text-3xl md:text-4xl lg:text-6xl xl:text-7xl font-bold tracking-tighter leading-tight px-2"
                   style={{ color: headlines[index].color }}
                 >
                   {headlines[index].text}
                 </motion.div>
               </AnimatePresence>
             </div>
-                      </div>
-            <p className="mx-auto mt-8 sm:mt-12 max-w-2xl text-center text-base sm:text-lg md:text-xl leading-7 sm:leading-8 text-slate-200 px-4">
+          </div>
+          <p className="mx-auto mt-6 sm:mt-8 md:mt-12 max-w-2xl text-center text-base sm:text-lg md:text-xl lg:text-2xl leading-6 sm:leading-7 md:leading-8 text-slate-200 px-4">
             What Doctors Can't Tell You (But Should)
           </p>
-          <p className="mx-auto mt-2 max-w-3xl text-center text-sm sm:text-base md:text-lg leading-6 sm:leading-7 text-slate-300 px-4">
+          <p className="mx-auto mt-2 max-w-3xl text-center text-sm sm:text-base md:text-lg lg:text-xl leading-5 sm:leading-6 md:leading-7 text-slate-300 px-4">
             We reverse-engineer your body's needs from symptoms → Find the 6 missing pieces → Skip everything else
           </p>
 
-          <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mt-8 px-4">
-            <Link href="/auth/signup">
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4 mt-6 sm:mt-8 px-4 max-w-md sm:max-w-none mx-auto">
+            <Link href="/auth/signup" className="w-full sm:w-auto">
               <Button
                 variant="default"
-                className="w-full sm:w-auto bg-dark-accent hover:bg-dark-accent/90 text-dark-background font-bold px-8 py-4 text-lg whitespace-nowrap"
+                className="w-full sm:w-auto bg-dark-accent hover:bg-dark-accent/90 text-dark-background font-bold px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg"
                 size="lg"
               >
                 <span className="hidden sm:inline">Start for $9.99 First Month</span>
                 <span className="sm:hidden">Start $9.99</span>{' '}
-                <ChevronsRight className="ml-2 h-5 w-5" />
+                <ChevronsRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </Link>
-            <Link href="/design-preview">
+            <Link href="/design-preview" className="w-full sm:w-auto">
               <Button
                 variant="outline"
-                className="w-full sm:w-auto border-dark-accent border-2 text-dark-accent hover:bg-dark-accent hover:text-dark-background px-8 py-4 text-lg whitespace-nowrap font-semibold"
+                className="w-full sm:w-auto border-dark-accent border-2 text-dark-accent hover:bg-dark-accent hover:text-dark-background px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold"
                 size="lg"
               >
                 See The Analysis{' '}
-                <Search className="ml-2 h-5 w-5" />
+                <Search className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </Link>
           </div>
@@ -480,20 +501,20 @@ export default function HomePage() {
 
       <FloatingPanel>
         {/* Value Shock Section */}
-        <section className="py-12 md:py-16 bg-dark-background border-t border-dark-border">
-          <div className="container mx-auto px-4 md:px-6 max-w-6xl">
-            <div className="text-center mb-8 md:mb-12">
-              <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-4 md:mb-6 px-2">
+        <section className="py-8 sm:py-12 md:py-16 bg-dark-background border-t border-dark-border">
+          <div className="container mx-auto px-3 sm:px-4 md:px-6 max-w-6xl">
+            <div className="text-center mb-6 sm:mb-8 md:mb-12">
+              <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-3 sm:mb-4 md:mb-6 px-2">
                 What Usually Costs $15,000+ in Lab Tests*
               </h2>
-              <p className="text-base md:text-lg text-gray-400 max-w-3xl mx-auto px-2">
+              <p className="text-sm sm:text-base md:text-lg text-gray-400 max-w-3xl mx-auto px-2">
                 We've developed an accessible approach to personalized health insights. Get comprehensive analysis for significantly less.
               </p>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
-              <div className="bg-dark-panel p-4 md:p-6 rounded-2xl border border-dark-border">
-                <h3 className="text-lg md:text-xl font-bold text-red-400 mb-3">Traditional Route</h3>
-                <div className="space-y-2 text-gray-300 text-sm md:text-base">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
+              <div className="bg-dark-panel p-3 sm:p-4 md:p-6 rounded-xl sm:rounded-2xl border border-dark-border">
+                <h3 className="text-base sm:text-lg md:text-xl font-bold text-red-400 mb-2 sm:mb-3">Traditional Route</h3>
+                <div className="space-y-1 sm:space-y-2 text-gray-300 text-xs sm:text-sm md:text-base">
                   <p>• Comprehensive Metabolic Panel: $2,500</p>
                   <p>• Nutrient Deficiency Testing: $3,200</p>
                   <p>• Hormone Analysis: $4,800</p>
@@ -501,16 +522,16 @@ export default function HomePage() {
                   <p>• Functional Medicine Consult: $800/session</p>
                   <p>• Custom Supplement Formulation: $500/month</p>
                 </div>
-                <div className="mt-4 pt-4 border-t border-dark-border">
-                  <p className="text-red-400 font-bold text-base md:text-lg">Total: $15,000+/year</p>
+                <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-dark-border">
+                  <p className="text-red-400 font-bold text-sm sm:text-base md:text-lg">Total: $15,000+/year</p>
                 </div>
               </div>
-              <div className="bg-dark-panel p-4 md:p-6 rounded-2xl border border-dark-accent relative">
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-dark-accent text-dark-background px-3 md:px-4 py-1 rounded-full text-xs md:text-sm font-bold">
+              <div className="bg-dark-panel p-3 sm:p-4 md:p-6 rounded-xl sm:rounded-2xl border border-dark-accent relative">
+                <div className="absolute -top-2 sm:-top-3 left-1/2 transform -translate-x-1/2 bg-dark-accent text-dark-background px-2 sm:px-3 md:px-4 py-1 rounded-full text-xs font-bold">
                   BREAKTHROUGH
                 </div>
-                <h3 className="text-lg md:text-xl font-bold text-green-400 mb-3 mt-2">SupplementScribe</h3>
-                <div className="space-y-2 text-gray-300 text-sm md:text-base">
+                <h3 className="text-base sm:text-lg md:text-xl font-bold text-green-400 mb-2 sm:mb-3 mt-1 sm:mt-2">SupplementScribe</h3>
+                <div className="space-y-1 sm:space-y-2 text-gray-300 text-xs sm:text-sm md:text-base">
                   <p>• Deep Symptom Pattern Analysis: ✓</p>
                   <p>• Nutrient Gap Identification: ✓</p>
                   <p>• Metabolic Pathway Mapping: ✓</p>
@@ -518,15 +539,15 @@ export default function HomePage() {
                   <p>• Personalized Protocol: ✓</p>
                   <p>• Monthly Optimization: ✓</p>
                 </div>
-                <div className="mt-4 pt-4 border-t border-dark-border">
-                  <p className="text-green-400 font-bold text-base md:text-lg">$9.99 first month, then $19.99/month</p>
+                <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-dark-border">
+                  <p className="text-green-400 font-bold text-sm sm:text-base md:text-lg">$9.99 first month, then $19.99/month</p>
                 </div>
               </div>
-              <div className="bg-dark-panel p-4 md:p-6 rounded-2xl border border-dark-border">
-                <h3 className="text-lg md:text-xl font-bold text-blue-400 mb-3">The Difference</h3>
-                <div className="space-y-3 text-gray-300">
-                  <p className="text-xl md:text-2xl font-bold text-white">Significant Savings</p>
-                  <div className="space-y-2 text-sm md:text-base">
+              <div className="bg-dark-panel p-3 sm:p-4 md:p-6 rounded-xl sm:rounded-2xl border border-dark-border">
+                <h3 className="text-base sm:text-lg md:text-xl font-bold text-blue-400 mb-2 sm:mb-3">The Difference</h3>
+                <div className="space-y-2 sm:space-y-3 text-gray-300">
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-white">Significant Savings</p>
+                  <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm md:text-base">
                     <p>• No waiting for lab results</p>
                     <p>• No expensive doctor visits</p>
                     <p>• No guesswork or trial-and-error</p>
@@ -534,13 +555,13 @@ export default function HomePage() {
                     <p>• Continuously adaptive</p>
                   </div>
                 </div>
-                <div className="mt-4 pt-4 border-t border-dark-border">
-                  <p className="text-blue-400 font-bold text-sm md:text-base">Same Results, Fraction of Cost</p>
+                <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-dark-border">
+                  <p className="text-blue-400 font-bold text-xs sm:text-sm md:text-base">Same Results, Fraction of Cost</p>
                 </div>
               </div>
             </div>
-            <div className="text-center mt-8">
-              <p className="text-xs text-gray-500 max-w-4xl mx-auto">
+            <div className="text-center mt-6 sm:mt-8">
+              <p className="text-xs text-gray-500 max-w-4xl mx-auto px-2 leading-relaxed">
                 *Cost estimates based on typical functional medicine practice pricing for comprehensive testing and consultations. Individual costs may vary. SupplementScribe provides health analysis and recommendations but is not a substitute for professional medical advice, diagnosis, or treatment. Always consult with a healthcare provider before making health decisions.
               </p>
             </div>
@@ -580,37 +601,37 @@ export default function HomePage() {
 
       <FloatingPanel>
         {/* "Stop Guessing. Start Knowing." Distilled Section */}
-        <section className="py-16 sm:py-24 bg-dark-background">
-          <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
-            <div className="text-center mb-8 sm:mb-16">
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4">
+        <section className="py-12 sm:py-16 md:py-24 bg-dark-background">
+          <div className="container mx-auto px-3 sm:px-4 md:px-6 max-w-6xl">
+            <div className="text-center mb-6 sm:mb-8 md:mb-16">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-3 sm:mb-4">
                 Stop Guessing. Start Knowing.
               </h2>
-              <p className="text-base sm:text-lg text-gray-400 max-w-3xl mx-auto px-4">
+              <p className="text-sm sm:text-base md:text-lg text-gray-400 max-w-3xl mx-auto px-2 sm:px-4">
                 Generic solutions fail because they ignore your unique biology. It's time to stop wasting money and effort on solutions that weren't designed for you.
               </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 p-4 sm:p-8 bg-dark-panel border border-dark-border rounded-2xl">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 p-3 sm:p-4 md:p-8 bg-dark-panel border border-dark-border rounded-xl sm:rounded-2xl">
               {/* Column 1: The Common (Flawed) Approach */}
-              <div className="md:border-r border-dark-border pb-6 md:pb-0 md:pr-8">
-                <h3 className="text-lg font-bold text-dark-secondary mb-4">THE GUESSWORK</h3>
-                <div className="space-y-4 text-white">
+              <div className="md:border-r border-dark-border pb-4 sm:pb-6 md:pb-0 md:pr-6 lg:pr-8">
+                <h3 className="text-base sm:text-lg font-bold text-dark-secondary mb-3 sm:mb-4">THE GUESSWORK</h3>
+                <div className="space-y-2 sm:space-y-4 text-white text-sm sm:text-base">
                   <p>Generic Multivitamins</p>
                   <p>"Kitchen-Sink" Greens Powders</p>
                   <p>Random, Un-Guided Supplements</p>
                 </div>
               </div>
               {/* Column 2: The Core Problem */}
-              <div className="md:border-r border-dark-border pb-6 md:pb-0 pt-6 md:pt-0 border-t md:border-t-0 md:pr-8">
-                <h3 className="text-lg font-bold text-dark-secondary mb-4">THE FATAL FLAW</h3>
-                <p className="text-white">
+              <div className="md:border-r border-dark-border pb-4 sm:pb-6 md:pb-0 pt-4 sm:pt-6 md:pt-0 border-t md:border-t-0 md:pr-6 lg:pr-8">
+                <h3 className="text-base sm:text-lg font-bold text-dark-secondary mb-3 sm:mb-4">THE FATAL FLAW</h3>
+                <p className="text-white text-sm sm:text-base leading-relaxed">
                   They ignore your unique biology, leading to nutrient competition, improper dosages, and new imbalances.
                 </p>
               </div>
               {/* Column 3: The Unfortunate Result */}
-              <div className="pt-6 md:pt-0 border-t md:border-t-0">
-                <h3 className="text-lg font-bold text-dark-secondary mb-4">THE UNFORTUNATE RESULT</h3>
-                <div className="space-y-4 text-white">
+              <div className="pt-4 sm:pt-6 md:pt-0 border-t md:border-t-0">
+                <h3 className="text-base sm:text-lg font-bold text-dark-secondary mb-3 sm:mb-4">THE UNFORTUNATE RESULT</h3>
+                <div className="space-y-2 sm:space-y-4 text-white text-sm sm:text-base">
                   <p>Expensive Placebos</p>
                   <p>New, Unintended Problems</p>
                   <p>You Still Don't Feel Better</p>
@@ -677,10 +698,10 @@ export default function HomePage() {
 
       <FloatingPanel>
         {/* Precision Panel Section */}
-        <section className="py-16 sm:py-32">
+        <section className="py-16 sm:py-32 bg-dark-background">
           <div className="container mx-auto px-4">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 1, y: 0 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
               viewport={{ once: true }}
@@ -693,7 +714,7 @@ export default function HomePage() {
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              initial={{ opacity: 1, scale: 1, y: 0 }}
               whileInView={{ opacity: 1, scale: 1, y: 0 }}
               transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
               viewport={{ once: true }}
@@ -769,45 +790,45 @@ export default function HomePage() {
 
       <FloatingPanel>
         {/* Pricing Section */}
-        <section id="pricing" className="py-16 sm:py-32">
-          <div className="container mx-auto px-4">
+        <section id="pricing" className="py-12 sm:py-16 md:py-32 bg-dark-background">
+          <div className="container mx-auto px-3 sm:px-4">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 1, y: 0 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
               viewport={{ once: true }}
-              className="text-center mb-8 sm:mb-16"
+              className="text-center mb-6 sm:mb-8 md:mb-16"
             >
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-dark-primary mb-4 px-4">Choose Your Health Journey</h2>
-              <p className="text-base sm:text-lg text-dark-secondary max-w-3xl mx-auto px-4">
+              <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-dark-primary mb-3 sm:mb-4 px-2">Choose Your Health Journey</h2>
+              <p className="text-sm sm:text-base md:text-lg text-dark-secondary max-w-3xl mx-auto px-2 sm:px-4">
                 Select the plan that fits your lifestyle. All plans include our AI-powered health analysis and personalized recommendations.
               </p>
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 1, y: 0 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
               viewport={{ once: true }}
-              className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto"
+              className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 max-w-4xl mx-auto"
             >
               {/* Software-Only Plan */}
-              <div className="bg-dark-panel border border-dark-border rounded-3xl p-6 shadow-xl shadow-black/20 relative">
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+              <div className="bg-dark-panel border border-dark-border rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl shadow-black/20 relative">
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-10">
+                  <span className="bg-green-500 text-white px-2 sm:px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap">
                     50% OFF FIRST MONTH
                   </span>
                 </div>
-                <div className="text-center mb-6 mt-2">
-                  <h3 className="text-xl font-bold text-dark-primary mb-2">Software-Only</h3>
-                  <p className="text-sm text-dark-secondary mb-4">AI analysis & recommendations</p>
-                  <div className="mb-4">
+                <div className="text-center mb-4 sm:mb-6 mt-3 sm:mt-2">
+                  <h3 className="text-lg sm:text-xl font-bold text-dark-primary mb-2">Software-Only</h3>
+                  <p className="text-xs sm:text-sm text-dark-secondary mb-3 sm:mb-4">AI analysis & recommendations</p>
+                  <div className="mb-3 sm:mb-4">
                     <div className="flex items-center justify-center gap-2 mb-2">
-                      <span className="text-lg text-dark-secondary line-through">$19.99</span>
-                      <span className="text-3xl font-bold text-green-400">$9.99</span>
-                      <span className="text-sm text-dark-secondary">first month</span>
+                      <span className="text-sm sm:text-lg text-dark-secondary line-through">$19.99</span>
+                      <span className="text-2xl sm:text-3xl font-bold text-green-400">$9.99</span>
+                      <span className="text-xs sm:text-sm text-dark-secondary">first month</span>
                     </div>
-                    <div className="text-sm text-dark-primary">
+                    <div className="text-xs sm:text-sm text-dark-primary">
                       Then $19.99/month
                     </div>
                     <div className="text-xs text-dark-secondary mt-1">
@@ -815,14 +836,14 @@ export default function HomePage() {
                     </div>
                   </div>
                 </div>
-                <ul className="space-y-3 mb-4 text-dark-primary text-sm">
-                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Deep Health Analysis</li>
-                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Personalized Core 6 Formula Plan</li>
-                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Custom Diet Plan</li>
-                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Progress Tracking</li>
-                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Health Score Monitoring</li>
+                <ul className="space-y-2 sm:space-y-3 mb-4 text-dark-primary text-xs sm:text-sm">
+                  <li className="flex items-start"><CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Deep Health Analysis</li>
+                  <li className="flex items-start"><CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Personalized Core 6 Formula Plan</li>
+                  <li className="flex items-start"><CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Custom Diet Plan</li>
+                  <li className="flex items-start"><CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Progress Tracking</li>
+                  <li className="flex items-start"><CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Health Score Monitoring</li>
                 </ul>
-                <div className="mb-6 p-3 bg-dark-background/50 rounded-lg border border-dark-border">
+                <div className="mb-4 sm:mb-6 p-2 sm:p-3 bg-dark-background/50 rounded-lg border border-dark-border">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs font-medium text-dark-primary">Add Monthly Supplements</p>
@@ -834,59 +855,63 @@ export default function HomePage() {
                     </div>
                   </div>
                 </div>
-                <Link href="/auth/signup">
-                  <button className="w-full px-4 py-2 text-sm font-bold text-dark-primary bg-dark-background border border-dark-border rounded-full hover:bg-dark-border transition-all duration-200">
-                    Get Started
-                  </button>
-                </Link>
+                <div className="flex justify-center">
+                  <Link href="/auth/signup" className="w-full">
+                    <button className="w-full px-4 py-3 text-xs sm:text-sm font-bold text-dark-primary bg-dark-background border border-dark-border rounded-full hover:bg-dark-border transition-all duration-200">
+                      Get Started
+                    </button>
+                  </Link>
+                </div>
               </div>
 
               {/* Complete Package Plan - Recommended */}
-              <div className="bg-dark-panel border-2 border-dark-accent rounded-3xl p-6 shadow-2xl shadow-black/30 relative md:transform md:scale-105">
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-dark-accent text-dark-background px-4 py-1 rounded-full text-xs font-bold">
+              <div className="bg-dark-panel border-2 border-dark-accent rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl shadow-black/30 relative">
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-10">
+                  <span className="bg-dark-accent text-dark-background px-3 sm:px-4 py-1 rounded-full text-xs font-bold whitespace-nowrap">
                     RECOMMENDED
                   </span>
                 </div>
-                <div className="text-center mb-6 mt-2">
-                  <h3 className="text-xl font-bold text-dark-primary mb-2">Complete Package</h3>
-                  <p className="text-sm text-dark-secondary mb-4">Software + physical supplements</p>
-                  <div className="mb-4">
-                    <div className="text-3xl font-bold text-dark-primary">
-                      $75<span className="text-sm text-dark-secondary">/month</span>
+                <div className="text-center mb-4 sm:mb-6 mt-3 sm:mt-2">
+                  <h3 className="text-lg sm:text-xl font-bold text-dark-primary mb-2">Complete Package</h3>
+                  <p className="text-xs sm:text-sm text-dark-secondary mb-3 sm:mb-4">Software + physical supplements</p>
+                  <div className="mb-3 sm:mb-4">
+                    <div className="text-2xl sm:text-3xl font-bold text-dark-primary">
+                      $75<span className="text-xs sm:text-sm text-dark-secondary">/month</span>
                     </div>
-                    <div className="text-sm text-dark-accent mt-1">
+                    <div className="text-xs sm:text-sm text-dark-accent mt-1">
                       $65/month yearly
                     </div>
                   </div>
                 </div>
-                <ul className="space-y-3 mb-6 text-dark-primary text-sm">
-                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Everything in Software-Only</li>
-                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Monthly Core 6 Supplement Pack</li>
-                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Premium Bioavailable Formulas</li>
-                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Delivered to Your Door</li>
-                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> No Sourcing Required</li>
+                <ul className="space-y-2 sm:space-y-3 mb-4 sm:mb-6 text-dark-primary text-xs sm:text-sm">
+                  <li className="flex items-start"><CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Everything in Software-Only</li>
+                  <li className="flex items-start"><CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Monthly Core 6 Supplement Pack</li>
+                  <li className="flex items-start"><CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Premium Bioavailable Formulas</li>
+                  <li className="flex items-start"><CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Delivered to Your Door</li>
+                  <li className="flex items-start"><CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> No Sourcing Required</li>
                 </ul>
-                <Link href="/auth/signup">
-                  <button className="w-full px-4 py-2 text-sm font-bold text-dark-background bg-dark-accent rounded-full hover:bg-dark-accent/90 transition-all duration-200 transform hover:scale-105">
-                    Get Started
-                  </button>
-                </Link>
+                <div className="flex justify-center">
+                  <Link href="/auth/signup" className="w-full">
+                    <button className="w-full px-4 py-3 text-xs sm:text-sm font-bold text-dark-background bg-dark-accent rounded-full hover:bg-dark-accent/90 transition-all duration-200">
+                      Get Started
+                    </button>
+                  </Link>
+                </div>
               </div>
             </motion.div>
 
             {/* Additional Info */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 1, y: 0 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
               viewport={{ once: true }}
-              className="text-center mt-12"
+              className="text-center mt-8 sm:mt-12"
             >
-              <p className="text-sm text-dark-secondary mb-4">
+              <p className="text-xs sm:text-sm text-dark-secondary mb-3 sm:mb-4 px-2">
                 All plans include 30-day money-back guarantee • Cancel anytime • No setup fees
               </p>
-              <div className="flex justify-center items-center space-x-8 text-xs text-dark-secondary">
+              <div className="flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4 md:gap-8 text-xs text-dark-secondary px-2">
                 <span>✓ HIPAA Compliant</span>
                 <span>✓ Bank-Level Security</span>
                 <span>✓ 99.9% Uptime</span>
@@ -898,29 +923,29 @@ export default function HomePage() {
       
       <FloatingPanel>
         {/* FAQ Section */}
-        <section className="py-16 sm:py-24">
-          <div className="container mx-auto px-4 max-w-3xl">
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-center mb-8 sm:mb-12 text-dark-primary">Frequently Asked Questions</h2>
-            <div className="space-y-4">
+        <section className="py-12 sm:py-16 md:py-24 bg-dark-background">
+          <div className="container mx-auto px-3 sm:px-4 max-w-3xl">
+            <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-center mb-6 sm:mb-8 md:mb-12 text-dark-primary px-2">Frequently Asked Questions</h2>
+            <div className="space-y-3 sm:space-y-4">
               {faqItems.map((item, i) => (
                 <Disclosure key={i}>
                   {({ open }) => (
                     <motion.div 
-                      className="bg-dark-panel p-6 rounded-2xl border border-dark-border shadow-sm"
+                      className="bg-dark-panel p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-dark-border shadow-sm"
                       initial={false}
                       animate={{ backgroundColor: open ? "#1c1c1c" : "#131313" }}
                     >
-                      <Disclosure.Button className="w-full flex justify-between items-center text-left text-lg font-medium text-dark-primary">
-                        <span>{item.question}</span>
-                        <ChevronDown className={`transform transition-transform duration-300 ${open ? 'rotate-180 text-dark-accent' : 'text-dark-secondary'}`} />
+                      <Disclosure.Button className="w-full flex justify-between items-center text-left text-base sm:text-lg font-medium text-dark-primary py-2 sm:py-0">
+                        <span className="pr-4">{item.question}</span>
+                        <ChevronDown className={`transform transition-transform duration-300 flex-shrink-0 h-4 w-4 sm:h-5 sm:w-5 ${open ? 'rotate-180 text-dark-accent' : 'text-dark-secondary'}`} />
                       </Disclosure.Button>
                       <motion.div
                         initial={false}
-                        animate={{ height: open ? 'auto' : 0, marginTop: open ? '1.5rem' : 0, opacity: open ? 1 : 0 }}
+                        animate={{ height: open ? 'auto' : 0, marginTop: open ? '1rem' : 0, opacity: open ? 1 : 0 }}
                         transition={{ duration: 0.3, ease: 'easeInOut' }}
                         className="overflow-hidden"
                       >
-                        <div className="text-dark-secondary leading-relaxed pt-2">
+                        <div className="text-dark-secondary leading-relaxed pt-2 text-sm sm:text-base">
                           {item.answer}
                         </div>
                       </motion.div>
@@ -934,19 +959,19 @@ export default function HomePage() {
       </FloatingPanel>
 
       {/* Footer */}
-      <footer className="bg-dark-panel text-dark-primary py-12 sm:py-20 border-t border-dark-border">
-        <div className="container mx-auto px-4 text-center">
-          <h3 className="text-2xl sm:text-3xl font-bold mb-4">Join the Biohacking Class of One</h3>
-          <p className="text-dark-secondary mb-8 max-w-xl mx-auto text-sm sm:text-base">Get access to the latest in precision health and be the first to know about new features.</p>
-          <form className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+      <footer className="bg-dark-panel text-dark-primary py-8 sm:py-12 md:py-20 border-t border-dark-border">
+        <div className="container mx-auto px-3 sm:px-4 text-center">
+          <h3 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 px-2">Join the Biohacking Class of One</h3>
+          <p className="text-dark-secondary mb-6 sm:mb-8 max-w-xl mx-auto text-xs sm:text-sm md:text-base px-2">Get access to the latest in precision health and be the first to know about new features.</p>
+          <form className="flex flex-col sm:flex-row gap-3 sm:gap-4 max-w-md mx-auto px-2">
             <input 
               type="email" 
               placeholder="Enter your email" 
-              className="flex-1 px-5 py-3 rounded-full bg-dark-background border border-dark-border text-dark-primary placeholder-dark-secondary focus:outline-none focus:ring-2 focus:ring-dark-accent text-sm sm:text-base" 
+              className="flex-1 px-4 sm:px-5 py-3 rounded-full bg-dark-background border border-dark-border text-dark-primary placeholder-dark-secondary focus:outline-none focus:ring-2 focus:ring-dark-accent text-sm sm:text-base" 
             />
             <button 
               type="submit" 
-              className="px-8 py-3 font-bold text-dark-background bg-dark-accent rounded-full hover:bg-dark-accent/90 transition-all duration-200 text-sm sm:text-base whitespace-nowrap"
+              className="px-6 sm:px-8 py-3 font-bold text-dark-background bg-dark-accent rounded-full hover:bg-dark-accent/90 transition-all duration-200 text-sm sm:text-base whitespace-nowrap"
             >
               Subscribe
             </button>

@@ -245,50 +245,56 @@ export const StepContainer = ({
   showNextButton?: boolean;
 }) => {
   return (
-    <div className="h-screen flex flex-col">
-      <div className="flex-1 pt-32 pb-4 sm:pb-8 px-4 sm:px-6 max-w-4xl mx-auto w-full">
-        <div className="mb-8 sm:mb-12 text-center">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 sm:mb-4 text-dark-primary">{title}</h1>
+    <div className="min-h-screen flex flex-col relative">
+      <div className="flex-1 pt-32 pb-32 sm:pb-24 px-4 sm:px-6 max-w-4xl mx-auto w-full">
+        <div className="mb-6 sm:mb-8 text-center">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-2 sm:mb-3 text-dark-primary">{title}</h1>
           {subtitle && (
-            <p className="text-sm sm:text-base lg:text-lg text-dark-secondary px-4">{subtitle}</p>
+            <p className="text-sm sm:text-base text-dark-secondary px-4">{subtitle}</p>
           )}
         </div>
         
-        <div className="max-h-[50vh] sm:max-h-[60vh] overflow-y-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-          {children}
+        <div className="w-full">
+          <div className="pb-4">
+            {children}
+          </div>
         </div>
       </div>
       
-      <div className="border-t border-dark-border p-4 sm:p-6">
-        <div className="max-w-2xl mx-auto flex justify-between items-center">
-          {onBack ? (
-            <button
-              type="button"
-              onClick={onBack}
-              className="min-h-[44px] inline-flex items-center gap-2 px-4 sm:px-6 text-sm sm:text-base text-dark-secondary hover:text-dark-primary transition-colors"
-            >
-              <ChevronLeft className="h-4 w-4" />
-              <span className="hidden sm:inline">Back</span>
-            </button>
-          ) : (
-            <div />
-          )}
-          
-          {showNextButton && onNext && (
-            <button
-              type={isLastStep ? "submit" : "button"}
-              onClick={!isLastStep ? onNext : undefined}
-              disabled={nextDisabled}
-              className={`min-h-[44px] inline-flex items-center gap-2 px-6 sm:px-8 py-2 sm:py-3 text-sm sm:text-base rounded-full font-medium transition-all ${
-                nextDisabled 
-                  ? 'bg-dark-border text-dark-secondary cursor-not-allowed' 
-                  : 'bg-dark-accent text-white hover:bg-dark-accent/90'
-              }`}
-            >
-              {nextLabel}
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          )}
+      {/* Fixed bottom navigation on mobile, normal on desktop */}
+      <div className="fixed bottom-0 left-0 right-0 border-t border-dark-border bg-dark-background/95 backdrop-blur-sm shadow-lg z-20" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+        <div className="p-4 sm:p-6">
+          <div className="max-w-2xl mx-auto flex justify-between items-center">
+            {onBack ? (
+              <button
+                type="button"
+                onClick={onBack}
+                className="min-h-[48px] inline-flex items-center gap-2 px-4 sm:px-6 text-sm sm:text-base text-dark-secondary hover:text-dark-primary transition-colors touch-target"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                <span className="hidden sm:inline">Back</span>
+              </button>
+            ) : (
+              <div />
+            )}
+            
+            {showNextButton && onNext && (
+              <button
+                type={isLastStep ? "submit" : "button"}
+                onClick={!isLastStep ? onNext : undefined}
+                disabled={nextDisabled}
+                data-next-step
+                className={`min-h-[48px] inline-flex items-center gap-2 px-8 sm:px-10 py-3 sm:py-3 text-base sm:text-base rounded-full font-medium transition-all transform active:scale-98 shadow-lg ${
+                  nextDisabled 
+                    ? 'bg-dark-border text-dark-secondary cursor-not-allowed' 
+                    : 'bg-dark-accent text-white hover:bg-dark-accent/90 active:bg-dark-accent/80'
+                }`}
+              >
+                {nextLabel}
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

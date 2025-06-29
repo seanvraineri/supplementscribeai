@@ -27,7 +27,7 @@ export const HealthGoalsStep = ({ onNext }: HealthGoalsStepProps) => {
   const form = useFormContext<OnboardingData>();
   const selectedGoals = form.watch('healthGoals') || [];
   const customGoal = form.watch('customHealthGoal');
-
+  
   const toggleGoal = (goalId: string) => {
     const current = selectedGoals || [];
     const updated = current.includes(goalId) 
@@ -38,69 +38,69 @@ export const HealthGoalsStep = ({ onNext }: HealthGoalsStepProps) => {
   };
 
   const canContinue = selectedGoals.length > 0 || customGoal;
-
+  
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         {STANDARD_HEALTH_GOALS.map((goal) => (
-          <motion.button
-            key={goal.id}
-            type="button"
-            onClick={() => toggleGoal(goal.id)}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            <motion.button
+              key={goal.id}
+              type="button"
+              onClick={() => toggleGoal(goal.id)}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.05 * STANDARD_HEALTH_GOALS.indexOf(goal), ease: "easeOut" }}
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.98 }}
-            className={`p-4 rounded-lg border-2 text-left transition-all duration-200
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.98 }}
+              className={`p-4 rounded-lg border-2 text-left transition-all duration-200
               ${selectedGoals.includes(goal.id)
-                ? 'bg-dark-accent/10 border-dark-accent'
-                : 'bg-dark-panel border-dark-border hover:border-dark-border/70'
-              }`
-            }
-          >
-            <div className="flex items-center gap-3">
+                  ? 'bg-dark-accent/10 border-dark-accent'
+                  : 'bg-dark-panel border-dark-border hover:border-dark-border/70'
+                }`
+              }
+            >
+              <div className="flex items-center gap-3">
               <div className={`p-2 rounded-md ${selectedGoals.includes(goal.id) ? 'bg-dark-accent/20' : 'bg-dark-background'}`}>
                 <goal.icon className={`w-5 h-5 ${selectedGoals.includes(goal.id) ? 'text-dark-accent' : 'text-dark-secondary'}`} />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-dark-primary text-sm leading-tight">
+                    {goal.label}
+                  </h3>
+                </div>
               </div>
-              <div>
-                <h3 className="font-semibold text-dark-primary text-sm leading-tight">
-                  {goal.label}
-                </h3>
-              </div>
-            </div>
-          </motion.button>
+            </motion.button>
         ))}
       </div>
 
       <motion.button
-        key={CUSTOM_GOAL.id}
-        type="button"
-        onClick={() => toggleGoal(CUSTOM_GOAL.id)}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.2, ease: "easeOut" }}
-        whileHover={{ scale: 1.01 }}
-        whileTap={{ scale: 0.99 }}
-        className={`w-full p-4 rounded-lg border-2 text-left transition-all duration-200
+          key={CUSTOM_GOAL.id}
+          type="button"
+          onClick={() => toggleGoal(CUSTOM_GOAL.id)}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.2, ease: "easeOut" }}
+          whileHover={{ scale: 1.01 }}
+          whileTap={{ scale: 0.99 }}
+          className={`w-full p-4 rounded-lg border-2 text-left transition-all duration-200
           ${selectedGoals.includes('custom')
-            ? 'bg-dark-accent/10 border-dark-accent'
-            : 'bg-dark-panel border-dark-border hover:border-dark-border/70'
-          }`
-        }
-      >
-        <div className="flex items-center gap-3">
+              ? 'bg-dark-accent/10 border-dark-accent'
+              : 'bg-dark-panel border-dark-border hover:border-dark-border/70'
+            }`
+          }
+        >
+          <div className="flex items-center gap-3">
           <div className={`p-2 rounded-md ${selectedGoals.includes('custom') ? 'bg-dark-accent/20' : 'bg-dark-background'}`}>
             <CUSTOM_GOAL.icon className={`w-5 h-5 ${selectedGoals.includes('custom') ? 'text-dark-accent' : 'text-dark-secondary'}`} />
+            </div>
+            <div>
+              <h3 className="font-semibold text-dark-primary text-sm leading-tight">
+                {CUSTOM_GOAL.label}
+              </h3>
+            </div>
           </div>
-          <div>
-            <h3 className="font-semibold text-dark-primary text-sm leading-tight">
-              {CUSTOM_GOAL.label}
-            </h3>
-          </div>
-        </div>
       </motion.button>
-
+      
       <AnimatePresence>
         {selectedGoals.includes('custom') && (
           <motion.div
@@ -134,7 +134,7 @@ export const HealthGoalsStep = ({ onNext }: HealthGoalsStepProps) => {
           Continue
           <ChevronRight className="h-5 w-5" />
         </button>
-      </div>
+        </div>
     </div>
   );
 }; 

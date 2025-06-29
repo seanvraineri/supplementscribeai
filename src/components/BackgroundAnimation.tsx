@@ -88,9 +88,9 @@ const BackgroundAnimation: React.FC = () => {
         </div>
       ))}
       
-      {/* Bloomberg-style fade edges */}
-      <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-black via-black/80 to-transparent z-10" />
-      <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-black via-black/80 to-transparent z-10" />
+      {/* Bloomberg-style fade edges - reduced opacity to prevent black screen issues */}
+      <div className="absolute inset-y-0 left-0 w-16 sm:w-32 bg-gradient-to-r from-dark-background/80 via-dark-background/40 to-transparent z-10" />
+      <div className="absolute inset-y-0 right-0 w-16 sm:w-32 bg-gradient-to-l from-dark-background/80 via-dark-background/40 to-transparent z-10" />
     </div>
   )
 }
