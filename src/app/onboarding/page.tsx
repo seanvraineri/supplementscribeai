@@ -175,9 +175,6 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(1);
   const [currentSubStep, setCurrentSubStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [familySetup, setFamilySetup] = useState<any>(null);
-  const [familySetupLoaded, setFamilySetupLoaded] = useState(false);
-  const familySetupProcessedRef = useRef(false);
   const router = useRouter();
 
   // Payment modal state
@@ -247,91 +244,6 @@ export default function OnboardingPage() {
       active: false
     }
   ]);
-
-  // Detect family setup from localStorage (only run once)
-  useEffect(() => {
-    if (familySetupLoaded || familySetupProcessedRef.current) return; // Prevent multiple runs
-    
-    familySetupProcessedRef.current = true; // Mark as being processed
-    
-    try {
-      // Check for family admin setup
-      const familyData = localStorage.getItem('familySetup');
-      if (familyData) {
-        const parsed = JSON.parse(familyData);
-        setFamilySetup(parsed);
-        logger.info('Family setup detected', { isAdmin: parsed.isAdmin, memberCount: parsed.familyMembers?.length });
-        
-        // Update processing steps to include family setup if applicable
-        if (parsed.isAdmin) {
-          setProcessingSteps(prev => {
-            // Check if family-setup step already exists to prevent duplicates
-            const hasFamilySetup = prev.some(step => step.id === 'family-setup');
-            if (hasFamilySetup) {
-              logger.debug('Family setup step already exists, skipping duplicate');
-              return prev; // Don't add duplicate
-            }
-            
-            logger.debug('Adding family setup step to processing steps');
-            return [
-              ...prev.slice(0, -1), // Remove the last 'complete' step
-              {
-                id: 'family-setup',
-                title: 'Family Setup',
-                description: 'Creating invite links for your family members',
-                icon: <Users className="h-5 w-5" />,
-                completed: false,
-                active: false
-              },
-              {
-                id: 'complete',
-                title: 'Complete',
-                description: 'Your family supplement protocol is ready!',
-                icon: <CheckCircle className="h-5 w-5" />,
-                completed: false,
-                active: false
-              }
-            ];
-          });
-        }
-      }
-      
-      // Check for family join
-      const familyJoinData = localStorage.getItem('familyJoin');
-      if (familyJoinData) {
-        const parsed = JSON.parse(familyJoinData);
-        setFamilySetup(parsed);
-        logger.info('Family join detected', { familyAdminId: parsed.familyAdminId });
-      }
-      
-      setFamilySetupLoaded(true); // Mark as loaded to prevent re-runs
-    } catch (error) {
-      logger.debug('No family setup data found');
-      setFamilySetupLoaded(true); // Mark as loaded even on error
-    }
-  }, [familySetupLoaded]);
-
-  // Cleanup effect to prevent stale data issues
-  useEffect(() => {
-    return () => {
-      // Clean up on component unmount if there was an error or interruption
-      if (familySetup && !isSubmitting) {
-        logger.debug('Cleaning up family setup data on component unmount');
-      }
-    };
-  }, [familySetup, isSubmitting]);
-
-  // Debug effect to log processing steps changes
-  useEffect(() => {
-    const stepIds = processingSteps.map(step => step.id);
-    const duplicateIds = stepIds.filter((id, index) => stepIds.indexOf(id) !== index);
-    
-    if (duplicateIds.length > 0) {
-      logger.error('Duplicate processing step IDs detected', { duplicateIds, allIds: stepIds });
-    } else {
-      logger.debug('Processing steps updated', { stepIds });
-    }
-  }, [processingSteps]);
 
   const updateProcessingStep = (stepId: string, completed: boolean = false, active: boolean = true) => {
     setProcessingSteps(prev => prev.map(step => ({
@@ -479,7 +391,7 @@ export default function OnboardingPage() {
       });
       
       // Save onboarding data to Supabase first
-      const result = await saveOnboardingData(data, familySetup);
+      const result = await saveOnboardingData(data);
       
       if (!result.success) {
         throw new Error(result.error || 'Failed to save onboarding data');
@@ -736,11 +648,11 @@ export default function OnboardingPage() {
   return (
     <div className="min-h-screen bg-dark-background">
       <div className="font-sans antialiased bg-dark-background text-dark-primary">
-        <div className="fixed top-0 left-0 right-0 p-6 z-10">
+        <div className="fixed top-0 left-0 right-0 p-4 sm:p-6 z-10 bg-dark-background/80 backdrop-blur-sm">
           <div className="max-w-4xl mx-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h1 className="text-xl font-bold">Health Assessment</h1>
-              <span className="text-sm font-mono text-dark-secondary">
+            <div className="flex justify-between items-center mb-3 sm:mb-4">
+              <h1 className="text-lg sm:text-xl font-bold">Health Assessment</h1>
+              <span className="text-xs sm:text-sm font-mono text-dark-secondary">
                 {!isSubmitting ? `STEP ${step.toString().padStart(2, '0')}/${totalSteps.toString().padStart(2, '0')}` : 'GENERATING PLAN'}
               </span>
             </div>

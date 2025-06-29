@@ -10,56 +10,7 @@ import {
   TrendingDown,
 } from 'lucide-react';
 import Link from 'next/link';
-
-// Simplified Navigation for this page
-const Navigation = () => (
-  <nav className="fixed top-0 left-0 right-0 z-50 bg-dark-background/80 backdrop-blur-md border-b border-dark-border">
-    <div className="container mx-auto px-6 max-w-6xl">
-      <div className="flex items-center justify-between h-16">
-        <Link
-          href="/"
-          className="text-xl font-bold text-dark-primary tracking-tight"
-        >
-          SupplementScribe
-        </Link>
-        <div className="flex items-center gap-6">
-          <Link href="/how-it-works" className="text-dark-accent font-medium">
-            How It Works
-          </Link>
-          <Link
-            href="/for-everyone"
-            className="text-dark-secondary hover:text-dark-primary transition-colors"
-          >
-            For Everyone
-          </Link>
-          <Link
-            href="/science"
-            className="text-dark-secondary hover:text-dark-primary transition-colors"
-          >
-            Science
-          </Link>
-          <Link
-            href="/content"
-            className="text-dark-secondary hover:text-dark-primary transition-colors"
-          >
-            Content
-          </Link>
-          <Link href="/login">
-            <button className="inline-flex items-center px-4 py-2 text-sm font-medium text-dark-secondary hover:text-dark-primary border border-dark-border rounded-lg hover:border-dark-accent transition-all duration-200">
-              <LogIn className="w-4 h-4 mr-2" />
-              Log In
-            </button>
-          </Link>
-          <Link href="/auth/signup">
-            <button className="inline-flex items-center px-4 py-2 text-sm font-bold text-dark-background bg-dark-accent rounded-lg hover:bg-dark-accent/90 transition-all duration-200">
-              Get Started
-            </button>
-          </Link>
-        </div>
-      </div>
-    </div>
-  </nav>
-);
+import Navigation from '@/components/Navigation';
 
 const StepCard = ({
   icon,
@@ -73,17 +24,17 @@ const StepCard = ({
   delay: number;
 }) => (
   <motion.div
-    className="bg-dark-panel p-8 rounded-2xl border border-dark-border"
+    className="bg-dark-panel p-6 sm:p-8 rounded-2xl border border-dark-border"
     initial={{ opacity: 0, y: 20 }}
     whileInView={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.6, delay }}
     viewport={{ once: true }}
   >
-    <div className="p-4 bg-dark-accent/10 rounded-xl mb-6 inline-block">
+    <div className="p-3 sm:p-4 bg-dark-accent/10 rounded-xl mb-4 sm:mb-6 inline-block">
       {icon}
     </div>
-    <h3 className="text-2xl font-bold text-white mb-4">{title}</h3>
-    <p className="text-dark-secondary leading-relaxed">{description}</p>
+    <h3 className="text-xl sm:text-2xl font-bold text-white mb-3 sm:mb-4">{title}</h3>
+    <p className="text-dark-secondary leading-relaxed text-sm sm:text-base">{description}</p>
   </motion.div>
 );
 
@@ -92,10 +43,10 @@ export default function HowItWorksPage() {
     <main className="bg-dark-background text-dark-primary font-sans">
       <Navigation />
       {/* Hero Section */}
-      <section className="pt-40 pb-24 text-center">
-        <div className="container mx-auto px-6 max-w-4xl">
+      <section className="pt-32 pb-16 sm:pt-40 sm:pb-24 text-center">
+        <div className="container mx-auto px-4 sm:px-6 max-w-4xl">
           <motion.h1
-            className="text-5xl md:text-7xl font-bold tracking-tight mb-6 text-dark-primary"
+            className="text-3xl sm:text-5xl md:text-7xl font-bold tracking-tight mb-6 text-dark-primary"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
@@ -103,7 +54,7 @@ export default function HowItWorksPage() {
             The End of Guesswork.
           </motion.h1>
           <motion.p
-            className="text-xl text-dark-secondary max-w-3xl mx-auto leading-relaxed"
+            className="text-base sm:text-xl text-dark-secondary max-w-3xl mx-auto leading-relaxed px-4"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
@@ -114,22 +65,22 @@ export default function HowItWorksPage() {
       </section>
 
       {/* The Problem Section - Expanded */}
-      <section className="py-24 bg-dark-panel/30">
-        <div className="container mx-auto px-6 max-w-5xl">
+      <section className="py-16 sm:py-24 bg-dark-panel/30">
+        <div className="container mx-auto px-4 sm:px-6 max-w-5xl">
           <motion.div
-            className="text-center mb-16"
+            className="text-center mb-12 sm:mb-16"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl font-bold mb-6">First, Understand the Battlefield</h2>
-            <p className="text-xl text-dark-secondary max-w-4xl mx-auto leading-relaxed">
+            <h2 className="text-2xl sm:text-4xl font-bold mb-4 sm:mb-6">First, Understand the Battlefield</h2>
+            <p className="text-base sm:text-xl text-dark-secondary max-w-4xl mx-auto leading-relaxed px-4">
               Your body is fighting a daily battle against an environment that depletes its resources. Generic solutions fail because they don't understand the complexity of this fight.
             </p>
           </motion.div>
           
-          <div className="grid md:grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 mb-12 sm:mb-16">
             <StepCard 
               icon={<TrendingDown className="w-10 h-10 text-red-400" />}
               title="The Food Fallacy"
@@ -157,15 +108,15 @@ export default function HowItWorksPage() {
             transition={{ duration: 0.6, delay: 0.3 }}
             viewport={{ once: true }}
           >
-            <h3 className="text-3xl font-bold mb-6">This leads to the common traps...</h3>
-            <div className="flex justify-center gap-8">
-              <div className="bg-dark-panel p-6 rounded-lg border border-dark-border max-w-md text-left">
+            <h3 className="text-xl sm:text-3xl font-bold mb-6">This leads to the common traps...</h3>
+            <div className="flex flex-col lg:flex-row justify-center gap-6 sm:gap-8">
+              <div className="bg-dark-panel p-6 rounded-lg border border-dark-border lg:max-w-md text-left">
                 <h4 className="font-bold text-white mb-2">The Greens Powder Fallacy</h4>
-                <p className="text-dark-secondary">They provide a "pixie dust" of 70+ ingredients at ineffective doses, where they compete for absorption, rendering them useless.</p>
+                <p className="text-dark-secondary text-sm sm:text-base">They provide a "pixie dust" of 70+ ingredients at ineffective doses, where they compete for absorption, rendering them useless.</p>
               </div>
-              <div className="bg-dark-panel p-6 rounded-lg border border-dark-border max-w-md text-left">
+              <div className="bg-dark-panel p-6 rounded-lg border border-dark-border lg:max-w-md text-left">
                 <h4 className="font-bold text-white mb-2">The Random Supplement Trap</h4>
-                <p className="text-dark-secondary">Taking single ingredients without a holistic plan can create new nutrient imbalances, making you feel even worse.</p>
+                <p className="text-dark-secondary text-sm sm:text-base">Taking single ingredients without a holistic plan can create new nutrient imbalances, making you feel even worse.</p>
               </div>
             </div>
           </motion.div>
@@ -174,21 +125,21 @@ export default function HowItWorksPage() {
       </section>
 
       {/* The Solution Section */}
-      <section className="py-24">
-        <div className="container mx-auto px-6 max-w-6xl">
+      <section className="py-16 sm:py-24">
+        <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
           <motion.div
-            className="text-center mb-16"
+            className="text-center mb-12 sm:mb-16"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl font-bold mb-6">
+            <h2 className="text-2xl sm:text-4xl font-bold mb-6">
               Your Blueprint to Biological Resilience
             </h2>
           </motion.div>
 
-          <div className="grid md:grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
             <StepCard
               icon={<BarChart3 className="w-10 h-10 text-dark-accent" />}
               title="1. The Deep Health Analysis"
@@ -210,16 +161,16 @@ export default function HowItWorksPage() {
           </div>
 
           <motion.div
-            className="mt-24 bg-dark-panel border border-dark-accent/30 rounded-2xl p-12 text-center"
+            className="mt-16 sm:mt-24 bg-dark-panel border border-dark-accent/30 rounded-2xl p-8 sm:p-12 text-center"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
             viewport={{ once: true }}
           >
-            <h3 className="text-2xl font-bold mb-4 text-dark-accent">
+            <h3 className="text-xl sm:text-2xl font-bold mb-4 text-dark-accent">
               How does our system know what you need?
             </h3>
-            <p className="text-dark-secondary max-w-3xl mx-auto leading-relaxed">
+            <p className="text-dark-secondary max-w-3xl mx-auto leading-relaxed text-sm sm:text-base">
               Our system uses a sophisticated AI logic engine, not a simple quiz. This engine is built upon a vast knowledge base of scientific literature and clinical data, curated by health experts. It analyzes the unique patterns across your symptoms and lifestyle to identify likely root causes and nutritional needs, much like an experienced doctor would—but with the power to cross-reference thousands of data points instantly.
             </p>
           </motion.div>
@@ -227,20 +178,20 @@ export default function HowItWorksPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-32">
-        <div className="container mx-auto px-6 max-w-4xl">
+      <section className="py-16 sm:py-32">
+        <div className="container mx-auto px-4 sm:px-6 max-w-4xl">
           <motion.div
-            className="text-center bg-gradient-to-r from-dark-panel/50 to-dark-panel/30 border border-dark-border rounded-2xl p-12"
+            className="text-center bg-gradient-to-r from-dark-panel/50 to-dark-panel/30 border border-dark-border rounded-2xl p-8 sm:p-12"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <h3 className="text-4xl font-bold mb-6 text-dark-primary">
+            <h3 className="text-2xl sm:text-4xl font-bold mb-6 text-dark-primary">
               Stop Guessing. Start Knowing.
             </h3>
             <Link href="/auth/signup">
-              <button className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-dark-background bg-dark-accent rounded-full overflow-hidden transition-all duration-300 transform hover:scale-105 shadow-lg shadow-dark-accent/20">
+              <button className="group relative inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-bold text-dark-background bg-dark-accent rounded-full overflow-hidden transition-all duration-300 transform hover:scale-105 shadow-lg shadow-dark-accent/20">
                 <span className="relative flex items-center">
                   Start Your AI Health Assessment{' '}
                   <ArrowRight className="ml-2 h-5 w-5" />

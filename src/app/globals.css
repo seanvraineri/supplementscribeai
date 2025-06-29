@@ -5,7 +5,37 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Mobile-First Global Fixes */
 @layer base {
+  /* Prevent horizontal scroll */
+  html,
+  body {
+    overflow-x: hidden;
+    max-width: 100vw;
+    scroll-behavior: smooth;
+  }
+
+  /* Better touch targets for mobile */
+  button,
+  a {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Fix mobile viewport issues */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Ensure proper box-sizing */
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
@@ -39,6 +69,13 @@
 
     --font-satoshi: 'Satoshi', sans-serif;
     --font-mono: 'Roboto Mono', monospace;
+
+    --dark-background: #0d0d0d;
+    --dark-panel: #1a1a1a;
+    --dark-border: #2d2d2d;
+    --dark-primary: #ffffff;
+    --dark-secondary: #a3a3a3;
+    --dark-accent: #00bfff;
   }
  
   .dark {
@@ -74,7 +111,6 @@
   html {
     font-family: 'Inter', system-ui, sans-serif;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
-    scroll-behavior: smooth;
   }
   
   body {
@@ -199,6 +235,19 @@
     @apply text-base sm:text-lg lg:text-xl;
   }
   
+  .text-responsive-xs {
+    @apply text-xs sm:text-sm;
+  }
+  .text-responsive-sm {
+    @apply text-sm sm:text-base;
+  }
+  .text-responsive-base {
+    @apply text-base sm:text-lg;
+  }
+  .text-responsive-lg {
+    @apply text-lg sm:text-xl lg:text-2xl;
+  }
+  
   /* Responsive spacing utilities */
   .space-responsive-y-6 {
     @apply space-y-4 sm:space-y-6;
@@ -224,6 +273,33 @@
   
   .py-responsive-6 {
     @apply py-4 sm:py-6;
+  }
+  
+  .p-responsive-sm {
+    @apply p-3 sm:p-4;
+  }
+  .p-responsive {
+    @apply p-4 sm:p-6;
+  }
+  .p-responsive-lg {
+    @apply p-4 sm:p-6 lg:p-8;
+  }
+  .px-responsive {
+    @apply px-4 sm:px-6;
+  }
+  .py-responsive {
+    @apply py-4 sm:py-6;
+  }
+
+  /* Responsive gaps */
+  .gap-responsive-sm {
+    @apply gap-2 sm:gap-3;
+  }
+  .gap-responsive {
+    @apply gap-4 sm:gap-6;
+  }
+  .gap-responsive-lg {
+    @apply gap-4 sm:gap-6 lg:gap-8;
   }
   
   /* Mobile sidebar styles */
@@ -284,6 +360,21 @@
   /* Responsive modal styles */
   .modal-mobile-full {
     @apply fixed inset-0 sm:inset-auto sm:max-w-lg sm:mx-auto sm:my-8;
+  }
+
+  /* Mobile text truncation */
+  .truncate-mobile {
+    @apply truncate sm:text-clip;
+  }
+
+  /* Hide scrollbars on mobile */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+>>>>>>> Stashed changes
   }
 }
 
@@ -348,6 +439,36 @@ html {
 @layer base {
   * {
     @apply border-border;
+  }
+}
+
+/* Mobile text scaling fixes */
+@media (max-width: 640px) {
+  /* Prevent text from being too large */
+  .text-8xl {
+    font-size: 3rem !important;
+    line-height: 1.1 !important;
+  }
+  
+  .text-7xl {
+    font-size: 2.5rem !important;
+    line-height: 1.1 !important;
+  }
+  
+  .text-6xl {
+    font-size: 2rem !important;
+    line-height: 1.2 !important;
+  }
+  
+  .text-5xl {
+    font-size: 1.75rem !important;
+    line-height: 1.2 !important;
+  }
+
+  /* Ensure containers have proper padding */
+  .container {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
   }
 }
 

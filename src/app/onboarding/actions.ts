@@ -7,111 +7,7 @@ import { redirect } from 'next/navigation';
 import { generateReferralCode } from '@/lib/referral-utils';
 import { logger } from '@/lib/logger';
 
-// Function to send family invitation emails
-async function sendFamilyInviteEmails(familyMembers: any[], adminName: string, adminId: string) {
-  try {
-    logger.step('Sending family invitation emails', { memberCount: familyMembers.length });
-    
-    const invitePromises = familyMembers.map(async (member) => {
-      const inviteUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/auth/signup?family_admin_id=${adminId}`;
-      
-      // Create the email content
-      const emailSubject = `${adminName} invited you to join SupplementScribe AI`;
-      const emailHtml = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="utf-8">
-          <title>You're Invited to SupplementScribe AI</title>
-          <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
-            .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 8px 8px; }
-            .button { display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; margin: 20px 0; font-weight: 600; }
-            .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>🌟 You're Invited!</h1>
-              <p>Join ${adminName}'s family health plan</p>
-            </div>
-            <div class="content">
-              <h2>Hi ${member.name}!</h2>
-              <p>${adminName} has invited you to join their family plan on <strong>SupplementScribe AI</strong> - the personalized supplement recommendation platform.</p>
-              
-              <p><strong>What this means for you:</strong></p>
-              <ul>
-                <li>🎯 Get your own personalized supplement recommendations</li>
-                <li>🧬 AI-powered health analysis based on your unique profile</li>
-                <li>💊 Custom 6-supplement protocol tailored to your needs</li>
-                <li>👨‍👩‍👧‍👦 Be part of ${adminName}'s family health journey</li>
-              </ul>
-              
-              <p>Click the button below to create your account and start your personalized health assessment:</p>
-              
-              <a href="${inviteUrl}" class="button">Join Family Plan & Get Started</a>
-              
-              <p><small>Or copy and paste this link: ${inviteUrl}</small></p>
-              
-              <div class="footer">
-                <p>This invitation was sent by ${adminName} through SupplementScribe AI</p>
-                <p>If you don't want to receive these emails, you can ignore this message.</p>
-              </div>
-            </div>
-          </div>
-        </body>
-        </html>
-      `;
-
-      // Send email using Supabase Edge Function
-      const supabase = await createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.access_token) {
-        const emailResponse = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/send-email`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            to: member.email,
-            subject: emailSubject,
-            html: emailHtml,
-            from: 'SupplementScribe AI <noreply@supplementscribe.ai>'
-          }),
-        });
-
-        if (!emailResponse.ok) {
-          logger.error(`Failed to send invite to ${member.email}`, { error: await emailResponse.text() });
-          return { success: false, email: member.email, error: 'Failed to send' };
-        } else {
-          logger.success(`Invite sent successfully to ${member.email}`);
-          return { success: true, email: member.email };
-        }
-      } else {
-        logger.error('No session token for sending emails');
-        return { success: false, email: member.email, error: 'No auth token' };
-      }
-    });
-
-    const results = await Promise.all(invitePromises);
-    const successful = results.filter(r => r.success).length;
-    const failed = results.filter(r => !r.success).length;
-    
-    logger.info(`Family invites sent: ${successful} successful, ${failed} failed`);
-    return { successful, failed, results };
-    
-  } catch (error) {
-    logger.error('Error sending family invitation emails', error instanceof Error ? error : { message: String(error) });
-    return { successful: 0, failed: familyMembers.length, error };
-  }
-}
-
-export async function saveOnboardingData(formData: unknown, familySetupData?: any) {
+export async function saveOnboardingData(formData: unknown) {
   try {
     logger.step('Saving onboarding data');
     const supabase = await createClient();
@@ -220,21 +116,6 @@ export async function saveOnboardingData(formData: unknown, familySetupData?: an
     } catch (error) {
       logger.debug('No referral code found');
     }
-
-    // Handle family setup data
-    let familyAdminId = null;
-    let familySize = null;
-    
-    if (familySetupData?.isAdmin) {
-      // This user is the family admin
-      familyAdminId = user.id;
-      familySize = familySetupData.familySize;
-      logger.info(`Setting up family admin with ${familySize} total members`);
-    } else if (familySetupData?.familyAdminId) {
-      // This user is joining an existing family
-      familyAdminId = familySetupData.familyAdminId;
-      logger.info(`Joining family with admin ID: ${familyAdminId}`);
-    }
     
     // Upsert Profile Data with new fields
     const profileData: any = {
@@ -288,12 +169,6 @@ export async function saveOnboardingData(formData: unknown, familySetupData?: an
       
       updated_at: new Date().toISOString(),
     };
-
-    // Add family fields if this is a family setup
-    if (familyAdminId && familySize) {
-      profileData.family_admin_id = familyAdminId;
-      profileData.family_size = familySize;
-    }
 
     const { error: profileError } = await supabase
       .from('user_profiles')
@@ -356,84 +231,6 @@ export async function saveOnboardingData(formData: unknown, familySetupData?: an
     // 🚧 PAYMENT GATE: AI functions moved to payment success handler
     // The generate-plan and health-domains-analysis functions are now called
     // in the payment success page AFTER payment is confirmed
-    
-    // COMMENTED OUT: AI generation now happens after payment
-    /*
-    try {
-      // Get user session token for authenticated edge function call
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.access_token) {
-        // Call generate-plan function with user's access token
-        const planResponse = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/generate-plan`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({}),
-        });
-
-        if (!planResponse.ok) {
-          logger.error('Failed to generate plan', { error: await planResponse.text() });
-          // Don't fail the onboarding if plan generation fails
-        } else {
-          logger.success('Supplement plan generated successfully');
-          
-          // 🔬 GENERATE AI-POWERED HEALTH DOMAINS ANALYSIS
-          logger.step('Generating AI-powered health domains analysis');
-          try {
-            const domainsResponse = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/health-domains-analysis`, {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${session.access_token}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({}),
-            });
-
-            if (!domainsResponse.ok) {
-              logger.error('Failed to generate health domains analysis', { error: await domainsResponse.text() });
-              // Don't fail the onboarding if domains analysis fails
-            } else {
-              logger.success('Health domains analysis generated successfully');
-            }
-          } catch (domainsError) {
-            logger.error('Error generating health domains analysis', domainsError instanceof Error ? domainsError : { message: String(domainsError) });
-            // Don't fail the onboarding if domains analysis fails
-          }
-        }
-      } else {
-        logger.error('No session token available for plan generation');
-      }
-    } catch (planError) {
-      logger.error('Error generating plan', planError instanceof Error ? planError : { message: String(planError) });
-      // Don't fail the onboarding if plan generation fails
-    }
-    */
-
-    // 🎯 SEND FAMILY INVITES if this is a family admin
-    if (familySetupData?.isAdmin && familySetupData?.familyMembers?.length > 0) {
-      logger.step('Sending family invitation emails');
-      try {
-        const inviteResults = await sendFamilyInviteEmails(
-          familySetupData.familyMembers,
-          fullName,
-          user.id
-        );
-        
-        if (inviteResults.successful > 0) {
-          logger.success(`Successfully sent ${inviteResults.successful} family invitations`);
-        }
-        
-        if (inviteResults.failed > 0) {
-          logger.warn(`Failed to send ${inviteResults.failed} family invitations`);
-        }
-      } catch (inviteError) {
-        logger.error('Error sending family invitations', inviteError instanceof Error ? inviteError : { message: String(inviteError) });
-        // Don't fail the onboarding if invite sending fails
-      }
-    }
 
     // Revalidate and redirect to dashboard
     revalidatePath('/dashboard');

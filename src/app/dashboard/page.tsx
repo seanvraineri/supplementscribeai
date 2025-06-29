@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
 import ReactMarkdown from 'react-markdown';
 import { cancelSubscription } from './actions';
+import Navigation from '@/components/Navigation';
 import { 
   Dna, 
   FileText, 
@@ -2755,84 +2756,79 @@ export default function DashboardPage() {
         <div className="bg-dark-background border border-dark-border rounded-lg p-6">
           <h4 className="text-lg font-semibold text-dark-primary mb-4">Plan Management</h4>
           
-          {profile?.subscription_tier === 'software_only' ? (
-            <div className="text-center py-6">
-              <Package className="h-12 w-12 text-dark-accent mx-auto mb-4" />
-              <h5 className="text-lg font-semibold text-dark-primary mb-2">Upgrade to Complete Package</h5>
-              <p className="text-dark-secondary mb-4">
-                Get monthly supplement delivery with your personalized recommendations
-              </p>
-              <div className="bg-dark-panel border border-dark-border rounded-lg p-4 mb-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-dark-primary">Complete Package</span>
-                  <span className="text-dark-accent font-bold">$75.00/month</span>
+          <div className="space-y-4">
+            {profile?.subscription_tier === 'full' && (
+              <>
+                <div className="flex items-center justify-between p-4 bg-dark-panel border border-dark-border rounded-lg">
+                  <div>
+                    <p className="font-medium text-dark-primary">Pause Deliveries</p>
+                    <p className="text-sm text-dark-secondary">Temporarily pause your monthly supplement deliveries</p>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    className="border-dark-border hover:bg-dark-border text-dark-primary hover:text-dark-primary bg-dark-panel"
+                    onClick={() => {
+                      // TODO: Implement delivery pause
+                      alert('Delivery pause feature coming soon!');
+                    }}
+                  >
+                    Pause
+                  </Button>
                 </div>
-                <p className="text-xs text-dark-secondary mt-1">
-                  Includes everything in Software Only + monthly supplement delivery
-                </p>
+                
+                <div className="flex items-center justify-between p-4 bg-dark-panel border border-dark-border rounded-lg">
+                  <div>
+                    <p className="font-medium text-dark-primary">Downgrade to Software Only</p>
+                    <p className="text-sm text-dark-secondary">Keep AI features, cancel supplement deliveries</p>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    className="border-dark-border hover:bg-dark-border text-orange-400 hover:text-orange-300 bg-dark-panel"
+                    onClick={() => {
+                      // TODO: Implement plan downgrade
+                      alert('Plan downgrade feature coming soon!');
+                    }}
+                  >
+                    Downgrade
+                  </Button>
+                </div>
+              </>
+            )}
+            
+            {profile?.subscription_tier === 'software_only' && (
+              <div className="flex items-center justify-between p-4 bg-dark-panel border border-dark-border rounded-lg">
+                <div>
+                  <p className="font-medium text-dark-primary">Upgrade to Complete Package</p>
+                  <p className="text-sm text-dark-secondary">Get monthly supplement delivery - $75.00/month</p>
+                </div>
+                <Button 
+                  variant="outline" 
+                  className="border-dark-border hover:bg-dark-border text-green-400 hover:text-green-300 bg-dark-panel"
+                  onClick={() => {
+                    // TODO: Implement plan upgrade
+                    alert('Plan upgrade feature coming soon!');
+                  }}
+                >
+                  Upgrade
+                </Button>
+              </div>
+            )}
+            
+            <div className="flex items-center justify-between p-4 bg-dark-panel border border-red-500/20 rounded-lg">
+              <div>
+                <p className="font-medium text-red-400">Cancel Subscription</p>
+                <p className="text-sm text-dark-secondary">Cancel your subscription and end all services</p>
               </div>
               <Button 
-                className="bg-dark-accent text-white hover:bg-dark-accent/80"
-                onClick={() => {
-                  // TODO: Implement plan upgrade
-                  alert('Plan upgrade feature coming soon!');
-                }}
+                variant="outline" 
+                className="border-red-500/20 hover:bg-red-500/10 text-red-400 hover:text-red-300 bg-dark-panel"
+                onClick={() => setShowCancelConfirm(true)}
+                disabled={isCancelling}
               >
-                Upgrade Plan
+                {isCancelling ? 'Cancelling...' : 'Cancel'}
               </Button>
             </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-dark-panel border border-dark-border rounded-lg">
-                <div>
-                  <p className="font-medium text-dark-primary">Pause Deliveries</p>
-                  <p className="text-sm text-dark-secondary">Temporarily pause your monthly supplement deliveries</p>
-                </div>
-                <Button 
-                  variant="outline" 
-                  className="border-dark-border hover:bg-dark-border text-dark-primary hover:text-dark-primary bg-dark-panel"
-                  onClick={() => {
-                    // TODO: Implement delivery pause
-                    alert('Delivery pause feature coming soon!');
-                  }}
-                >
-                  Pause
-                </Button>
-              </div>
-              
-              <div className="flex items-center justify-between p-4 bg-dark-panel border border-dark-border rounded-lg">
-                <div>
-                  <p className="font-medium text-dark-primary">Downgrade to Software Only</p>
-                  <p className="text-sm text-dark-secondary">Keep AI features, cancel supplement deliveries</p>
-                </div>
-                <Button 
-                  variant="outline" 
-                  className="border-dark-border hover:bg-dark-border text-orange-400 hover:text-orange-300 bg-dark-panel"
-                  onClick={() => {
-                    // TODO: Implement plan downgrade
-                    alert('Plan downgrade feature coming soon!');
-                  }}
-                >
-                  Downgrade
-                </Button>
-              </div>
-              
-              <div className="flex items-center justify-between p-4 bg-dark-panel border border-red-500/20 rounded-lg">
-                <div>
-                  <p className="font-medium text-red-400">Cancel Subscription</p>
-                  <p className="text-sm text-dark-secondary">Cancel your subscription and end all services</p>
-                </div>
-                <Button 
-                  variant="outline" 
-                  className="border-red-500/20 hover:bg-red-500/10 text-red-400 hover:text-red-300 bg-dark-panel"
-                  onClick={() => setShowCancelConfirm(true)}
-                  disabled={isCancelling}
-                >
-                  {isCancelling ? 'Cancelling...' : 'Cancel'}
-                </Button>
-              </div>
-            </div>
-          )}
+          </div>
         </div>
       </div>
 
@@ -3836,21 +3832,18 @@ export default function DashboardPage() {
           subscription_cancelled_at: new Date().toISOString()
         }));
         
-        // Show success message
+        // Show success message briefly
         alert(result.message || 'Your subscription has been cancelled successfully.');
         
-        // Reset confirmation state
-        setShowCancelConfirm(false);
-        
-        // Reload orders to reflect changes
-        loadSubscriptionOrders();
+        // Redirect to homepage
+        router.push('/');
       } else {
         alert(result.error || 'Failed to cancel subscription. Please try again.');
+        setIsCancelling(false);
       }
     } catch (error) {
       console.error('Error cancelling subscription:', error);
       alert('An unexpected error occurred. Please try again.');
-    } finally {
       setIsCancelling(false);
     }
   };
@@ -3960,7 +3953,7 @@ export default function DashboardPage() {
 
             {/* Main Content - Add mobile padding only */}
             <main className="flex-1 flex flex-col">
-              <div className={`container mx-auto ${activeTab === 'dashboard' ? 'h-full flex-1 p-4' : 'overflow-auto p-6'} lg:pt-4 pt-16`}>
+              <div className={`container mx-auto ${activeTab === 'dashboard' ? 'h-full flex-1 p-4' : 'overflow-auto p-4 sm:p-6'} lg:pt-4 pt-16`}>
                 {renderContent()}
               </div>
             </main>

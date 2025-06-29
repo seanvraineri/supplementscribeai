@@ -31,7 +31,7 @@ export async function cancelSubscription() {
 
     // Cancel any pending orders
     const { error: ordersError } = await supabase
-      .from('subscription_orders')
+      .from('supplement_orders')
       .update({ 
         status: 'cancelled',
         updated_at: new Date().toISOString()

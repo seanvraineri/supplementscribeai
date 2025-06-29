@@ -1707,7 +1707,7 @@ export default function DashboardPage() {
               <CardContent className="space-y-6">
                 {/* Main Score Display */}
                 <div className="text-center">
-                  <div className="relative">
+            <div className="relative">
                     <div className="relative inline-flex items-center justify-center w-36 h-36 rounded-full bg-gradient-to-br from-blue-500/20 to-blue-600/20 border-4 border-dark-border shadow-2xl">
                       <div className="text-center z-10">
                         <motion.div 
@@ -1720,7 +1720,7 @@ export default function DashboardPage() {
                         </motion.div>
                         <div className="text-xs text-dark-secondary font-medium uppercase tracking-wider">
                           Good
-                        </div>
+              </div>
                       </div>
                     </div>
                     <div className="flex justify-center mt-3">
@@ -3329,7 +3329,7 @@ export default function DashboardPage() {
               <div className="flex items-start gap-3 mb-3">
                 <div className="p-1.5 bg-blue-500/10 rounded">
                   <Zap className="h-4 w-4 text-blue-400" />
-                </div>
+                          </div>
                 <div className="flex-1">
                   <p className="text-dark-primary font-medium">
                     Alex, you mentioned chronic fatigue affecting work performance. Since starting methylfolate 2 weeks ago for your MTHFR C677T variant, rate your 3PM energy compared to your typical afternoon crash (1 = completely exhausted like before, 10 = sustained energy through the day)
@@ -3337,8 +3337,8 @@ export default function DashboardPage() {
                   <p className="text-xs text-dark-secondary mt-1">
                     Your MTHFR variant reduces methylation by 40% - we're tracking if bypassing this bottleneck is restoring your cellular energy production
                   </p>
-                </div>
-              </div>
+                        </div>
+                      </div>
               <div className="flex gap-2 mt-3">
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
                   <button
@@ -3351,9 +3351,9 @@ export default function DashboardPage() {
                   >
                     {num}
                   </button>
-                ))}
-              </div>
-            </div>
+                    ))}
+                  </div>
+                </div>
 
             {/* Question 2: Sleep Architecture */}
             <div className="bg-dark-background border border-dark-border rounded-lg p-4">
@@ -3523,8 +3523,8 @@ export default function DashboardPage() {
             <div className="flex items-center gap-3">
               <div className="p-2 bg-green-500/20 rounded-lg">
                 <Pill className="h-6 w-6 text-green-400" />
-              </div>
-              <div>
+                    </div>
+                    <div>
                 <h3 className="text-xl font-semibold text-dark-primary">Supplement Tracking</h3>
                 <p className="text-sm text-dark-secondary">Track your daily supplement intake</p>
               </div>
@@ -3534,9 +3534,9 @@ export default function DashboardPage() {
                 <p className="text-2xl font-bold text-green-400">85%</p>
                 <p className="text-xs text-dark-secondary">Today's adherence</p>
               </div>
-            </div>
-          </div>
-
+                    </div>
+                  </div>
+                  
           {/* Individual Supplement Tracking */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {plan?.recommendations?.map((rec: any, index: number) => (

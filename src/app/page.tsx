@@ -1,7 +1,7 @@
 'use client'
 
 import { motion, Variants, useScroll, useTransform } from 'framer-motion';
-import { CheckCircle, ChevronsRight, ChevronDown, LogIn, Database, Users, Brain, Dna, HeartHandshake, Microscope, Search, FlaskConical, TrendingUp } from 'lucide-react';
+import { CheckCircle, ChevronsRight, ChevronDown, LogIn, Database, Users, Brain, Dna, HeartHandshake, Microscope, Search, FlaskConical, TrendingUp, Menu, X } from 'lucide-react';
 import { Disclosure } from '@headlessui/react';
 import Link from 'next/link';
 import { SVGProps } from 'react';
@@ -47,46 +47,164 @@ const ParallaxBackground = () => {
   );
 };
 
-// Navigation Component
-const Navigation = () => (
-  <nav className="fixed top-0 left-0 right-0 z-50 bg-dark-background/80 backdrop-blur-md border-b border-dark-border">
-    <div className="container mx-auto px-6 max-w-6xl">
-      <div className="flex items-center justify-between h-16">
-        <Link href="/" className="text-xl font-bold text-dark-primary tracking-tight">
-          SupplementScribe
-        </Link>
-        <div className="flex items-center gap-6">
-          <Link href="/how-it-works" className="text-dark-secondary hover:text-dark-primary transition-colors">
-            How It Works
-          </Link>
-          <Link href="/for-everyone" className="text-dark-secondary hover:text-dark-primary transition-colors">
-            For Everyone
-          </Link>
-          <Link href="/science" className="text-dark-secondary hover:text-dark-primary transition-colors">
-            Science
-          </Link>
-          <Link href="/content" className="text-dark-secondary hover:text-dark-primary transition-colors">
-            Content
-          </Link>
-          <a href="#pricing" className="text-dark-secondary hover:text-dark-primary transition-colors">
-            Pricing
-          </a>
-          <Link href="/login">
-            <button className="inline-flex items-center px-4 py-2 text-sm font-medium text-dark-secondary hover:text-dark-primary border border-dark-border rounded-lg hover:border-dark-accent transition-all duration-200">
-              <LogIn className="w-4 h-4 mr-2" />
-              Log In
+// Navigation Component with Mobile Menu
+const Navigation = () => {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Close menu when clicking on a link
+  const handleLinkClick = () => {
+    setMobileMenuOpen(false);
+  };
+
+  return (
+    <>
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-dark-background/80 backdrop-blur-md border-b border-dark-border">
+        <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
+          <div className="flex items-center justify-between h-16">
+            <Link href="/" className="text-xl font-bold text-dark-primary tracking-tight">
+              SupplementScribe
+            </Link>
+            
+            {/* Desktop Navigation - Hidden on Mobile */}
+            <div className="hidden md:flex items-center gap-6">
+              <Link href="/how-it-works" className="text-dark-secondary hover:text-dark-primary transition-colors">
+                How It Works
+              </Link>
+              <Link href="/for-everyone" className="text-dark-secondary hover:text-dark-primary transition-colors">
+                For Everyone
+              </Link>
+              <Link href="/science" className="text-dark-secondary hover:text-dark-primary transition-colors">
+                Science
+              </Link>
+              <Link href="/content" className="text-dark-secondary hover:text-dark-primary transition-colors">
+                Content
+              </Link>
+              <a href="#pricing" className="text-dark-secondary hover:text-dark-primary transition-colors">
+                Pricing
+              </a>
+              <Link href="/login">
+                <button className="inline-flex items-center px-4 py-2 text-sm font-medium text-dark-secondary hover:text-dark-primary border border-dark-border rounded-lg hover:border-dark-accent transition-all duration-200">
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Log In
+                </button>
+              </Link>
+              <Link href="/auth/signup">
+                <button className="inline-flex items-center px-4 py-2 text-sm font-bold text-dark-background bg-dark-accent rounded-lg hover:bg-dark-accent/90 transition-all duration-200">
+                  Get Started
+                </button>
+              </Link>
+            </div>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="md:hidden p-2 text-dark-primary hover:text-dark-accent transition-colors"
+              aria-label="Open menu"
+            >
+              <Menu className="w-6 h-6" />
             </button>
-          </Link>
-          <Link href="/auth/signup">
-            <button className="inline-flex items-center px-4 py-2 text-sm font-bold text-dark-background bg-dark-accent rounded-lg hover:bg-dark-accent/90 transition-all duration-200">
-              Get Started
-            </button>
-          </Link>
+          </div>
         </div>
-      </div>
-    </div>
-  </nav>
-);
+      </nav>
+
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 md:hidden"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+
+            {/* Menu Panel */}
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed right-0 top-0 h-full w-[280px] bg-dark-background border-l border-dark-border z-50 md:hidden"
+            >
+              <div className="flex flex-col h-full">
+                {/* Header */}
+                <div className="flex items-center justify-between p-4 border-b border-dark-border">
+                  <span className="text-xl font-bold text-dark-primary">Menu</span>
+                  <button
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="p-2 text-dark-secondary hover:text-dark-primary transition-colors"
+                    aria-label="Close menu"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+
+                {/* Navigation Links */}
+                <div className="flex-1 overflow-y-auto py-8">
+                  <div className="flex flex-col space-y-1 px-4">
+                    <Link 
+                      href="/how-it-works" 
+                      onClick={handleLinkClick}
+                      className="px-4 py-3 text-lg text-dark-secondary hover:text-dark-primary hover:bg-dark-panel rounded-lg transition-all duration-200"
+                    >
+                      How It Works
+                    </Link>
+                    <Link 
+                      href="/for-everyone" 
+                      onClick={handleLinkClick}
+                      className="px-4 py-3 text-lg text-dark-secondary hover:text-dark-primary hover:bg-dark-panel rounded-lg transition-all duration-200"
+                    >
+                      For Everyone
+                    </Link>
+                    <Link 
+                      href="/science" 
+                      onClick={handleLinkClick}
+                      className="px-4 py-3 text-lg text-dark-secondary hover:text-dark-primary hover:bg-dark-panel rounded-lg transition-all duration-200"
+                    >
+                      Science
+                    </Link>
+                    <Link 
+                      href="/content" 
+                      onClick={handleLinkClick}
+                      className="px-4 py-3 text-lg text-dark-secondary hover:text-dark-primary hover:bg-dark-panel rounded-lg transition-all duration-200"
+                    >
+                      Content
+                    </Link>
+                    <a 
+                      href="#pricing" 
+                      onClick={handleLinkClick}
+                      className="px-4 py-3 text-lg text-dark-secondary hover:text-dark-primary hover:bg-dark-panel rounded-lg transition-all duration-200"
+                    >
+                      Pricing
+                    </a>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="p-4 border-t border-dark-border space-y-3">
+                  <Link href="/login" onClick={handleLinkClick} className="block">
+                    <button className="w-full inline-flex items-center justify-center px-4 py-3 text-base font-medium text-dark-secondary hover:text-dark-primary border border-dark-border rounded-lg hover:border-dark-accent transition-all duration-200">
+                      <LogIn className="w-4 h-4 mr-2" />
+                      Log In
+                    </button>
+                  </Link>
+                  <Link href="/auth/signup" onClick={handleLinkClick} className="block">
+                    <button className="w-full inline-flex items-center justify-center px-4 py-3 text-base font-bold text-dark-background bg-dark-accent rounded-lg hover:bg-dark-accent/90 transition-all duration-200">
+                      Get Started
+                    </button>
+                  </Link>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </>
+  );
+};
 
 // Updated icons for the dark theme
 const AnalyzeIcon = (props: SVGProps<SVGSVGElement>) => (
@@ -311,7 +429,7 @@ export default function HomePage() {
             </h1>
             
                         {/* Visible Animated Display - The beloved flipping text */}
-            <div className="h-32 md:h-40 lg:h-48 xl:h-56 flex items-center justify-center">
+            <div className="h-24 sm:h-32 md:h-40 lg:h-48 xl:h-56 flex items-center justify-center">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={headlines[index].text}
@@ -319,7 +437,7 @@ export default function HomePage() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -20, scale: 0.95 }}
                   transition={{ duration: 0.5 }}
-                  className="text-center text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tighter leading-tight"
+                  className="text-center text-2xl sm:text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tighter leading-tight px-4"
                   style={{ color: headlines[index].color }}
                 >
                   {headlines[index].text}
@@ -327,10 +445,10 @@ export default function HomePage() {
               </AnimatePresence>
             </div>
                       </div>
-            <p className="mx-auto mt-12 max-w-2xl text-center text-lg md:text-xl leading-8 text-slate-200">
+            <p className="mx-auto mt-8 sm:mt-12 max-w-2xl text-center text-base sm:text-lg md:text-xl leading-7 sm:leading-8 text-slate-200 px-4">
             What Doctors Can't Tell You (But Should)
           </p>
-          <p className="mx-auto mt-2 max-w-3xl text-center text-sm md:text-base leading-7 text-slate-300 px-4">
+          <p className="mx-auto mt-2 max-w-3xl text-center text-sm sm:text-base md:text-lg leading-6 sm:leading-7 text-slate-300 px-4">
             We reverse-engineer your body's needs from symptoms → Find the 6 missing pieces → Skip everything else
           </p>
 
@@ -433,22 +551,22 @@ export default function HomePage() {
       <FloatingPanel>
         {/* Trusted by Section */}
         <section className="py-12 bg-dark-background">
-          <div className="container mx-auto px-6 max-w-6xl">
-            <p className="text-center text-sm font-bold uppercase tracking-widest text-dark-secondary">
+          <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
+            <p className="text-center text-xs sm:text-sm font-bold uppercase tracking-widest text-dark-secondary">
               Designed for the Health-Obsessed
             </p>
-            <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-4">
-              <div className="flex justify-center items-center">
-                <p className="font-bold text-dark-primary text-lg">Julian H. <span className="text-dark-secondary font-normal text-sm">- Founder & CEO</span></p>
+            <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-x-8 md:gap-y-4">
+              <div className="flex justify-center items-center text-center">
+                <p className="font-bold text-dark-primary text-base sm:text-lg">Julian H. <span className="text-dark-secondary font-normal text-xs sm:text-sm block sm:inline">- Founder & CEO</span></p>
               </div>
-              <div className="flex justify-center items-center">
-                <p className="font-bold text-dark-primary text-lg">Dr. Anya S. <span className="text-dark-secondary font-normal text-sm">- PhD, Neuroscience</span></p>
+              <div className="flex justify-center items-center text-center">
+                <p className="font-bold text-dark-primary text-base sm:text-lg">Dr. Anya S. <span className="text-dark-secondary font-normal text-xs sm:text-sm block sm:inline">- PhD, Neuroscience</span></p>
               </div>
-              <div className="flex justify-center items-center">
-                <p className="font-bold text-dark-primary text-lg">Catherine M. <span className="text-dark-secondary font-normal text-sm">- Marathoner (at 52)</span></p>
+              <div className="flex justify-center items-center text-center">
+                <p className="font-bold text-dark-primary text-base sm:text-lg">Catherine M. <span className="text-dark-secondary font-normal text-xs sm:text-sm block sm:inline">- Marathoner (at 52)</span></p>
               </div>
-              <div className="flex justify-center items-center">
-                <p className="font-bold text-dark-primary text-lg">Leo C. <span className="text-dark-secondary font-normal text-sm">- Ironman Triathlete</span></p>
+              <div className="flex justify-center items-center text-center">
+                <p className="font-bold text-dark-primary text-base sm:text-lg">Leo C. <span className="text-dark-secondary font-normal text-xs sm:text-sm block sm:inline">- Ironman Triathlete</span></p>
               </div>
             </div>
           </div>
@@ -462,19 +580,19 @@ export default function HomePage() {
 
       <FloatingPanel>
         {/* "Stop Guessing. Start Knowing." Distilled Section */}
-        <section className="py-24 bg-dark-background">
-          <div className="container mx-auto px-6 max-w-6xl">
-            <div className="text-center mb-16">
-              <h2 className="text-5xl font-bold text-white mb-4">
+        <section className="py-16 sm:py-24 bg-dark-background">
+          <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
+            <div className="text-center mb-8 sm:mb-16">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4">
                 Stop Guessing. Start Knowing.
               </h2>
-              <p className="text-lg text-gray-400 max-w-3xl mx-auto">
+              <p className="text-base sm:text-lg text-gray-400 max-w-3xl mx-auto px-4">
                 Generic solutions fail because they ignore your unique biology. It's time to stop wasting money and effort on solutions that weren't designed for you.
               </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 p-8 bg-dark-panel border border-dark-border rounded-2xl">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 p-4 sm:p-8 bg-dark-panel border border-dark-border rounded-2xl">
               {/* Column 1: The Common (Flawed) Approach */}
-              <div className="border-r border-dark-border pr-8">
+              <div className="md:border-r border-dark-border pb-6 md:pb-0 md:pr-8">
                 <h3 className="text-lg font-bold text-dark-secondary mb-4">THE GUESSWORK</h3>
                 <div className="space-y-4 text-white">
                   <p>Generic Multivitamins</p>
@@ -483,14 +601,14 @@ export default function HomePage() {
                 </div>
               </div>
               {/* Column 2: The Core Problem */}
-              <div className="border-r border-dark-border pr-8">
+              <div className="md:border-r border-dark-border pb-6 md:pb-0 pt-6 md:pt-0 border-t md:border-t-0 md:pr-8">
                 <h3 className="text-lg font-bold text-dark-secondary mb-4">THE FATAL FLAW</h3>
                 <p className="text-white">
                   They ignore your unique biology, leading to nutrient competition, improper dosages, and new imbalances.
                 </p>
               </div>
               {/* Column 3: The Unfortunate Result */}
-              <div>
+              <div className="pt-6 md:pt-0 border-t md:border-t-0">
                 <h3 className="text-lg font-bold text-dark-secondary mb-4">THE UNFORTUNATE RESULT</h3>
                 <div className="space-y-4 text-white">
                   <p>Expensive Placebos</p>
@@ -506,25 +624,25 @@ export default function HomePage() {
       <FloatingPanel>
         {/* How It Works Section */}
         <section className="py-24 bg-dark-background">
-          <div className="container mx-auto px-6 max-w-6xl">
+          <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
             <div className="text-center mb-16">
-              <h2 className="text-5xl font-bold text-white mb-4">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4">
                 Your Blueprint to Biological Resilience
               </h2>
-              <p className="text-lg text-gray-400 max-w-3xl mx-auto">
+              <p className="text-base sm:text-lg text-gray-400 max-w-3xl mx-auto px-4">
                 Our system is designed to overcome these traps with a targeted, synergistic approach built for your unique biology.
               </p>
             </div>
-            <div className="grid md:grid-cols-3 gap-12 text-center">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 text-center">
               {/* Step 1 */}
               <div className="flex flex-col items-center">
                 <div className="p-4 bg-blue-500/10 rounded-xl mb-4 inline-block">
                   <Search className="w-8 h-8 text-blue-400" />
                 </div>
-                <h3 className="text-2xl font-bold text-white mb-2 flex items-center justify-center h-24 text-center">
+                <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">
                   1. The Deep Health Analysis
                 </h3>
-                <p className="text-gray-400">
+                <p className="text-gray-400 text-sm sm:text-base">
                   This is not a simple quiz. Our comprehensive analysis uses a sophisticated analysis of your health inputs to get an X-ray view of your health, identifying the likely root causes behind your symptoms.
                 </p>
               </div>
@@ -533,10 +651,10 @@ export default function HomePage() {
                 <div className="p-4 bg-blue-500/10 rounded-xl mb-4 inline-block">
                   <FlaskConical className="w-8 h-8 text-blue-400" />
                 </div>
-                <h3 className="text-2xl font-bold text-white mb-2 flex items-center justify-center h-24 text-center">
+                <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">
                   2. Build Your Micronutrient Stack
                 </h3>
-                <p className="text-gray-400">
+                <p className="text-gray-400 text-sm sm:text-base">
                   We build your complete two-part solution: a Core 6 precision supplement formula for what's missing from your diet, and a synergistic diet plan to handle the rest.
                 </p>
               </div>
@@ -545,10 +663,10 @@ export default function HomePage() {
                 <div className="p-4 bg-blue-500/10 rounded-xl mb-4 inline-block">
                   <TrendingUp className="w-8 h-8 text-blue-400" />
                 </div>
-                <h3 className="text-2xl font-bold text-white mb-2 flex items-center justify-center h-24 text-center">
+                <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">
                   3. Adapt and Optimize
                 </h3>
-                <p className="text-gray-400">
+                <p className="text-gray-400 text-sm sm:text-base">
                   Your biology is always changing, and so is your plan. With daily progress tracking, your plan adapts your formula and diet plan to ensure you're always on the fastest path to your goals.
                 </p>
               </div>
@@ -559,17 +677,17 @@ export default function HomePage() {
 
       <FloatingPanel>
         {/* Precision Panel Section */}
-        <section className="py-32">
+        <section className="py-16 sm:py-32">
           <div className="container mx-auto px-4">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
               viewport={{ once: true }}
-              className="text-center mb-20"
+              className="text-center mb-12 sm:mb-20"
             >
-              <h2 className="text-4xl font-bold tracking-tight text-dark-primary">Your Personalized Micronutrient Stack</h2>
-              <p className="text-lg text-dark-secondary mt-4 max-w-3xl mx-auto">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-dark-primary px-4">Your Personalized Micronutrient Stack</h2>
+              <p className="text-base sm:text-lg text-dark-secondary mt-4 max-w-3xl mx-auto px-4">
                 Our system is designed to divide your nutritional needs into two parts for maximum efficacy and absorption.
               </p>
             </motion.div>
@@ -627,18 +745,18 @@ export default function HomePage() {
       
       <FloatingPanel>
         {/* Testimonial Marquee Section */}
-        <section className="py-24 bg-dark-background/50 backdrop-blur-lg border-t border-b border-dark-border overflow-hidden">
-           <h2 className="text-4xl font-bold tracking-tight text-center mb-16 text-dark-primary">Trusted by the Health Obsessed</h2>
-           <div className="relative flex overflow-hidden">
+        <section className="py-12 sm:py-24 bg-dark-background/50 backdrop-blur-lg border-t border-b border-dark-border">
+           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-center mb-8 sm:mb-16 text-dark-primary px-4">Trusted by the Health Obsessed</h2>
+           <div className="relative overflow-hidden">
              <motion.div 
                className="flex"
                animate={{ x: ['0%', '-50%'] }}
                transition={{ ease: 'linear', duration: 20, repeat: Infinity }}
              >
                {duplicatedTestimonials.map((t, i) => (
-                  <div key={`testimonial-${i}`} className="flex-shrink-0 w-full md:w-1/2 lg:w-1/3 p-6">
-                     <div className="h-full bg-dark-panel p-8 rounded-2xl border border-dark-border shadow-lg">
-                       <p className="text-lg mb-6 text-dark-primary">"{t.quote}"</p>
+                  <div key={`testimonial-${i}`} className="flex-shrink-0 w-[300px] sm:w-[350px] md:w-1/2 lg:w-1/3 px-4 sm:px-6">
+                     <div className="h-full bg-dark-panel p-6 sm:p-8 rounded-2xl border border-dark-border shadow-lg">
+                       <p className="text-base sm:text-lg mb-4 sm:mb-6 text-dark-primary">"{t.quote}"</p>
                        <p className="font-bold text-dark-primary">{t.name}</p>
                        <p className="text-sm text-dark-secondary">{t.title}</p>
                      </div>
@@ -651,17 +769,17 @@ export default function HomePage() {
 
       <FloatingPanel>
         {/* Pricing Section */}
-        <section id="pricing" className="py-32">
+        <section id="pricing" className="py-16 sm:py-32">
           <div className="container mx-auto px-4">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
               viewport={{ once: true }}
-              className="text-center mb-16"
+              className="text-center mb-8 sm:mb-16"
             >
-              <h2 className="text-4xl font-bold tracking-tight text-dark-primary mb-4">Choose Your Health Journey</h2>
-              <p className="text-lg text-dark-secondary max-w-3xl mx-auto">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-dark-primary mb-4 px-4">Choose Your Health Journey</h2>
+              <p className="text-base sm:text-lg text-dark-secondary max-w-3xl mx-auto px-4">
                 Select the plan that fits your lifestyle. All plans include our AI-powered health analysis and personalized recommendations.
               </p>
             </motion.div>
@@ -671,7 +789,7 @@ export default function HomePage() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
               viewport={{ once: true }}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto"
+              className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto"
             >
               {/* Software-Only Plan */}
               <div className="bg-dark-panel border border-dark-border rounded-3xl p-6 shadow-xl shadow-black/20 relative">
@@ -724,7 +842,7 @@ export default function HomePage() {
               </div>
 
               {/* Complete Package Plan - Recommended */}
-              <div className="bg-dark-panel border-2 border-dark-accent rounded-3xl p-6 shadow-2xl shadow-black/30 relative transform scale-105">
+              <div className="bg-dark-panel border-2 border-dark-accent rounded-3xl p-6 shadow-2xl shadow-black/30 relative md:transform md:scale-105">
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                   <span className="bg-dark-accent text-dark-background px-4 py-1 rounded-full text-xs font-bold">
                     RECOMMENDED
@@ -755,68 +873,6 @@ export default function HomePage() {
                   </button>
                 </Link>
               </div>
-
-              {/* Family Software-Only Plan */}
-              <div className="bg-dark-panel border border-dark-border rounded-3xl p-6 shadow-xl shadow-black/20 relative">
-                <div className="text-center mb-6">
-                  <h3 className="text-xl font-bold text-dark-primary mb-2">Family Software</h3>
-                  <p className="text-sm text-dark-secondary mb-4">For families (2-9 members)</p>
-                  <div className="mb-4">
-                    <div className="text-3xl font-bold text-dark-primary">
-                      $17.99<span className="text-sm text-dark-secondary">/month</span>
-                    </div>
-                    <div className="text-sm text-dark-accent mt-1">
-                      $13.99/month yearly
-                    </div>
-                    <div className="text-xs text-dark-secondary mt-1">
-                      Per person
-                    </div>
-                  </div>
-                </div>
-                <ul className="space-y-3 mb-6 text-dark-primary text-sm">
-                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Everything in Software-Only</li>
-                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Up to 9 Family Members</li>
-                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Individual Health Profiles</li>
-                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Family Discount Pricing</li>
-                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Separate Tracking Per Person</li>
-                </ul>
-                <Link href="/auth/signup">
-                  <button className="w-full px-4 py-2 text-sm font-bold text-dark-primary bg-dark-background border border-dark-border rounded-full hover:bg-dark-border transition-all duration-200">
-                    Get Started
-                  </button>
-                </Link>
-              </div>
-
-              {/* Family Complete Plan */}
-              <div className="bg-dark-panel border border-dark-border rounded-3xl p-6 shadow-xl shadow-black/20 relative">
-                <div className="text-center mb-6">
-                  <h3 className="text-xl font-bold text-dark-primary mb-2">Family Complete</h3>
-                  <p className="text-sm text-dark-secondary mb-4">Software + supplements for all</p>
-                  <div className="mb-4">
-                    <div className="text-3xl font-bold text-dark-primary">
-                      $70<span className="text-sm text-dark-secondary">/month</span>
-                    </div>
-                    <div className="text-sm text-dark-accent mt-1">
-                      $63/month yearly
-                    </div>
-                    <div className="text-xs text-dark-secondary mt-1">
-                      Per person
-                    </div>
-                  </div>
-                </div>
-                <ul className="space-y-3 mb-6 text-dark-primary text-sm">
-                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Everything in Complete Package</li>
-                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Up to 9 Family Members</li>
-                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Individual Supplement Packs</li>
-                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Personalized for Each Member</li>
-                  <li className="flex items-start"><CheckCircle className="h-4 w-4 mr-2 text-dark-accent flex-shrink-0 mt-0.5" /> Family Discount Pricing</li>
-                </ul>
-                <Link href="/auth/signup">
-                  <button className="w-full px-4 py-2 text-sm font-bold text-dark-primary bg-dark-background border border-dark-border rounded-full hover:bg-dark-border transition-all duration-200">
-                    Get Started
-                  </button>
-                </Link>
-              </div>
             </motion.div>
 
             {/* Additional Info */}
@@ -842,9 +898,9 @@ export default function HomePage() {
       
       <FloatingPanel>
         {/* FAQ Section */}
-        <section className="py-24">
+        <section className="py-16 sm:py-24">
           <div className="container mx-auto px-4 max-w-3xl">
-            <h2 className="text-4xl font-bold text-center mb-12 text-dark-primary">Frequently Asked Questions</h2>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-center mb-8 sm:mb-12 text-dark-primary">Frequently Asked Questions</h2>
             <div className="space-y-4">
               {faqItems.map((item, i) => (
                 <Disclosure key={i}>
@@ -878,13 +934,22 @@ export default function HomePage() {
       </FloatingPanel>
 
       {/* Footer */}
-      <footer className="bg-dark-panel text-dark-primary py-20 border-t border-dark-border">
+      <footer className="bg-dark-panel text-dark-primary py-12 sm:py-20 border-t border-dark-border">
         <div className="container mx-auto px-4 text-center">
-          <h3 className="text-3xl font-bold mb-4">Join the Biohacking Class of One</h3>
-          <p className="text-dark-secondary mb-8 max-w-xl mx-auto">Get access to the latest in precision health and be the first to know about new features.</p>
-          <form className="flex flex-col md:flex-row gap-4 max-w-md mx-auto">
-            <input type="email" placeholder="Enter your email" className="flex-1 px-5 py-3 rounded-full bg-dark-background border border-dark-border text-dark-primary placeholder-dark-secondary focus:outline-none focus:ring-2 focus:ring-dark-accent" />
-            <button type="submit" className="px-8 py-3 font-bold text-dark-background bg-dark-accent rounded-full">Subscribe</button>
+          <h3 className="text-2xl sm:text-3xl font-bold mb-4">Join the Biohacking Class of One</h3>
+          <p className="text-dark-secondary mb-8 max-w-xl mx-auto text-sm sm:text-base">Get access to the latest in precision health and be the first to know about new features.</p>
+          <form className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+            <input 
+              type="email" 
+              placeholder="Enter your email" 
+              className="flex-1 px-5 py-3 rounded-full bg-dark-background border border-dark-border text-dark-primary placeholder-dark-secondary focus:outline-none focus:ring-2 focus:ring-dark-accent text-sm sm:text-base" 
+            />
+            <button 
+              type="submit" 
+              className="px-8 py-3 font-bold text-dark-background bg-dark-accent rounded-full hover:bg-dark-accent/90 transition-all duration-200 text-sm sm:text-base whitespace-nowrap"
+            >
+              Subscribe
+            </button>
           </form>
         </div>
       </footer>
