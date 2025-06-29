@@ -263,33 +263,34 @@ export default function ShareGraphics({
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 sm:space-y-6 lg:space-y-8">
       {/* Header */}
       <div className="text-center">
-        <div className="flex items-center justify-center gap-2 mb-3">
-          <Sparkles className="h-6 w-6 text-dark-accent" />
-          <h3 className="text-3xl font-bold text-dark-primary">Share Your Stack</h3>
-          <Sparkles className="h-6 w-6 text-dark-accent" />
+        <div className="flex items-center justify-center gap-1.5 sm:gap-2 mb-2 sm:mb-3">
+          <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-dark-accent" />
+          <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-dark-primary">Share Your Stack</h3>
+          <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-dark-accent" />
         </div>
-        <p className="text-dark-secondary text-lg">Create viral-worthy graphics to share your supplement journey</p>
+        <p className="text-dark-secondary text-sm sm:text-base lg:text-lg">Create viral-worthy graphics to share your supplement journey</p>
       </div>
 
       {/* Format Selection */}
-      <div className="flex flex-wrap gap-3 justify-center">
+      <div className="flex flex-wrap gap-2 sm:gap-3 justify-center">
         {Object.entries(formats).map(([key, format]) => (
           <Button
             key={key}
             variant={selectedFormat === key ? "default" : "outline"}
-            size="lg"
+            size="sm"
             onClick={() => setSelectedFormat(key as GraphicFormat)}
-            className={`transition-all duration-200 ${
+            className={`transition-all duration-200 text-xs sm:text-sm touch-target ${
               selectedFormat === key 
                 ? "bg-dark-accent text-white shadow-lg scale-105" 
                 : "border-dark-border text-dark-secondary hover:bg-dark-border hover:scale-102"
             }`}
           >
-            <span className="mr-2">{format.icon}</span>
-            {format.name}
+            <span className="mr-1 sm:mr-2">{format.icon}</span>
+            <span className="hidden sm:inline">{format.name}</span>
+            <span className="sm:hidden">{format.name.split(' ')[0]}</span>
           </Button>
         ))}
       </div>
@@ -297,21 +298,22 @@ export default function ShareGraphics({
       {/* Canvas Preview */}
       <div className="flex justify-center">
         <div className="relative">
-          <div className="bg-gradient-to-br from-dark-panel to-dark-background border border-dark-border rounded-2xl p-6 shadow-2xl">
+          <div className="bg-gradient-to-br from-dark-panel to-dark-background border border-dark-border rounded-lg sm:rounded-xl lg:rounded-2xl p-3 sm:p-4 lg:p-6 shadow-xl lg:shadow-2xl">
             <canvas
               ref={canvasRef}
-              className="max-w-full max-h-[500px] object-contain rounded-xl shadow-lg"
+              className="max-w-full max-h-[300px] sm:max-h-[400px] lg:max-h-[500px] object-contain rounded-lg sm:rounded-xl shadow-lg"
               style={{ 
-                width: selectedFormat === 'story' ? '250px' : selectedFormat === 'square' ? '350px' : '450px',
+                width: selectedFormat === 'story' ? '180px' : selectedFormat === 'square' ? '250px' : '100%',
+                maxWidth: selectedFormat === 'story' ? '180px' : selectedFormat === 'square' ? '250px' : '350px',
                 height: 'auto'
               }}
             />
             
             {isGenerating && (
-              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm rounded-2xl flex items-center justify-center">
-                <div className="bg-dark-background border border-dark-border rounded-xl p-6 text-center">
-                  <div className="w-8 h-8 border-3 border-dark-accent border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-                  <p className="text-dark-primary font-medium">Generating your viral graphic...</p>
+              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm rounded-lg sm:rounded-xl lg:rounded-2xl flex items-center justify-center">
+                <div className="bg-dark-background border border-dark-border rounded-lg sm:rounded-xl p-3 sm:p-4 lg:p-6 text-center">
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 border-3 border-dark-accent border-t-transparent rounded-full animate-spin mx-auto mb-2 sm:mb-3"></div>
+                  <p className="text-dark-primary font-medium text-xs sm:text-sm lg:text-base">Generating your viral graphic...</p>
                 </div>
               </div>
             )}
@@ -320,25 +322,25 @@ export default function ShareGraphics({
       </div>
 
       {/* Action Buttons */}
-      <div className="flex flex-wrap gap-4 justify-center">
+      <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3 lg:gap-4 justify-center">
         <Button
           onClick={downloadGraphic}
           disabled={isGenerating}
-          size="lg"
-          className="bg-dark-accent text-white hover:bg-dark-accent/80 shadow-lg hover:shadow-xl transition-all duration-200"
+          size="sm"
+          className="bg-dark-accent text-white hover:bg-dark-accent/80 shadow-lg hover:shadow-xl transition-all duration-200 touch-target text-xs sm:text-sm"
         >
-          <Download className="h-5 w-5 mr-2" />
-          Download HD
+          <Download className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5 mr-1 sm:mr-2" />
+          Download
         </Button>
         
         <Button
           onClick={() => shareGraphic('native')}
           disabled={isGenerating}
           variant="outline"
-          size="lg"
-          className="border-dark-border text-dark-secondary hover:bg-dark-border hover:text-dark-primary transition-all duration-200"
+          size="sm"
+          className="border-dark-border text-dark-secondary hover:bg-dark-border hover:text-dark-primary transition-all duration-200 touch-target text-xs sm:text-sm"
         >
-          <Share2 className="h-5 w-5 mr-2" />
+          <Share2 className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5 mr-1 sm:mr-2" />
           Share
         </Button>
         
@@ -346,37 +348,37 @@ export default function ShareGraphics({
           onClick={() => shareGraphic('copy')}
           disabled={isGenerating}
           variant="outline"
-          size="lg"
-          className="border-dark-border text-dark-secondary hover:bg-dark-border hover:text-dark-primary transition-all duration-200"
+          size="sm"
+          className="border-dark-border text-dark-secondary hover:bg-dark-border hover:text-dark-primary transition-all duration-200 touch-target text-xs sm:text-sm"
         >
-          <Copy className="h-5 w-5 mr-2" />
-          Copy Image
+          <Copy className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5 mr-1 sm:mr-2" />
+          Copy
         </Button>
         
         <Button
           onClick={() => shareGraphic('instagram')}
           disabled={isGenerating}
           variant="outline"
-          size="lg"
-          className="border-dark-border text-dark-secondary hover:bg-dark-border hover:text-dark-primary transition-all duration-200"
+          size="sm"
+          className="border-dark-border text-dark-secondary hover:bg-dark-border hover:text-dark-primary transition-all duration-200 touch-target text-xs sm:text-sm"
         >
-          <Instagram className="h-5 w-5 mr-2" />
+          <Instagram className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5 mr-1 sm:mr-2" />
           Instagram
         </Button>
       </div>
 
       {/* Tips */}
-      <div className="bg-dark-panel border border-dark-border rounded-xl p-6">
-        <h4 className="text-lg font-semibold text-dark-primary mb-3">💡 Sharing Tips</h4>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-dark-secondary">
+      <div className="bg-dark-panel border border-dark-border rounded-lg sm:rounded-xl p-3 sm:p-4 lg:p-6">
+        <h4 className="text-base sm:text-lg font-semibold text-dark-primary mb-2 sm:mb-3">💡 Sharing Tips</h4>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 lg:gap-4 text-xs sm:text-sm text-dark-secondary">
           <div>
-            <span className="font-medium text-dark-accent">📱 Instagram Stories:</span> Perfect for quick shares and engagement
+            <span className="font-medium text-dark-accent">📱 Stories:</span> Perfect for quick shares
           </div>
           <div>
-            <span className="font-medium text-dark-accent">⬜ Instagram Posts:</span> Great for feed content and discovery
+            <span className="font-medium text-dark-accent">⬜ Posts:</span> Great for discovery
           </div>
           <div>
-            <span className="font-medium text-dark-accent">��️ LinkedIn/Email:</span> Professional sharing and newsletters
+            <span className="font-medium text-dark-accent">💼 LinkedIn:</span> Professional sharing
           </div>
         </div>
       </div>
