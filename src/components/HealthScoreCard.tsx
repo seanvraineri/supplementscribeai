@@ -281,27 +281,27 @@ export default function HealthScoreCard({ onViewDetails }: HealthScoreCardProps)
 
   return (
     <Card className="bg-dark-panel border-dark-border">
-      <CardHeader className="pb-4">
+      <CardHeader className="pb-3 sm:pb-4 p-4 sm:p-6">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-dark-primary flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-dark-accent" />
+            <CardTitle className="text-dark-primary flex items-center gap-1.5 sm:gap-2 text-base sm:text-lg">
+              <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 text-dark-accent" />
               Health Score
             </CardTitle>
-            <CardDescription className="text-dark-secondary">
+            <CardDescription className="text-dark-secondary text-xs sm:text-sm">
               AI-powered health assessment
             </CardDescription>
           </div>
-          <div className="w-6 h-6 flex items-center justify-center">
-            <BarChart3 className="h-4 w-4 text-dark-accent" />
+          <div className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center">
+            <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4 text-dark-accent" />
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6 pt-0 sm:pt-0">
         {/* Main Score Display */}
         <div className="text-center">
           <div className="relative">
-            <div className={`relative inline-flex items-center justify-center w-36 h-36 rounded-full bg-gradient-to-br ${getScoreBgColor(healthScore.healthScore)} border-4 border-dark-border shadow-2xl`}>
+            <div className={`relative inline-flex items-center justify-center w-28 h-28 sm:w-36 sm:h-36 rounded-full bg-gradient-to-br ${getScoreBgColor(healthScore.healthScore)} border-4 border-dark-border shadow-2xl`}>
               {/* Animated ring */}
               <div className="absolute inset-0 rounded-full border-4 border-transparent">
                 <div 
@@ -311,21 +311,21 @@ export default function HealthScoreCard({ onViewDetails }: HealthScoreCardProps)
               </div>
               <div className="text-center z-10">
                 <motion.div 
-                  className={`text-5xl font-bold ${getScoreColor(healthScore.healthScore)}`}
+                  className={`text-3xl sm:text-5xl font-bold ${getScoreColor(healthScore.healthScore)}`}
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ duration: 0.5, delay: 0.2 }}
                 >
                   {healthScore.healthScore}
                 </motion.div>
-                <div className="text-xs text-dark-secondary font-medium uppercase tracking-wider">
+                <div className="text-[10px] sm:text-xs text-dark-secondary font-medium uppercase tracking-wider">
                   {getScoreLabel(healthScore.healthScore)}
                 </div>
               </div>
             </div>
             {/* Score interpretation badges */}
-            <div className="flex justify-center mt-3">
-              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+            <div className="flex justify-center mt-2 sm:mt-3">
+              <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium ${
                 healthScore.healthScore >= 85 ? 'bg-green-500/20 text-green-400' :
                 healthScore.healthScore >= 70 ? 'bg-blue-500/20 text-blue-400' :
                 healthScore.healthScore >= 55 ? 'bg-yellow-500/20 text-yellow-400' :
@@ -339,7 +339,7 @@ export default function HealthScoreCard({ onViewDetails }: HealthScoreCardProps)
             </div>
           </div>
           <motion.p 
-            className="text-dark-secondary text-sm mt-4 max-w-md mx-auto leading-relaxed"
+            className="text-dark-secondary text-xs sm:text-sm mt-3 sm:mt-4 max-w-md mx-auto leading-relaxed"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
@@ -349,12 +349,12 @@ export default function HealthScoreCard({ onViewDetails }: HealthScoreCardProps)
         </div>
 
         {/* Score Breakdown */}
-        <div className="space-y-4">
-          <h4 className="text-sm font-semibold text-dark-primary mb-4 flex items-center gap-2">
-            <BarChart3 className="h-4 w-4 text-dark-accent" />
+        <div className="space-y-3 sm:space-y-4">
+          <h4 className="text-xs sm:text-sm font-semibold text-dark-primary mb-3 sm:mb-4 flex items-center gap-1.5 sm:gap-2">
+            <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4 text-dark-accent" />
             Score Breakdown
           </h4>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-2 sm:gap-4">
             {Object.entries(healthScore.scoreBreakdown).map(([category, score], index) => {
               const IconComponent = categoryIcons[category as keyof typeof categoryIcons];
               const label = categoryLabels[category as keyof typeof categoryLabels];
@@ -363,30 +363,30 @@ export default function HealthScoreCard({ onViewDetails }: HealthScoreCardProps)
               return (
                 <motion.div 
                   key={category} 
-                  className="bg-dark-background rounded-lg p-3 border border-dark-border hover:border-dark-accent/50 transition-all duration-300"
+                  className="bg-dark-background rounded-lg p-2 sm:p-3 border border-dark-border hover:border-dark-accent/50 transition-all duration-300"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.6 + index * 0.1 }}
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="p-1.5 bg-dark-accent/10 rounded-lg">
-                        <IconComponent className="h-3 w-3 text-dark-accent" />
+                  <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+                    <div className="flex items-center gap-1 sm:gap-2">
+                      <div className="p-1 sm:p-1.5 bg-dark-accent/10 rounded-lg">
+                        <IconComponent className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-dark-accent" />
                       </div>
-                      <span className="text-xs font-medium text-dark-primary">{label}</span>
+                      <span className="text-[10px] sm:text-xs font-medium text-dark-primary truncate">{label}</span>
                     </div>
-                    <span className={`text-xs font-bold ${getScoreColor(score * 4)}`}>{score}/25</span>
+                    <span className={`text-[10px] sm:text-xs font-bold ${getScoreColor(score * 4)}`}>{score}/25</span>
                   </div>
-                  <div className="w-full bg-dark-border rounded-full h-1.5">
+                  <div className="w-full bg-dark-border rounded-full h-1 sm:h-1.5">
                     <motion.div
-                      className={`h-1.5 rounded-full ${getScoreColor(score * 4).replace('text-', 'bg-')} shadow-sm`}
+                      className={`h-1 sm:h-1.5 rounded-full ${getScoreColor(score * 4).replace('text-', 'bg-')} shadow-sm`}
                       initial={{ width: 0 }}
                       animate={{ width: `${percentage}%` }}
                       transition={{ duration: 1.2, delay: 0.8 + index * 0.1 }}
                     />
                   </div>
-                  <div className="mt-1 text-right">
-                    <span className="text-xs text-dark-secondary">{Math.round(percentage)}%</span>
+                  <div className="mt-0.5 sm:mt-1 text-right">
+                    <span className="text-[9px] sm:text-xs text-dark-secondary">{Math.round(percentage)}%</span>
                   </div>
                 </motion.div>
               );
@@ -395,25 +395,25 @@ export default function HealthScoreCard({ onViewDetails }: HealthScoreCardProps)
         </div>
 
         {/* Quick Insights */}
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           {healthScore.strengths.length > 0 && (
             <motion.div 
-              className="bg-green-500/5 rounded-lg p-4 border border-green-500/20"
+              className="bg-green-500/5 rounded-lg p-3 sm:p-4 border border-green-500/20"
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.5 }}
             >
-              <div className="flex items-center gap-2 mb-3">
-                <div className="p-1.5 bg-green-500/20 rounded-lg">
-                  <CheckCircle className="h-3 w-3 text-green-400" />
+              <div className="flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3">
+                <div className="p-1 sm:p-1.5 bg-green-500/20 rounded-lg">
+                  <CheckCircle className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-green-400" />
                 </div>
-                <span className="text-sm font-semibold text-green-400">Your Strengths</span>
+                <span className="text-xs sm:text-sm font-semibold text-green-400">Your Strengths</span>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5 sm:space-y-2">
                 {healthScore.strengths.slice(0, 3).map((strength, index) => (
-                  <div key={index} className="flex items-start gap-2">
-                    <span className="text-green-400 text-xs mt-1">✓</span>
-                    <p className="text-xs text-dark-primary font-medium leading-relaxed">
+                  <div key={index} className="flex items-start gap-1.5 sm:gap-2">
+                    <span className="text-green-400 text-[10px] sm:text-xs mt-0.5 sm:mt-1">✓</span>
+                    <p className="text-[11px] sm:text-xs text-dark-primary font-medium leading-relaxed">
                       {strength}
                     </p>
                   </div>
@@ -424,22 +424,22 @@ export default function HealthScoreCard({ onViewDetails }: HealthScoreCardProps)
 
           {healthScore.concerns.length > 0 && (
             <motion.div 
-              className="bg-yellow-500/5 rounded-lg p-4 border border-yellow-500/20"
+              className="bg-yellow-500/5 rounded-lg p-3 sm:p-4 border border-yellow-500/20"
               initial={{ opacity: 0, x: 10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.6 }}
             >
-              <div className="flex items-center gap-2 mb-3">
-                <div className="p-1.5 bg-yellow-500/20 rounded-lg">
-                  <AlertTriangle className="h-3 w-3 text-yellow-400" />
+              <div className="flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3">
+                <div className="p-1 sm:p-1.5 bg-yellow-500/20 rounded-lg">
+                  <AlertTriangle className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-yellow-400" />
                 </div>
-                <span className="text-sm font-semibold text-yellow-400">Focus Areas</span>
+                <span className="text-xs sm:text-sm font-semibold text-yellow-400">Focus Areas</span>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5 sm:space-y-2">
                 {healthScore.concerns.slice(0, 3).map((concern, index) => (
-                  <div key={index} className="flex items-start gap-2">
-                    <span className="text-yellow-400 text-xs mt-1">⚠</span>
-                    <p className="text-xs text-dark-primary font-medium leading-relaxed">
+                  <div key={index} className="flex items-start gap-1.5 sm:gap-2">
+                    <span className="text-yellow-400 text-[10px] sm:text-xs mt-0.5 sm:mt-1">⚠</span>
+                    <p className="text-[11px] sm:text-xs text-dark-primary font-medium leading-relaxed">
                       {concern}
                     </p>
                   </div>
