@@ -287,30 +287,37 @@ async function generateAIHealthDomainsAnalysis(userData: any) {
   // Lifestyle Assessment (16 questions)
   healthContext += `🎯 LIFESTYLE ASSESSMENT RESPONSES:\n`;
   const lifestyleQuestions = [
-    { key: 'energy_levels', question: 'Often feels tired or low energy', response: profile?.energy_levels },
-    { key: 'effort_fatigue', question: 'Physical activity feels more difficult than it should', response: profile?.effort_fatigue },
-    { key: 'caffeine_effect', question: 'Relies on caffeine to get through the day', response: profile?.caffeine_effect },
-    { key: 'digestive_issues', question: 'Experiences digestive discomfort regularly', response: profile?.digestive_issues },
-    { key: 'stress_levels', question: 'Feels stressed or anxious frequently', response: profile?.stress_levels },
-    { key: 'sleep_quality', question: 'Has trouble falling asleep or staying asleep', response: profile?.sleep_quality },
-    { key: 'mood_changes', question: 'Experiences mood swings or emotional instability', response: profile?.mood_changes },
-    { key: 'brain_fog', question: 'Has difficulty concentrating or mental clarity issues', response: profile?.brain_fog },
-    { key: 'sugar_cravings', question: 'Craves sugary or processed foods regularly', response: profile?.sugar_cravings },
-    { key: 'skin_issues', question: 'Has ongoing skin problems or breakouts', response: profile?.skin_issues },
-    { key: 'joint_pain', question: 'Experiences joint pain or stiffness', response: profile?.joint_pain },
-    { key: 'immune_system', question: 'Gets sick frequently or has trouble fighting off illness', response: profile?.immune_system },
-    { key: 'workout_recovery', question: 'Takes longer than expected to recover from exercise', response: profile?.workout_recovery },
-    { key: 'food_sensitivities', question: 'Suspects certain foods cause negative reactions', response: profile?.food_sensitivities },
-    { key: 'weight_management', question: 'Struggles with maintaining or losing weight', response: profile?.weight_management },
-    { key: 'medication_history', question: 'Currently takes or has history with ADHD/anxiety medications', response: profile?.medication_history }
+    { key: 'energy_levels', question: 'Often feels tired or low energy', response: profile?.energy_levels, details: profile?.energy_levels_details },
+    { key: 'effort_fatigue', question: 'Physical activity feels more difficult than it should', response: profile?.effort_fatigue, details: profile?.effort_fatigue_details },
+    { key: 'caffeine_effect', question: 'Relies on caffeine to get through the day', response: profile?.caffeine_effect, details: profile?.caffeine_effect_details },
+    { key: 'digestive_issues', question: 'Experiences digestive discomfort regularly', response: profile?.digestive_issues, details: profile?.digestive_issues_details },
+    { key: 'stress_levels', question: 'Feels stressed or anxious frequently', response: profile?.stress_levels, details: profile?.stress_levels_details },
+    { key: 'sleep_quality', question: 'Has trouble falling asleep or staying asleep', response: profile?.sleep_quality, details: profile?.sleep_quality_details },
+    { key: 'mood_changes', question: 'Experiences mood swings or emotional instability', response: profile?.mood_changes, details: profile?.mood_changes_details },
+    { key: 'brain_fog', question: 'Has difficulty concentrating or mental clarity issues', response: profile?.brain_fog, details: profile?.brain_fog_details },
+    { key: 'sugar_cravings', question: 'Craves sugary or processed foods regularly', response: profile?.sugar_cravings, details: profile?.sugar_cravings_details },
+    { key: 'skin_issues', question: 'Has ongoing skin problems or breakouts', response: profile?.skin_issues, details: profile?.skin_issues_details },
+    { key: 'joint_pain', question: 'Experiences joint pain or stiffness', response: profile?.joint_pain, details: profile?.joint_pain_details },
+    { key: 'immune_system', question: 'Gets sick frequently or has trouble fighting off illness', response: profile?.immune_system, details: profile?.immune_system_details },
+    { key: 'workout_recovery', question: 'Takes longer than expected to recover from exercise', response: profile?.workout_recovery, details: profile?.workout_recovery_details },
+    { key: 'food_sensitivities', question: 'Suspects certain foods cause negative reactions', response: profile?.food_sensitivities, details: profile?.food_sensitivities_details },
+    { key: 'weight_management', question: 'Struggles with maintaining or losing weight', response: profile?.weight_management, details: profile?.weight_management_details },
+    { key: 'medication_history', question: 'Currently takes or has history with ADHD/anxiety medications', response: profile?.medication_history, details: profile?.medication_history_details }
   ];
 
   const positiveResponses = lifestyleQuestions.filter(q => q.response === 'yes');
   const totalIssues = positiveResponses.length;
+  const detailsProvided = positiveResponses.filter(q => q.details).length;
 
   healthContext += `Total Issues Identified: ${totalIssues}/16\n`;
+  if (detailsProvided > 0) {
+    healthContext += `Detailed Context Provided: ${detailsProvided} issues\n`;
+  }
   positiveResponses.forEach(q => {
     healthContext += `• ✅ YES: ${q.question}\n`;
+    if (q.details) {
+      healthContext += `  💬 DETAILS: "${q.details}"\n`;
+    }
   });
   healthContext += `\n`;
 
@@ -390,7 +397,7 @@ async function generateAIHealthDomainsAnalysis(userData: any) {
     throw new Error('OpenAI API key not configured');
   }
 
-  const prompt = `${healthContext}
+  const insightsPrompt = `${healthContext}
 
 🎯 CRITICAL PERSONALIZATION REQUIREMENTS:
 - Use their EXACT age: ${age} years old (not generic age ranges)
@@ -403,6 +410,30 @@ async function generateAIHealthDomainsAnalysis(userData: any) {
 - Explain WHY they experience each specific symptom
 - Make every insight impossible to replicate without their exact data
 - **CRITICAL**: Use "${firstName}" SPARINGLY - only 3-5 times total. Primarily use "you/your" to sound conversational, not robotic
+
+${detailsProvided > 0 ? `
+🔍 CRITICAL DETAIL ANALYSIS (${detailsProvided} user-provided details):
+The user has provided SPECIFIC DETAILS about their symptoms. These details contain CRUCIAL PATTERNS:
+- TIMING patterns (when symptoms occur)
+- TRIGGER patterns (what makes symptoms worse)
+- CONNECTION patterns (how symptoms relate)
+- SEVERITY patterns (impact on daily life)
+
+YOU MUST analyze these details to:
+1. Detect hidden conditions they may not be aware of
+2. Find root causes that connect multiple symptoms
+3. Provide ultra-personalized recommendations based on their exact patterns
+4. Reference their specific details in your analysis to show deep understanding
+` : ''}
+
+🎯 LIFESTYLE INTEGRATION REQUIREMENTS:
+- Reference their specific symptoms naturally throughout your insights
+- Use their EXACT words from their assessment (e.g., "crash at 2pm" not just "fatigue")  
+- Connect multiple symptoms to show patterns across domains
+- Make it conversational - you understand their health journey intimately
+- Each domain insight should reference 2-3 of their specific symptoms when relevant
+- Show how their symptoms relate to different health domains
+- Weave their lifestyle assessment responses naturally into each domain analysis
 
 🎯 ULTRA-HYPER-PERSONALIZED ANALYSIS FOR ${firstName.toUpperCase()}**:
 
@@ -619,7 +650,7 @@ BEGIN ULTRA-PERSONALIZED ANALYSIS FOR ${firstName}:`;
         },
         {
           role: 'user',
-          content: prompt
+          content: insightsPrompt
         }
       ],
       max_completion_tokens: 6000,

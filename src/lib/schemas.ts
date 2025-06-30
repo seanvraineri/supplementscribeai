@@ -44,6 +44,24 @@ export const onboardingSchema = z.object({
   weight_management: z.string().optional(),
   medication_history: z.string().optional(),
   
+  // Optional detail fields for lifestyle questions (when user answers "yes")
+  energy_levels_details: z.string().max(500).optional(),
+  effort_fatigue_details: z.string().max(500).optional(),
+  caffeine_effect_details: z.string().max(500).optional(),
+  digestive_issues_details: z.string().max(500).optional(),
+  stress_levels_details: z.string().max(500).optional(),
+  sleep_quality_details: z.string().max(500).optional(),
+  mood_changes_details: z.string().max(500).optional(),
+  brain_fog_details: z.string().max(500).optional(),
+  sugar_cravings_details: z.string().max(500).optional(),
+  skin_issues_details: z.string().max(500).optional(),
+  joint_pain_details: z.string().max(500).optional(),
+  immune_system_details: z.string().max(500).optional(),
+  workout_recovery_details: z.string().max(500).optional(),
+  food_sensitivities_details: z.string().max(500).optional(),
+  weight_management_details: z.string().max(500).optional(),
+  medication_history_details: z.string().max(500).optional(),
+  
   // Keeping old fields for backwards compatibility but they won't be used in new flow
   anxiety_level: z.string().optional(),
   stress_resilience: z.string().optional(),

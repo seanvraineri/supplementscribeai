@@ -7,6 +7,7 @@ ALTER TABLE public.supplement_plans DISABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users can manage their own supplement plans" ON public.supplement_plans;
 DROP POLICY IF EXISTS "Users can view their own supplement plans" ON public.supplement_plans;
 DROP POLICY IF EXISTS "Users can create their own supplement plans" ON public.supplement_plans;
+DROP POLICY IF EXISTS "supplement_plans_user_policy" ON public.supplement_plans;
 
 -- Re-enable RLS
 ALTER TABLE public.supplement_plans ENABLE ROW LEVEL SECURITY;

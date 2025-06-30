@@ -682,35 +682,84 @@ PERSONALIZATION TIER: ${tier}
   
   // Sleep & Energy
   if (profile.sleep_hours) prompt += `Sleep Hours: ${profile.sleep_hours} hours/night\n`;
-  if (profile.energy_levels) prompt += `Energy Levels: ${profile.energy_levels}\n`;
-  if (profile.effort_fatigue) prompt += `Effort/Fatigue: ${profile.effort_fatigue}\n`;
-  if (profile.sleep_quality) prompt += `Sleep Quality: ${profile.sleep_quality}\n`;
+  if (profile.energy_levels) {
+    prompt += `Energy Levels: ${profile.energy_levels}\n`;
+    if (profile.energy_levels_details) prompt += `  💬 Details: "${profile.energy_levels_details}"\n`;
+  }
+  if (profile.effort_fatigue) {
+    prompt += `Effort/Fatigue: ${profile.effort_fatigue}\n`;
+    if (profile.effort_fatigue_details) prompt += `  💬 Details: "${profile.effort_fatigue_details}"\n`;
+  }
+  if (profile.sleep_quality) {
+    prompt += `Sleep Quality: ${profile.sleep_quality}\n`;
+    if (profile.sleep_quality_details) prompt += `  💬 Details: "${profile.sleep_quality_details}"\n`;
+  }
   if (profile.sleep_aids) prompt += `Sleep Aids: ${profile.sleep_aids}\n`;
   
   // Mental/Cognitive
-  if (profile.caffeine_effect) prompt += `Caffeine Effect: ${profile.caffeine_effect}\n`;
-  if (profile.brain_fog) prompt += `Brain Fog: ${profile.brain_fog}\n`;
+  if (profile.caffeine_effect) {
+    prompt += `Caffeine Effect: ${profile.caffeine_effect}\n`;
+    if (profile.caffeine_effect_details) prompt += `  💬 Details: "${profile.caffeine_effect_details}"\n`;
+  }
+  if (profile.brain_fog) {
+    prompt += `Brain Fog: ${profile.brain_fog}\n`;
+    if (profile.brain_fog_details) prompt += `  💬 Details: "${profile.brain_fog_details}"\n`;
+  }
   if (profile.anxiety_level) prompt += `Anxiety Level: ${profile.anxiety_level}\n`;
   if (profile.stress_resilience) prompt += `Stress Resilience: ${profile.stress_resilience}\n`;
-  if (profile.stress_levels) prompt += `Stress Levels: ${profile.stress_levels}\n`;
-  if (profile.mood_changes) prompt += `Mood Changes: ${profile.mood_changes}\n`;
+  if (profile.stress_levels) {
+    prompt += `Stress Levels: ${profile.stress_levels}\n`;
+    if (profile.stress_levels_details) prompt += `  💬 Details: "${profile.stress_levels_details}"\n`;
+  }
+  if (profile.mood_changes) {
+    prompt += `Mood Changes: ${profile.mood_changes}\n`;
+    if (profile.mood_changes_details) prompt += `  💬 Details: "${profile.mood_changes_details}"\n`;
+  }
   
   // Digestive & Metabolic
   if (profile.bloating) prompt += `Bloating: ${profile.bloating}\n`;
   if (profile.digestion_speed) prompt += `Digestion Speed: ${profile.digestion_speed}\n`;
-  if (profile.digestive_issues) prompt += `Digestive Issues: ${profile.digestive_issues}\n`;
-  if (profile.food_sensitivities) prompt += `Food Sensitivities: ${profile.food_sensitivities}\n`;
-  if (profile.sugar_cravings) prompt += `Sugar Cravings: ${profile.sugar_cravings}\n`;
-  if (profile.weight_management) prompt += `Weight Management: ${profile.weight_management}\n`;
+  if (profile.digestive_issues) {
+    prompt += `Digestive Issues: ${profile.digestive_issues}\n`;
+    if (profile.digestive_issues_details) prompt += `  💬 Details: "${profile.digestive_issues_details}"\n`;
+  }
+  if (profile.food_sensitivities) {
+    prompt += `Food Sensitivities: ${profile.food_sensitivities}\n`;
+    if (profile.food_sensitivities_details) prompt += `  💬 Details: "${profile.food_sensitivities_details}"\n`;
+  }
+  if (profile.sugar_cravings) {
+    prompt += `Sugar Cravings: ${profile.sugar_cravings}\n`;
+    if (profile.sugar_cravings_details) prompt += `  💬 Details: "${profile.sugar_cravings_details}"\n`;
+  }
+  if (profile.weight_management) {
+    prompt += `Weight Management: ${profile.weight_management}\n`;
+    if (profile.weight_management_details) prompt += `  💬 Details: "${profile.weight_management_details}"\n`;
+  }
   if (profile.belly_fat) prompt += `Belly Fat: ${profile.belly_fat}\n`;
   
   // Physical Health
   if (profile.anemia_history) prompt += `Anemia History: ${profile.anemia_history}\n`;
   if (profile.bruising_bleeding) prompt += `Bruising/Bleeding: ${profile.bruising_bleeding}\n`;
-  if (profile.joint_pain) prompt += `Joint Pain: ${profile.joint_pain}\n`;
-  if (profile.skin_issues) prompt += `Skin Issues: ${profile.skin_issues}\n`;
-  if (profile.immune_system) prompt += `Immune System: ${profile.immune_system}\n`;
-  if (profile.workout_recovery) prompt += `Workout Recovery: ${profile.workout_recovery}\n`;
+  if (profile.joint_pain) {
+    prompt += `Joint Pain: ${profile.joint_pain}\n`;
+    if (profile.joint_pain_details) prompt += `  💬 Details: "${profile.joint_pain_details}"\n`;
+  }
+  if (profile.skin_issues) {
+    prompt += `Skin Issues: ${profile.skin_issues}\n`;
+    if (profile.skin_issues_details) prompt += `  💬 Details: "${profile.skin_issues_details}"\n`;
+  }
+  if (profile.immune_system) {
+    prompt += `Immune System: ${profile.immune_system}\n`;
+    if (profile.immune_system_details) prompt += `  💬 Details: "${profile.immune_system_details}"\n`;
+  }
+  if (profile.workout_recovery) {
+    prompt += `Workout Recovery: ${profile.workout_recovery}\n`;
+    if (profile.workout_recovery_details) prompt += `  💬 Details: "${profile.workout_recovery_details}"\n`;
+  }
+  if (profile.medication_history) {
+    prompt += `Medication History: ${profile.medication_history}\n`;
+    if (profile.medication_history_details) prompt += `  💬 Details: "${profile.medication_history_details}"\n`;
+  }
   
   // Nutrient Deficiencies
   if (profile.low_nutrients && profile.low_nutrients.length > 0) {
@@ -772,7 +821,7 @@ PERSONALIZATION TIER: ${tier}
   
   prompt += `🎯 STRATEGY: Create a diet plan that provides nutrients abundant in food while supporting the absorption and effectiveness of their 6-supplement pack.\n\n`;
 
-  prompt += `🔥 CRITICAL INSTRUCTIONS (IN ORDER OF PRIORITY):\n1. 🚨 ALLERGIES: NEVER include any allergen listed above - this is LIFE-THREATENING\n2. 🍽️ DIETARY PREFERENCE: EVERY food must comply with their ${profile.dietary_preference || 'specified'} diet - NO EXCEPTIONS\n3. Reference their SPECIFIC biomarker values in reasoning (e.g., \"Your Vitamin D level of 22 ng/mL...\")\n4. Connect genetic variants to food choices (e.g., \"Your MTHFR variant means...\")\n5. USE ALL 16 ASSESSMENT QUESTIONS above - address their sleep, energy, stress, digestion, etc.\n6. Connect their symptoms to specific foods (e.g., \"Your brain fog + bloating suggests...\")\n7. Reference their exact responses (e.g., \"Since you sleep only 5 hours...\")\n8. Explain HOW each food will help THEIR specific body and concerns\n9. Make every explanation deeply personal and caring\n10. ALL meal ingredients must come from your grocery list\n11. Provide EXACTLY 5 meals in each category (20 total)\n12. Use only traditional whole foods (no seed oils, grass-fed only if diet allows, etc.)\n13. 🚨 MANDATORY: Use Title Case for ALL grocery list items\n14. 🎯 FOCUS ON FOOD-ABUNDANT NUTRIENTS that complement their supplement pack\n\n🧬 MICRONUTRIENT ANALYSIS REQUIREMENTS:\n- Identify 6-8 KEY NUTRIENTS they're getting from this diet plan\n- For each nutrient, explain WHY THEY SPECIFICALLY need it based on their symptoms/biomarkers/genetics\n- Show which foods in your grocery list provide each nutrient\n- Identify 3-4 powerful nutrient synergies (e.g., Vitamin C + Iron for better absorption)\n- Explain how their diet works WITH their 6-supplement pack (not against it)\n- Make it personal - connect nutrients to their specific health concerns\n- Example: \"Vitamin C from your bell peppers will help with your frequent illness and skin issues\"\n\nProvide ONLY the JSON response with grocery list first, then exactly 20 personalized meals, then micronutrient analysis.`;
+  prompt += `🔥 CRITICAL INSTRUCTIONS (IN ORDER OF PRIORITY):\n1. 🚨 ALLERGIES: NEVER include any allergen listed above - this is LIFE-THREATENING\n2. 🍽️ DIETARY PREFERENCE: EVERY food must comply with their ${profile.dietary_preference || 'specified'} diet - NO EXCEPTIONS\n3. Reference their SPECIFIC biomarker values in reasoning (e.g., \"Your Vitamin D level of 22 ng/mL...\")\n4. Connect genetic variants to food choices (e.g., \"Your MTHFR variant means...\")\n5. USE ALL 16 ASSESSMENT QUESTIONS above - address their sleep, energy, stress, digestion, etc.\n6. Connect their symptoms to specific foods (e.g., \"Your brain fog + bloating suggests...\")\n7. Reference their exact responses (e.g., \"Since you sleep only 5 hours...\")\n8. Explain HOW each food will help THEIR specific body and concerns\n9. Make every explanation deeply personal and caring\n10. ALL meal ingredients must come from your grocery list\n11. Provide EXACTLY 5 meals in each category (20 total)\n12. Use only traditional whole foods (no seed oils, grass-fed only if diet allows, etc.)\n13. 🚨 MANDATORY: Use Title Case for ALL grocery list items\n14. 🎯 FOCUS ON FOOD-ABUNDANT NUTRIENTS that complement their supplement pack\n\n🔍 PATTERN DETECTION FROM USER DETAILS:\nIf the user provided details about their symptoms (marked with 💬), analyze these for:\n- TIMING patterns (morning fatigue, 3pm crashes, after meals, etc.)\n- TRIGGER patterns (stress, certain foods, weather, activity)\n- CONNECTION patterns (symptoms that occur together)\n- SEVERITY patterns (frequency, duration, impact on life)\nUse these patterns to make ultra-personalized food recommendations!\n\n🧬 MICRONUTRIENT ANALYSIS REQUIREMENTS:\n- Identify 6-8 KEY NUTRIENTS they're getting from this diet plan\n- For each nutrient, explain WHY THEY SPECIFICALLY need it based on their symptoms/biomarkers/genetics\n- Show which foods in your grocery list provide each nutrient\n- Identify 3-4 powerful nutrient synergies (e.g., Vitamin C + Iron for better absorption)\n- Explain how their diet works WITH their 6-supplement pack (not against it)\n- Make it personal - connect nutrients to their specific health concerns\n- Example: \"Vitamin C from your bell peppers will help with your frequent illness and skin issues\"\n\nProvide ONLY the JSON response with grocery list first, then exactly 20 personalized meals, then micronutrient analysis.`;
 
   return prompt;
 }

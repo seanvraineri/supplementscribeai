@@ -41,6 +41,9 @@ CREATE INDEX IF NOT EXISTS idx_supplement_orders_subscription_tier ON public.sup
 ALTER TABLE public.supplement_orders ENABLE ROW LEVEL SECURITY;
 
 -- Create RLS policy that matches the pattern from other user-owned tables
+-- Drop existing policy if it exists (safe to re-create)
+DROP POLICY IF EXISTS "Users can manage their own supplement orders" ON public.supplement_orders;
+
 CREATE POLICY "Users can manage their own supplement orders" 
 ON public.supplement_orders 
 FOR ALL 
@@ -52,6 +55,7 @@ WITH CHECK (auth.uid() = user_id);
 GRANT ALL ON public.supplement_orders TO authenticated;
 
 -- Add updated_at trigger for automatic timestamp updates
+-- Create or replace the function (safe to re-create)
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -59,6 +63,9 @@ BEGIN
     RETURN NEW;
 END;
 $$ language 'plpgsql';
+
+-- Drop and recreate trigger to ensure it's properly set up
+DROP TRIGGER IF EXISTS update_supplement_orders_updated_at ON public.supplement_orders;
 
 CREATE TRIGGER update_supplement_orders_updated_at 
     BEFORE UPDATE ON public.supplement_orders 

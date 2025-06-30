@@ -893,8 +893,14 @@ PERSONALIZATION TIER: ${tier}
 
   lifestyleProblems.forEach(q => {
     const response = profile[q.key];
+    const detailKey = `${q.key}_details`;
+    const details = profile[detailKey];
+    
     if (response === 'yes') {
-      activeProblems.push(q);
+      activeProblems.push({
+        ...q,
+        userDetails: details || null
+      });
     } else if (response === 'no') {
       noProblems.push(q);
     }
@@ -904,9 +910,13 @@ PERSONALIZATION TIER: ${tier}
     prompt += `🔴 ACTIVE HEALTH PROBLEMS (Answered YES - URGENT SUPPLEMENTATION NEEDED):\n`;
     activeProblems.forEach(q => {
       prompt += `• ${q.problem} → Target with: ${q.supplements.join(', ')}\n`;
+      if (q.userDetails) {
+        prompt += `  💬 USER DETAILS: "${q.userDetails}"\n`;
+      }
     });
     prompt += `\n⚠️ CRITICAL: These ${activeProblems.length} problems are actively affecting their daily life.\n`;
     prompt += `Your supplement plan MUST prioritize addressing these issues.\n`;
+    prompt += `PAY SPECIAL ATTENTION to the user's specific details - they provide crucial context!\n`;
   }
 
   if (noProblems.length > 0) {
@@ -917,6 +927,32 @@ PERSONALIZATION TIER: ${tier}
     if (noProblems.length > 5) {
       prompt += `... and ${noProblems.length - 5} other areas functioning well\n`;
     }
+  }
+
+  // 🔍 NEW: Cross-Symptom Pattern Analysis from Detail Fields
+  const detailsProvided = activeProblems.filter(p => p.userDetails).length;
+  if (detailsProvided > 0) {
+    prompt += `\n=== 🔍 DETAILED SYMPTOM PATTERN ANALYSIS (${detailsProvided} details provided) ===\n`;
+    prompt += `Analyze these user-provided details for hidden patterns:\n\n`;
+    
+    // Collect all details for pattern analysis
+    const allDetails: string[] = [];
+    activeProblems.forEach(problem => {
+      if (problem.userDetails) {
+        allDetails.push(`${problem.problem}: "${problem.userDetails}"`);
+      }
+    });
+    
+    prompt += allDetails.join('\n') + '\n\n';
+    
+    prompt += `🎯 PATTERN DETECTION INSTRUCTIONS:\n`;
+    prompt += `1. Look for TIMING patterns (morning, after meals, 3pm crashes, etc.)\n`;
+    prompt += `2. Identify TRIGGERS (stress, food, activity, weather)\n`;
+    prompt += `3. Find CONNECTIONS between symptoms (e.g., fatigue + brain fog + weight gain = thyroid)\n`;
+    prompt += `4. Detect SEVERITY indicators (frequency, duration, impact on life)\n`;
+    prompt += `5. Notice FAMILY patterns mentioned (genetic predispositions)\n\n`;
+    
+    prompt += `⚠️ If patterns suggest undiagnosed conditions, prioritize supplements that address the root cause!\n`;
   }
 
   // Optional manual biomarker input (Step 8 - user-entered text)
@@ -1173,45 +1209,6 @@ STRESS RESILIENCE STACK (if anxiety/sleep issues):
 
 CRITICAL: The PRIMARY HEALTH CONCERN is their most important issue. At least 2-3 supplements should directly address this concern.
 
-PERSONALIZATION STRATEGY FOR ${tier}:`;
-
-  switch (tier) {
-    case 'PRECISION_MEDICINE':
-      prompt += `
-- Prioritize genetic variants (MTHFR → methylfolate, COMT → magnesium, etc.)
-- Address biomarker deficiencies with precision
-- Use genetic data for supplement form selection
-- Target metabolic pathways based on genetics
-- CITE SPECIFIC GENETIC VARIANTS AND BIOMARKER VALUES in your reasoning`;
-      break;
-    case 'BIOMARKER_FOCUSED':
-      prompt += `
-- Correct deficiencies shown in lab work first
-- Target inflammatory markers if elevated
-- Address metabolic imbalances
-- Focus on nutrient optimization
-- CITE SPECIFIC BIOMARKER VALUES AND RANGES in your reasoning`;
-      break;
-    case 'SYMPTOM_TARGETED':
-      prompt += `
-- Address primary symptoms and health concerns
-- Target brain fog, sleep, energy, anxiety, etc.
-- Support stated health goals
-- Consider lifestyle factors
-- CITE SPECIFIC SYMPTOMS AND HEALTH GOALS in your reasoning`;
-      break;
-    case 'FOUNDATIONAL_WELLNESS':
-      prompt += `
-- Provide essential nutrients for optimal health
-- Consider age/gender-specific needs
-- Focus on prevention and general wellness
-- Target common population deficiencies
-- CITE SPECIFIC AGE, GENDER, AND LIFESTYLE FACTORS in your reasoning`;
-      break;
-  }
-
-  prompt += `
-
 🔥 CRITICAL PERSONALIZATION INSTRUCTIONS:
 - Each "reason" field MUST be deeply personal, empathetic, and healing-focused
 - Write as if you're a caring health coach who truly understands their struggle
@@ -1221,14 +1218,25 @@ PERSONALIZATION STRATEGY FOR ${tier}:`;
 - Use warm, supportive language that shows you care about their wellbeing
 - Make them feel seen, understood, and hopeful about their health journey
 
+🎯 LIFESTYLE INTEGRATION REQUIREMENTS:
+- Naturally weave in their specific symptoms throughout recommendations
+- Use their EXACT words from detail fields (e.g., "crash at 2pm" not just "fatigue")
+- Each supplement should address 2-3 of their reported issues
+- Connect symptoms to show you see the patterns (e.g., "Your afternoon crashes and 3am wake-ups both suggest...")
+- Make it conversational - like talking to someone who knows them well
+- Spread coverage across all 6 supplements so ALL their issues are addressed
+- Never list symptoms mechanically - integrate them naturally into the explanation
+
 REASONING EXAMPLES:
 - Primary Concern: "You mentioned that your main concern is '${profile.primary_health_concern || '[their specific concern]'}' - this is exactly why I'm recommending this supplement. It directly addresses your primary worry by [specific mechanism]. You shouldn't have to live with this concern any longer."
+
+- Lifestyle Symptoms: "Your afternoon energy crashes and need for 3-4 cups of coffee tell me your adrenals are working overtime. This adaptogen blend will help stabilize your energy naturally, so you won't need to rely on caffeine to get through the day. Many people with your exact pattern find they can cut their coffee intake in half within 2 weeks."
+
+- Multiple Symptoms: "The combination of waking at 3am, afternoon brain fog, and sugar cravings all point to blood sugar dysregulation. This supplement helps stabilize glucose levels throughout the day and night, addressing all three issues at their root cause."
 
 - Biomarkers: "Your Vitamin D level of 18 ng/mL explains so much about what you've been experiencing, especially regarding your primary concern about [their concern]. This severe deficiency is likely contributing to your brain fog, low energy, and difficulty with weight management. By bringing your Vitamin D to optimal levels (30-50 ng/mL), you should start feeling more mentally clear, energetic, and motivated to reach your health goals."
 
 - Genetics: "Your MTHFR A1298C variant means your body has been working extra hard to process folate, which could be connected to your primary concern about [their concern]. This methylated B-complex bypasses your genetic limitation, giving your brain and nervous system the exact form of B vitamins they can actually use."
-
-- Symptoms: "Your severe brain fog and poor sleep quality are deeply connected. This magnesium will help calm your nervous system, allowing for deeper, more restorative sleep. When you sleep better, your brain fog lifts, your energy returns, and you'll feel like yourself again."
 
 🚨 ANTI-HALLUCINATION REQUIREMENTS:
 - ONLY use biomarker values that are explicitly listed above

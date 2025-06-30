@@ -512,6 +512,28 @@ USER PROFILE:
 - Gender: ${profile.gender || 'Not specified'}
 - Health Goals: ${healthProfile.healthGoals?.join(', ') || 'Not specified'}
 
+LIFESTYLE ASSESSMENT (16 symptoms):
+${Object.entries(healthProfile.healthMetrics).filter(([key, value]) => {
+  const isMainQuestion = key.includes('Levels') || key.includes('Fatigue') || key.includes('Quality') || 
+                        key.includes('Issues') || key.includes('System') || key.includes('Recovery') ||
+                        key.includes('Management') || key.includes('Cravings') || key.includes('Changes') ||
+                        key.includes('Pain') || key.includes('Effect') || key.includes('Fog') || key.includes('History');
+  return isMainQuestion && !key.includes('Details') && value === 'yes';
+}).map(([key, value]) => {
+  const detailKey = key + 'Details';
+  const details = healthProfile.healthMetrics[detailKey];
+  return `• ${key.replace(/([A-Z])/g, ' $1').trim()}: YES${details ? `\n  💬 Details: "${details}"` : ''}`;
+}).join('\n')}
+
+${Object.entries(healthProfile.healthMetrics).filter(([key, value]) => key.includes('Details') && value).length > 0 ? 
+`\n🔍 SYMPTOM PATTERN ANALYSIS REQUIRED:
+Analyze the user-provided details above for:
+- TIMING patterns (morning fatigue, 3pm crashes, after meals)
+- TRIGGER patterns (stress, foods, weather, activity)
+- CONNECTION patterns (symptoms that occur together)
+- SEVERITY patterns (frequency, duration, life impact)
+Use these patterns to determine if this product addresses their specific symptom patterns!` : ''}
+
 GENETIC ANALYSIS (${genetics.length} variants analyzed):
 ${genetics.length > 0 ? genetics.map(g => 
   `• ${g.rsid} (${g.gene}): ${g.genotype}`
@@ -779,20 +801,46 @@ serve(async (req) => {
       healthMetrics: {
         sleepHours: userProfile.sleep_hours,
         energyLevels: userProfile.energy_levels,
+        energyLevelsDetails: userProfile.energy_levels_details,
         effortFatigue: userProfile.effort_fatigue,
+        effortFatigueDetails: userProfile.effort_fatigue_details,
         caffeineEffect: userProfile.caffeine_effect,
+        caffeineEffectDetails: userProfile.caffeine_effect_details,
         brainFog: userProfile.brain_fog,
+        brainFogDetails: userProfile.brain_fog_details,
         anxietyLevel: userProfile.anxiety_level,
         stressResilience: userProfile.stress_resilience,
+        stressLevels: userProfile.stress_levels,
+        stressLevelsDetails: userProfile.stress_levels_details,
         sleepQuality: userProfile.sleep_quality,
+        sleepQualityDetails: userProfile.sleep_quality_details,
+        moodChanges: userProfile.mood_changes,
+        moodChangesDetails: userProfile.mood_changes_details,
         sleepAids: userProfile.sleep_aids,
         bloating: userProfile.bloating,
         anemiaHistory: userProfile.anemia_history,
         digestionSpeed: userProfile.digestion_speed,
+        digestiveIssues: userProfile.digestive_issues,
+        digestiveIssuesDetails: userProfile.digestive_issues_details,
+        foodSensitivities: userProfile.food_sensitivities,
+        foodSensitivitiesDetails: userProfile.food_sensitivities_details,
+        sugarCravings: userProfile.sugar_cravings,
+        sugarCravingsDetails: userProfile.sugar_cravings_details,
         lowNutrients: userProfile.low_nutrients || [],
         bruisingBleeding: userProfile.bruising_bleeding,
         bellyFat: userProfile.belly_fat,
-        jointPain: userProfile.joint_pain
+        jointPain: userProfile.joint_pain,
+        jointPainDetails: userProfile.joint_pain_details,
+        skinIssues: userProfile.skin_issues,
+        skinIssuesDetails: userProfile.skin_issues_details,
+        immuneSystem: userProfile.immune_system,
+        immuneSystemDetails: userProfile.immune_system_details,
+        workoutRecovery: userProfile.workout_recovery,
+        workoutRecoveryDetails: userProfile.workout_recovery_details,
+        weightManagement: userProfile.weight_management,
+        weightManagementDetails: userProfile.weight_management_details,
+        medicationHistory: userProfile.medication_history,
+        medicationHistoryDetails: userProfile.medication_history_details
       },
       biomarkers: userBiomarkers.map(b => {
         const prettify = (raw: string | null) => {

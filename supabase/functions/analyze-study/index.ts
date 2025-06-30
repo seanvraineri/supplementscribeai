@@ -223,19 +223,101 @@ Deno.serve(async (req) => {
       
              // Lifestyle Assessment Issues (Yes answers only) - Detailed context
        const lifestyleIssues = [];
-       if (profile?.energy_levels === 'yes') lifestyleIssues.push('Often feels tired or low energy (needs energy-boosting nutrients like B-vitamins and iron)');
-       if (profile?.effort_fatigue === 'yes') lifestyleIssues.push('Physical activity feels more difficult than it should (may benefit from performance-enhancing supplements like CoQ10)');
-       if (profile?.digestive_issues === 'yes') lifestyleIssues.push('Experiences digestive discomfort regularly (needs gut-healing nutrients and probiotics)');
-       if (profile?.stress_levels === 'yes') lifestyleIssues.push('Feels stressed or anxious frequently (needs stress-fighting nutrients like magnesium)');
-       if (profile?.mood_changes === 'yes') lifestyleIssues.push('Experiences mood swings or irritability (needs mood-stabilizing nutrients like omega-3s)');
-       if (profile?.sugar_cravings === 'yes') lifestyleIssues.push('Craves sugar or processed foods (needs blood sugar stabilizing nutrients)');
-       if (profile?.skin_issues === 'yes') lifestyleIssues.push('Has skin problems like acne, dryness, or sensitivity (needs skin-supporting vitamins like zinc and vitamin E)');
-       if (profile?.joint_pain === 'yes') lifestyleIssues.push('Experiences joint pain or stiffness (needs anti-inflammatory supplements like turmeric)');
-       if (profile?.brain_fog === 'yes') lifestyleIssues.push('Experiences brain fog or difficulty concentrating (needs brain-boosting supplements for mental clarity)');
-       if (profile?.sleep_quality === 'yes') lifestyleIssues.push('Has trouble falling asleep or staying asleep (needs sleep-promoting supplements like melatonin)');
-       if (profile?.workout_recovery === 'yes') lifestyleIssues.push('Takes longer to recover from workouts (needs recovery-enhancing supplements)');
-       if (profile?.food_sensitivities === 'yes') lifestyleIssues.push('Certain foods make them feel unwell (needs digestive enzymes and gut repair nutrients)');
-       if (profile?.weight_management === 'yes') lifestyleIssues.push('Difficult to maintain a healthy weight (needs metabolism-supporting supplements)');
+       const lifestyleDetails = [];
+       
+       if (profile?.energy_levels === 'yes') {
+         lifestyleIssues.push('Often feels tired or low energy (needs energy-boosting nutrients like B-vitamins and iron)');
+         if (profile?.energy_levels_details) {
+           lifestyleDetails.push(`Energy details: "${profile.energy_levels_details}"`);
+         }
+       }
+       if (profile?.effort_fatigue === 'yes') {
+         lifestyleIssues.push('Physical activity feels more difficult than it should (may benefit from performance-enhancing supplements like CoQ10)');
+         if (profile?.effort_fatigue_details) {
+           lifestyleDetails.push(`Fatigue details: "${profile.effort_fatigue_details}"`);
+         }
+       }
+       if (profile?.digestive_issues === 'yes') {
+         lifestyleIssues.push('Experiences digestive discomfort regularly (needs gut-healing nutrients and probiotics)');
+         if (profile?.digestive_issues_details) {
+           lifestyleDetails.push(`Digestive details: "${profile.digestive_issues_details}"`);
+         }
+       }
+       if (profile?.stress_levels === 'yes') {
+         lifestyleIssues.push('Feels stressed or anxious frequently (needs stress-fighting nutrients like magnesium)');
+         if (profile?.stress_levels_details) {
+           lifestyleDetails.push(`Stress details: "${profile.stress_levels_details}"`);
+         }
+       }
+       if (profile?.mood_changes === 'yes') {
+         lifestyleIssues.push('Experiences mood swings or irritability (needs mood-stabilizing nutrients like omega-3s)');
+         if (profile?.mood_changes_details) {
+           lifestyleDetails.push(`Mood details: "${profile.mood_changes_details}"`);
+         }
+       }
+       if (profile?.sugar_cravings === 'yes') {
+         lifestyleIssues.push('Craves sugar or processed foods (needs blood sugar stabilizing nutrients)');
+         if (profile?.sugar_cravings_details) {
+           lifestyleDetails.push(`Cravings details: "${profile.sugar_cravings_details}"`);
+         }
+       }
+       if (profile?.skin_issues === 'yes') {
+         lifestyleIssues.push('Has skin problems like acne, dryness, or sensitivity (needs skin-supporting vitamins like zinc and vitamin E)');
+         if (profile?.skin_issues_details) {
+           lifestyleDetails.push(`Skin details: "${profile.skin_issues_details}"`);
+         }
+       }
+       if (profile?.joint_pain === 'yes') {
+         lifestyleIssues.push('Experiences joint pain or stiffness (needs anti-inflammatory supplements like turmeric)');
+         if (profile?.joint_pain_details) {
+           lifestyleDetails.push(`Joint pain details: "${profile.joint_pain_details}"`);
+         }
+       }
+       if (profile?.brain_fog === 'yes') {
+         lifestyleIssues.push('Experiences brain fog or difficulty concentrating (needs brain-boosting supplements for mental clarity)');
+         if (profile?.brain_fog_details) {
+           lifestyleDetails.push(`Brain fog details: "${profile.brain_fog_details}"`);
+         }
+       }
+       if (profile?.sleep_quality === 'yes') {
+         lifestyleIssues.push('Has trouble falling asleep or staying asleep (needs sleep-promoting supplements like melatonin)');
+         if (profile?.sleep_quality_details) {
+           lifestyleDetails.push(`Sleep details: "${profile.sleep_quality_details}"`);
+         }
+       }
+       if (profile?.workout_recovery === 'yes') {
+         lifestyleIssues.push('Takes longer to recover from workouts (needs recovery-enhancing supplements)');
+         if (profile?.workout_recovery_details) {
+           lifestyleDetails.push(`Recovery details: "${profile.workout_recovery_details}"`);
+         }
+       }
+       if (profile?.food_sensitivities === 'yes') {
+         lifestyleIssues.push('Certain foods make them feel unwell (needs digestive enzymes and gut repair nutrients)');
+         if (profile?.food_sensitivities_details) {
+           lifestyleDetails.push(`Food sensitivity details: "${profile.food_sensitivities_details}"`);
+         }
+       }
+       if (profile?.weight_management === 'yes') {
+         lifestyleIssues.push('Difficult to maintain a healthy weight (needs metabolism-supporting supplements)');
+         if (profile?.weight_management_details) {
+           lifestyleDetails.push(`Weight management details: "${profile.weight_management_details}"`);
+         }
+       }
+       if (profile?.immune_system === 'yes') {
+         lifestyleIssues.push('Gets sick more often than desired (needs immune-boosting nutrients)');
+         if (profile?.immune_system_details) {
+           lifestyleDetails.push(`Immune system details: "${profile.immune_system_details}"`);
+         }
+       }
+       if (profile?.caffeine_effect === 'yes') {
+         lifestyleIssues.push('Relies on caffeine to get through the day');
+         if (profile?.caffeine_effect_details) {
+           lifestyleDetails.push(`Caffeine details: "${profile.caffeine_effect_details}"`);
+         }
+       }
+       if (profile?.medication_history === 'yes' && profile?.medication_history_details) {
+         lifestyleDetails.push(`Medication history details: "${profile.medication_history_details}"`);
+       }
        
        // Also include positive lifestyle factors (No answers)
        const lifestyleStrengths = [];
@@ -244,6 +326,10 @@ Deno.serve(async (req) => {
        
        if (lifestyleIssues.length > 0) {
          parts.push(`**LIFESTYLE CONCERNS**: ${lifestyleIssues.join(' • ')}`);
+       }
+       
+       if (lifestyleDetails.length > 0) {
+         parts.push(`**LIFESTYLE DETAILS (User-Provided Context)**: \n${lifestyleDetails.join('\n')}`);
        }
        
        if (lifestyleStrengths.length > 0) {
@@ -273,20 +359,46 @@ Deno.serve(async (req) => {
       healthMetrics: {
         sleepHours: userProfile.sleep_hours,
         energyLevels: userProfile.energy_levels,
+        energyLevelsDetails: userProfile.energy_levels_details,
         effortFatigue: userProfile.effort_fatigue,
+        effortFatigueDetails: userProfile.effort_fatigue_details,
         caffeineEffect: userProfile.caffeine_effect,
+        caffeineEffectDetails: userProfile.caffeine_effect_details,
         brainFog: userProfile.brain_fog,
+        brainFogDetails: userProfile.brain_fog_details,
         anxietyLevel: userProfile.anxiety_level,
         stressResilience: userProfile.stress_resilience,
+        stressLevels: userProfile.stress_levels,
+        stressLevelsDetails: userProfile.stress_levels_details,
         sleepQuality: userProfile.sleep_quality,
+        sleepQualityDetails: userProfile.sleep_quality_details,
+        moodChanges: userProfile.mood_changes,
+        moodChangesDetails: userProfile.mood_changes_details,
         sleepAids: userProfile.sleep_aids,
         bloating: userProfile.bloating,
         anemiaHistory: userProfile.anemia_history,
         digestionSpeed: userProfile.digestion_speed,
+        digestiveIssues: userProfile.digestive_issues,
+        digestiveIssuesDetails: userProfile.digestive_issues_details,
+        foodSensitivities: userProfile.food_sensitivities,
+        foodSensitivitiesDetails: userProfile.food_sensitivities_details,
+        sugarCravings: userProfile.sugar_cravings,
+        sugarCravingsDetails: userProfile.sugar_cravings_details,
         lowNutrients: userProfile.low_nutrients || [],
         bruisingBleeding: userProfile.bruising_bleeding,
         bellyFat: userProfile.belly_fat,
-        jointPain: userProfile.joint_pain
+        jointPain: userProfile.joint_pain,
+        jointPainDetails: userProfile.joint_pain_details,
+        skinIssues: userProfile.skin_issues,
+        skinIssuesDetails: userProfile.skin_issues_details,
+        immuneSystem: userProfile.immune_system,
+        immuneSystemDetails: userProfile.immune_system_details,
+        workoutRecovery: userProfile.workout_recovery,
+        workoutRecoveryDetails: userProfile.workout_recovery_details,
+        weightManagement: userProfile.weight_management,
+        weightManagementDetails: userProfile.weight_management_details,
+        medicationHistory: userProfile.medication_history,
+        medicationHistoryDetails: userProfile.medication_history_details
       },
       biomarkers: userBiomarkers.map(b => {
         // Simple prettifier: snake_case or all-caps to Title Case
@@ -428,6 +540,15 @@ Create a compelling narrative: "Your health journey with [primary concern] combi
 - Surprising connections: "Interestingly, this study also found benefits for [unexpected area] which could help with your [related concern]"
 - Predictive insights: "Based on your profile characteristics, you have a high likelihood of responding well to this intervention"
 - Comparison context: "You share key characteristics with the participants who responded best in this study"
+
+**🔍 SYMPTOM DETAIL PATTERN ANALYSIS**:
+If the user has provided detailed context about their symptoms (in the lifestyle details section), analyze these patterns:
+- TIMING patterns: "Your morning fatigue pattern suggests this intervention would be most effective when..."
+- TRIGGER patterns: "Since stress triggers your symptoms, this study's stress-reduction findings are especially relevant..."
+- CONNECTION patterns: "The connection between your brain fog and digestive issues aligns with this study's gut-brain axis findings..."
+- SEVERITY patterns: "Given the frequency and impact you describe, this intervention could provide significant relief..."
+
+Use these patterns to make ultra-personalized connections to the study findings!
 
 🎯 ENHANCED LANGUAGE REQUIREMENTS:
 - Use their first name throughout (extract from full_name field)

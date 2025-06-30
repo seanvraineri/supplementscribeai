@@ -173,7 +173,6 @@ const STEP_INFO = [
 
 export default function OnboardingPage() {
   const [step, setStep] = useState(1);
-  const [currentSubStep, setCurrentSubStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
   const [isCheckingCompletion, setIsCheckingCompletion] = useState(true);
@@ -385,7 +384,7 @@ export default function OnboardingPage() {
   const steps = [
     { id: 1, component: HealthGoalsStep, title: 'Health Goals', fields: ['healthGoals', 'customHealthGoal'] },
     { id: 2, component: SubscriptionTierStep, title: 'Choose Your Plan', fields: ['subscription_tier'] },
-    { id: 3, component: () => <div>Lifestyle Assessment</div>, title: 'Lifestyle Assessment', fields: ['energy_levels', 'effort_fatigue', 'caffeine_effect', 'digestive_issues', 'stress_levels', 'sleep_quality', 'mood_changes', 'brain_fog', 'sugar_cravings', 'skin_issues', 'joint_pain', 'immune_system', 'workout_recovery', 'food_sensitivities', 'weight_management', 'medication_history'] },
+    { id: 3, component: LifestyleAssessment, title: 'Lifestyle Assessment', fields: ['energy_levels', 'effort_fatigue', 'caffeine_effect', 'digestive_issues', 'stress_levels', 'sleep_quality', 'mood_changes', 'brain_fog', 'sugar_cravings', 'skin_issues', 'joint_pain', 'immune_system', 'workout_recovery', 'food_sensitivities', 'weight_management', 'medication_history', 'energy_levels_details', 'effort_fatigue_details', 'caffeine_effect_details', 'digestive_issues_details', 'stress_levels_details', 'sleep_quality_details', 'mood_changes_details', 'brain_fog_details', 'sugar_cravings_details', 'skin_issues_details', 'joint_pain_details', 'immune_system_details', 'workout_recovery_details', 'food_sensitivities_details', 'weight_management_details', 'medication_history_details'] },
     { id: 4, component: ActivityLevelStep, title: 'Activity Level', fields: ['activity_level'] },
     { id: 5, component: SleepHoursStep, title: 'Sleep Hours', fields: ['sleep_hours'] },
     { id: 6, component: AlcoholStep, title: 'Alcohol Intake', fields: ['alcohol_intake'] },
@@ -674,38 +673,19 @@ export default function OnboardingPage() {
     </div>
   );
   
-  // For lifestyle assessment, show current question progress
-  const isLifestyleStep = step === 3;
+  // Get step info for display
   const stepInfo = STEP_INFO[step - 1];
-
   let displayTitle = stepInfo.title;
   let displaySubtitle = stepInfo.subtitle;
-
-  if (isLifestyleStep) {
-    const currentQuestion = LIFESTYLE_QUESTIONS[currentSubStep - 1];
-    if (currentQuestion) {
-      displayTitle = currentQuestion.question;
-      displaySubtitle = `Question ${currentSubStep} of 16`;
-    }
-  }
   
   const handleBack = () => {
-    if (isLifestyleStep && currentSubStep > 1) {
-      setCurrentSubStep((prev: number) => prev - 1);
-    } else if (step > 1) {
+    if (step > 1) {
       prevStep();
     }
   };
   
   const handleNext = () => {
-    if (isLifestyleStep) {
-       if (currentSubStep < 16) {
-          setCurrentSubStep((prev: number) => prev + 1);
-        } else {
-          setCurrentSubStep(1); // Reset for next time
-          nextStep();
-        }
-    } else if (step < totalSteps) {
+    if (step < totalSteps) {
       nextStep();
     } else {
       onFinalSubmit();
@@ -719,11 +699,7 @@ export default function OnboardingPage() {
       case 2:
         return <SubscriptionTierStep onNext={handleNext} />;
       case 3:
-        return <LifestyleAssessment 
-          currentSubStep={currentSubStep} 
-          onSubStepComplete={handleNext} 
-          totalSubSteps={16}
-        />;
+        return <LifestyleAssessment onNext={handleNext} onBack={handleBack} />;
       case 4:
         return <ActivityLevelStep onNext={handleNext} />;
       case 5:
@@ -747,7 +723,7 @@ export default function OnboardingPage() {
     }
   })();
   
-  const canGoBack = !isSubmitting && (step > 1 || (isLifestyleStep && currentSubStep > 1));
+  const canGoBack = !isSubmitting && step > 1;
   const isLastStep = step === totalSteps;
 
   const getNextLabel = () => {
@@ -806,7 +782,7 @@ export default function OnboardingPage() {
                   <LoadingAnimation key="loading" />
                 ) : (
                   <motion.div
-                    key={step + (isLifestyleStep ? `-${currentSubStep}`: '')}
+                    key={step}
                     initial={{ opacity: 0, x: 50 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -50 }}
