@@ -246,18 +246,16 @@ function buildHyperPersonalizedContext(
     )
   );
   
+  // Include ALL relevant biomarkers for LLM to interpret based on full context
   relevantBiomarkers.forEach(b => {
-    const analysis = analyzeBiomarkerValue(b);
-    if (analysis.isAbnormal) {
-      biomarkerAlerts.push({
-        marker: b.marker_name || 'Unknown',
-        value: b.value || 0,
-        severity: analysis.severity as 'critical' | 'moderate' | 'mild',
-        personalizedResponse: generatePersonalizedBiomarkerResponse(b, symptomData.category),
-        targetRange: b.reference_range || 'Unknown',
-        actionPlan: generateBiomarkerActionPlan(b, symptomData.category)
-      });
-    }
+    biomarkerAlerts.push({
+      marker: b.marker_name || 'Unknown',
+      value: b.value || 0,
+      severity: 'moderate' as 'critical' | 'moderate' | 'mild', // Let LLM determine actual severity
+      personalizedResponse: `${b.marker_name}: ${b.value}${b.unit || ''}`, // Let LLM provide interpretation
+      targetRange: b.reference_range || 'Requires personalized assessment',
+      actionPlan: `Optimize ${b.marker_name} based on your unique profile` // Let LLM provide specific plan
+    });
   });
   
   // Symptom personalization
@@ -723,6 +721,38 @@ ${compressedContext}${personalizedContext}
 - Show them you remember EVERYTHING they told you about their health
 - Each response should reference 2-3 of their specific symptoms when relevant
 
+**🔬 PERSONALIZED BIOMARKER INTERPRETATION**:
+- Consider age, gender, lifestyle, and genetics when interpreting ALL biomarker values
+- A 22-year-old athlete has different "normal" ranges than a 65-year-old sedentary person
+- Reference their specific symptoms when explaining biomarker impacts
+- Connect biomarker patterns to their health concerns (e.g., "Your testosterone of 397 combined with your afternoon crashes...")
+- Never use generic ranges - always personalize to their unique profile
+- Consider medication effects, genetic variants, and lifestyle factors
+
+**🧬 PERSONALIZED GENETIC INTERPRETATION**:
+- Interpret genetic variants in context of their ENTIRE health picture
+- MTHFR + low B12 requires different recommendations than MTHFR + normal B12
+- Consider compound effects when multiple variants interact
+- Connect genetic insights to their specific symptoms and biomarkers
+- Explain HOW their genetics contribute to what they're experiencing
+- Make genetic information actionable and relevant to their goals
+
+**🔬 PERSONALIZED BIOMARKER INTERPRETATION**:
+- Consider age, gender, lifestyle, and genetics when interpreting ALL biomarker values
+- A 22-year-old athlete has different "normal" ranges than a 65-year-old sedentary person
+- Reference their specific symptoms when explaining biomarker impacts
+- Connect biomarker patterns to their health concerns (e.g., "Your testosterone of 397 combined with your afternoon crashes...")
+- Never use generic ranges - always personalize to their unique profile
+- Consider medication effects, genetic variants, and lifestyle factors
+
+**🧬 PERSONALIZED GENETIC INTERPRETATION**:
+- Interpret genetic variants in context of their ENTIRE health picture
+- MTHFR + low B12 requires different recommendations than MTHFR + normal B12
+- Consider compound effects when multiple variants interact
+- Connect genetic insights to their specific symptoms and biomarkers
+- Explain HOW their genetics contribute to what they're experiencing
+- Make genetic information actionable and relevant to their goals
+
 **🎮 NATURAL CONVERSATION FLOW & ENGAGEMENT**:
 - **BE A HEALTH DETECTIVE**: Make them feel like you're solving mysteries together about their body
 - **NATURAL PROGRESSION**: Each response should naturally lead to the next question or insight
@@ -1155,13 +1185,7 @@ async function analyzeUserGeneticData(supabase: any, userId: string): Promise<st
         analysisLines.push(`**${geneName}**: ${variantList}`);
       });
 
-      // Add specific interpretations for high-impact variants
-      const interpretations = interpretGeneticVariants(geneGroups);
-      if (interpretations.length > 0) {
-        analysisLines.push('');
-        analysisLines.push('**KEY GENETIC INSIGHTS**:');
-        interpretations.forEach(insight => analysisLines.push(insight));
-      }
+      // Let the LLM provide personalized genetic interpretations based on full context
     }
 
     return analysisLines.join('\n');
@@ -2109,46 +2133,17 @@ function buildOptimizedHealthContext(
     parts.push(`**MEDICATIONS**: ${medications.slice(0,5).map(m => `**${m.medication_name}**`).join(', ')}`);
   }
 
-  // Key biomarkers analysis
+  // Key biomarkers - Let LLM interpret based on full context
   if (biomarkers.length > 0) {
-    // Analyze biomarkers for abnormal values
-    const analyzed = biomarkers.map(b => ({
-      ...b,
-      analysis: analyzeBiomarkerValue(b)
-    }));
-
-    const abnormalBiomarkers = analyzed.filter(b => b.analysis.isAbnormal);
-    
-    if (abnormalBiomarkers.length > 0) {
-      const criticalBiomarkers = abnormalBiomarkers
-        .filter(b => b.analysis.severity === 'critical')
-        .slice(0, 5)
-        .map(b => `**${b.displayName || b.marker_name}**: ${b.value}${b.unit || ''} (${b.analysis.message})`)
-        .join('\n');
-      
-      if (criticalBiomarkers) {
-        parts.push(`**CRITICAL BIOMARKERS**:\n${criticalBiomarkers}`);
-      }
-
-      const moderateBiomarkers = abnormalBiomarkers
-        .filter(b => b.analysis.severity === 'moderate')
-        .slice(0, 5)
-        .map(b => `**${b.displayName || b.marker_name}**: ${b.value}${b.unit || ''} (${b.analysis.message})`)
-        .join('\n');
-      
-      if (moderateBiomarkers) {
-        parts.push(`**MODERATE CONCERNS**:\n${moderateBiomarkers}`);
-      }
-    }
-
-    // Key biomarkers summary (top 15 most important)
-    const keyList = ['CRP','HDL','LDL','Glucose','HBA1C','Ferritin','Vitamin D','B12','TSH','Testosterone'];
-    const keyBiomarkers = biomarkers
-      .filter((b:any)=> keyList.some(k=> (b.displayName||b.marker_name||'').toUpperCase().includes(k.toUpperCase())))
-      .slice(0,15)
+    // Format all biomarkers for LLM interpretation
+    const biomarkerList = biomarkers
+      .slice(0, 20) // Limit to top 20 for space
       .map((b:any)=> `**${b.displayName||b.marker_name}**: ${b.value}${b.unit||''}`)
-      .join(', ');
-    if (keyBiomarkers) parts.push(`**KEY BIOMARKERS**: ${keyBiomarkers}`);
+      .join('\n');
+    
+    if (biomarkerList) {
+      parts.push(`**BIOMARKERS**:\n${biomarkerList}`);
+    }
   }
 
   // Enhanced genetics section with debugging
@@ -2208,23 +2203,7 @@ function buildOptimizedHealthContext(
         })
         .join('\n');
       
-      parts.push(`**GENETICS** (${validSnps.length} valid variants from ${snps.length} total):\n${formattedGenetics}`);
-      
-      // Add important genetic interpretations
-      const interpretations = interpretGeneticVariants(geneGroups);
-      if (interpretations.length > 0) {
-        parts.push(`**GENETIC INSIGHTS**:\n${interpretations.join('\n')}`);
-      }
-      
-      // Add high-impact variants
-      const prioritized = prioritizeGeneticVariants(validSnps);
-      if (prioritized.length > 0) {
-        const impactList = prioritized
-          .slice(0, 10)
-          .map(v => `**${v.gene} ${v.rsid} (${v.genotype})**: ${v.impact}`)
-          .join('\n');
-        parts.push(`**HIGH-IMPACT VARIANTS**:\n${impactList}`);
-      }
+      parts.push(`**GENETICS** (${validSnps.length} valid variants):\n${formattedGenetics}`);
     }
   } else {
     parts.push(`**GENETICS**: No genetic data available - please complete genetic assessment`);
