@@ -1218,14 +1218,27 @@ CRITICAL: The PRIMARY HEALTH CONCERN is their most important issue. At least 2-3
 - Use warm, supportive language that shows you care about their wellbeing
 - Make them feel seen, understood, and hopeful about their health journey
 
-🎯 LIFESTYLE INTEGRATION REQUIREMENTS:
-- Naturally weave in their specific symptoms throughout recommendations
-- Use their EXACT words from detail fields (e.g., "crash at 2pm" not just "fatigue")
-- Each supplement should address 2-3 of their reported issues
-- Connect symptoms to show you see the patterns (e.g., "Your afternoon crashes and 3am wake-ups both suggest...")
-- Make it conversational - like talking to someone who knows them well
-- Spread coverage across all 6 supplements so ALL their issues are addressed
-- Never list symptoms mechanically - integrate them naturally into the explanation
+🎯 HOLISTIC HEALTH INTEGRATION:
+- Process ALL available user data simultaneously from the sections provided above
+- Use their EXACT words for symptoms from "LIFESTYLE DETAILS" section - never paraphrase
+- Apply your medical knowledge to connect whatever data IS available: genetics (if uploaded) + biomarkers (if uploaded) + lifestyle + demographics + conditions
+- **BIOMARKER & SNP DATA IS OPTIONAL** - many users won't have this data uploaded
+- Work with whatever data is available - if missing biomarkers/genetics, focus on lifestyle patterns and demographics
+- Find the unified biological narrative using ONLY the data explicitly provided in this prompt
+
+🧬 ADAPTIVE PATTERN RECOGNITION:
+- If they have biomarkers: integrate with lifestyle and genetics for precision recommendations
+- If they have genetics: explain variants in context of their symptoms and demographics  
+- If they have neither: focus on symptom patterns, demographics, and evidence-based supplement strategies
+- Transform missing biomarker/genetic data into intelligent testing recommendations
+- Connect their supplement needs to their complete available health story
+
+🚨 DATA AVAILABILITY REQUIREMENTS:
+- LIFESTYLE DATA: Always available - use their exact symptom words from provided sections
+- BIOMARKER DATA: Optional - only reference if explicitly provided in biomarker section above
+- GENETIC DATA: Optional - only reference variants shown in genetic data above  
+- If biomarker/genetic data missing: "Without biomarker testing, I'm focusing on your symptom patterns..."
+- Never assume or make up biomarker values or genetic variants not provided
 
 REASONING EXAMPLES:
 - Primary Concern: "You mentioned that your main concern is '${profile.primary_health_concern || '[their specific concern]'}' - this is exactly why I'm recommending this supplement. It directly addresses your primary worry by [specific mechanism]. You shouldn't have to live with this concern any longer."
@@ -1237,15 +1250,6 @@ REASONING EXAMPLES:
 - Biomarkers: "Your Vitamin D level of 18 ng/mL explains so much about what you've been experiencing, especially regarding your primary concern about [their concern]. This severe deficiency is likely contributing to your brain fog, low energy, and difficulty with weight management. By bringing your Vitamin D to optimal levels (30-50 ng/mL), you should start feeling more mentally clear, energetic, and motivated to reach your health goals."
 
 - Genetics: "Your MTHFR A1298C variant means your body has been working extra hard to process folate, which could be connected to your primary concern about [their concern]. This methylated B-complex bypasses your genetic limitation, giving your brain and nervous system the exact form of B vitamins they can actually use."
-
-🚨 ANTI-HALLUCINATION REQUIREMENTS:
-- ONLY use biomarker values that are explicitly listed above
-- ONLY reference genetic variants that are explicitly shown above
-- NEVER make up or assume biomarker values not provided
-- NEVER reference genetic variants not in the data
-- If no biomarker data: focus on symptoms and demographics only
-- If no genetic data: focus on biomarkers and symptoms only
-- NEVER cite studies or values that aren't real
 
 Provide EXACTLY 6 recommendations in this JSON format:
 

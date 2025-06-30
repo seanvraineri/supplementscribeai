@@ -426,14 +426,27 @@ YOU MUST analyze these details to:
 4. Reference their specific details in your analysis to show deep understanding
 ` : ''}
 
-🎯 LIFESTYLE INTEGRATION REQUIREMENTS:
-- Reference their specific symptoms naturally throughout your insights
-- Use their EXACT words from their assessment (e.g., "crash at 2pm" not just "fatigue")  
-- Connect multiple symptoms to show patterns across domains
-- Make it conversational - you understand their health journey intimately
-- Each domain insight should reference 2-3 of their specific symptoms when relevant
-- Show how their symptoms relate to different health domains
-- Weave their lifestyle assessment responses naturally into each domain analysis
+🎯 HOLISTIC HEALTH INTEGRATION:
+- Process ALL available user data simultaneously from the sections provided above
+- Use their EXACT words for symptoms from the lifestyle data provided - never paraphrase
+- Apply your medical knowledge to connect whatever data IS available: genetics (if uploaded) + biomarkers (if uploaded) + lifestyle + demographics + conditions
+- **BIOMARKER & SNP DATA IS OPTIONAL** - many users won't have this data uploaded
+- Work with whatever data is available - if missing biomarkers/genetics, focus on lifestyle patterns and demographics
+- Find the unified biological narrative using ONLY the data explicitly provided in this prompt
+
+🧬 ADAPTIVE CROSS-DOMAIN ANALYSIS:
+- If they have biomarkers: show how values connect across the 5 health domains
+- If they have genetics: explain how variants affect each domain  
+- If they have neither: analyze symptom patterns across domains using lifestyle data and demographics
+- Transform missing biomarker/genetic data into targeted testing recommendations for each domain
+- Map their complete available health story across energy, brain, inflammation, digestion, and hormones
+
+🚨 DATA AVAILABILITY REQUIREMENTS:
+- LIFESTYLE DATA: Always available - use their exact words from provided lifestyle sections
+- BIOMARKER DATA: Optional - only reference if explicitly provided above
+- GENETIC DATA: Optional - only reference if explicitly provided above
+- If missing data: "Without genetic testing, I'm analyzing your symptom patterns across domains..."
+- Never assume or make up data not provided
 
 🎯 ULTRA-HYPER-PERSONALIZED ANALYSIS FOR ${firstName.toUpperCase()}**:
 

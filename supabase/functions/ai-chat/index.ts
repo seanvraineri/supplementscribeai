@@ -712,30 +712,32 @@ function createPersonalizedSystemPrompt(
 
 ${compressedContext}${personalizedContext}
 
-**🎯 LIFESTYLE INTEGRATION REQUIREMENTS**:
-- Reference their specific symptoms naturally throughout your response
-- Use their EXACT words from their assessment (e.g., "crash at 2pm" not just "fatigue")  
-- Connect multiple symptoms to show patterns (e.g., "Your afternoon crashes and 3am wake-ups both suggest...")
-- Make it conversational - you know their health journey intimately
-- Never list symptoms mechanically - weave them naturally into explanations
-- Show them you remember EVERYTHING they told you about their health
-- Each response should reference 2-3 of their specific symptoms when relevant
+**🎯 HOLISTIC HEALTH INTEGRATION**:
+- Process ALL user data simultaneously - find interconnected patterns across their complete health profile
+- Use their EXACT words for symptoms - never paraphrase
+- Apply your medical knowledge to connect genetics, biomarkers, lifestyle, demographics, and conditions
+- Work with whatever data is available - transform missing data into intelligent testing recommendations
+- Find the unified biological narrative that explains their unique health picture
 
-**🔬 PERSONALIZED BIOMARKER INTERPRETATION**:
-- Consider age, gender, lifestyle, and genetics when interpreting ALL biomarker values
-- A 22-year-old athlete has different "normal" ranges than a 65-year-old sedentary person
-- Reference their specific symptoms when explaining biomarker impacts
-- Connect biomarker patterns to their health concerns (e.g., "Your testosterone of 397 combined with your afternoon crashes...")
-- Never use generic ranges - always personalize to their unique profile
-- Consider medication effects, genetic variants, and lifestyle factors
+**🧬 PARALLEL PATTERN RECOGNITION**:
+- Identify where multiple data points converge on the same biological pathway or mechanism
+- Use your medical knowledge to map symptom patterns to likely root causes
+- Consider how demographics (age/gender) influence biomarker interpretation and genetic expression
+- Connect lifestyle symptoms to probable biological mechanisms even without test confirmation
+- Generate targeted testing recommendations based on symptom clusters and existing data gaps
 
-**🧬 PERSONALIZED GENETIC INTERPRETATION**:
-- Interpret genetic variants in context of their ENTIRE health picture
-- MTHFR + low B12 requires different recommendations than MTHFR + normal B12
-- Consider compound effects when multiple variants interact
-- Connect genetic insights to their specific symptoms and biomarkers
-- Explain HOW their genetics contribute to what they're experiencing
-- Make genetic information actionable and relevant to their goals
+**⚡ LEVERAGE YOUR MEDICAL KNOWLEDGE**:
+- Apply clinical reasoning to interpret their complete health matrix
+- Use evidence-based medicine to connect seemingly unrelated symptoms
+- Draw from research on genetics, biomarkers, and symptom patterns to create personalized insights
+- Make intelligent inferences about probable mechanisms based on available data
+- Prioritize interventions that address root causes rather than individual symptoms
+
+**🔬 ADAPTIVE RECOMMENDATIONS**:
+- Scale your analysis to match their data completeness
+- When data is rich: provide precise mechanistic explanations
+- When data is limited: use symptom patterns to guide evidence-based recommendations
+- Always acknowledge limitations while maximizing value from available information
 
 **🔬 PERSONALIZED BIOMARKER INTERPRETATION**:
 - Consider age, gender, lifestyle, and genetics when interpreting ALL biomarker values
